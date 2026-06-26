@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="배송여정 · 배송조회 · 제품 소개 시스템 — 주문하신 상품의 배송 상태를 실시간으로 확인하세요." />
+  <title>배송여정 · 배송조회 | StoreFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- ===== 헤더 ===== -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#" class="brand">
+        <span class="brand-mark">📦</span>
+        <span class="brand-name">StoreFlow</span>
+      </a>
+      <nav class="header-nav">
+        <a href="#track">배송조회</a>
+        <a href="#journey">배송여정</a>
+        <a href="#product">제품소개</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===== 배송조회 검색 ===== -->
+    <section id="track" class="hero">
+      <div class="container">
+        <h1 class="hero-title">배송조회</h1>
+        <p class="hero-sub">운송장 번호를 입력하면 배송 여정을 실시간으로 확인할 수 있어요.</p>
+
+        <form id="track-form" class="track-form" autocomplete="off">
+          <input
+            id="track-input"
+            class="track-input"
+            type="text"
+            inputmode="numeric"
+            placeholder="운송장 번호를 입력하세요 (예: 519719884106)"
+            aria-label="운송장 번호"
+          />
+          <button type="submit" class="btn btn-primary track-btn">조회하기</button>
+        </form>
+        <div class="track-samples">
+          예시 번호:
+          <button type="button" class="sample-chip" data-no="519719884106">519719884106</button>
+          <button type="button" class="sample-chip" data-no="884201337755">884201337755</button>
+        </div>
+        <p id="track-error" class="track-error" hidden></p>
+      </div>
+    </section>
+
+    <!-- ===== 조회 결과 (배송여정 + 상세) ===== -->
+    <section id="result" class="result" hidden>
+      <div class="container">
+
+        <!-- 요약 카드 -->
+        <div class="summary-card">
+          <div class="summary-main">
+            <span id="summary-badge" class="status-badge">배송중</span>
+            <h2 id="summary-title" class="summary-title">배송이 진행 중이에요</h2>
+            <p id="summary-desc" class="summary-desc"></p>
+          </div>
+          <dl class="summary-meta">
+            <div><dt>운송장번호</dt><dd id="meta-invoice">—</dd></div>
+            <div><dt>택배사</dt><dd id="meta-carrier">—</dd></div>
+            <div><dt>받는 분</dt><dd id="meta-receiver">—</dd></div>
+            <div><dt>도착 예정</dt><dd id="meta-eta">—</dd></div>
+          </dl>
+        </div>
+
+        <!-- ===== 배송여정 (진행 단계) ===== -->
+        <div id="journey" class="journey">
+          <h3 class="block-title">배송여정</h3>
+          <ol id="journey-steps" class="journey-steps"></ol>
+        </div>
+
+        <!-- ===== 상세 추적 타임라인 ===== -->
+        <div class="history">
+          <h3 class="block-title">상세 배송 현황</h3>
+          <ul id="history-list" class="timeline"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 제품 소개 ===== -->
+    <section id="product" class="product-section" hidden>
+      <div class="container">
+        <h3 class="block-title">주문하신 제품</h3>
+
+        <div class="product-card">
+          <div class="product-media">
+            <img id="product-image" src="" alt="제품 이미지" />
+          </div>
+          <div class="product-info">
+            <span id="product-brand" class="product-brand"></span>
+            <h4 id="product-name" class="product-name"></h4>
+            <div class="product-rating">
+              <span id="product-stars" class="stars" aria-hidden="true"></span>
+              <span id="product-score" class="rating-score"></span>
+              <span id="product-reviews-count" class="rating-count"></span>
+            </div>
+            <p id="product-desc" class="product-desc"></p>
+            <div class="product-price">
+              <span id="product-price" class="price-now"></span>
+              <span id="product-price-origin" class="price-origin"></span>
+              <span id="product-discount" class="price-discount"></span>
+            </div>
+            <div class="product-cta">
+              <button class="btn btn-primary" id="cta-buy">다시 구매하기</button>
+              <button class="btn btn-outline" id="cta-cart">장바구니 담기</button>
+            </div>
+            <ul id="product-features" class="product-features"></ul>
+          </div>
+        </div>
+
+        <!-- 리뷰 -->
+        <div class="reviews">
+          <h3 class="block-title">고객 리뷰</h3>
+          <ul id="review-list" class="review-list"></ul>
+        </div>
+
+        <!-- 추천 상품 -->
+        <div class="recommends">
+          <h3 class="block-title">함께 보면 좋은 상품</h3>
+          <ul id="recommend-list" class="recommend-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 빈 상태 안내 -->
+    <section id="empty-state" class="empty-state">
+      <div class="container">
+        <div class="empty-illust">🚚</div>
+        <p class="empty-text">운송장 번호를 입력하고 <b>조회하기</b>를 눌러보세요.</p>
+        <p class="empty-sub">예시 번호로 바로 체험해볼 수 있어요.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2026 StoreFlow — 배송여정 · 배송조회 · 제품 소개 시스템 (데모)</p>
+      <p class="footer-note">본 화면은 목업 데이터로 동작하는 데모입니다.</p>
+    </div>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
