@@ -22,6 +22,8 @@
         <a href="#track">배송조회</a>
         <a href="#journey">배송여정</a>
         <a href="#product">제품소개</a>
+        <a href="#brand">브랜드</a>
+        <a href="#contact">문의하기</a>
       </nav>
     </div>
   </header>
@@ -49,13 +51,30 @@
           <button type="button" class="sample-chip" data-no="519719884106">519719884106</button>
           <button type="button" class="sample-chip" data-no="884201337755">884201337755</button>
         </div>
-        <p id="track-error" class="track-error" hidden></p>
+        <p id="track-error" class="track-error" role="alert" hidden></p>
       </div>
     </section>
 
-    <!-- ===== 조회 결과 (배송여정 + 상세) ===== -->
-    <section id="result" class="result" hidden>
+    <!-- ===== 조회 결과 ===== -->
+    <section id="result" class="result" hidden aria-live="polite">
       <div class="container">
+
+        <!-- 상태 애니메이션 영역 (추후 사용자가 Lottie/video/gif 삽입) -->
+        <div id="status-animation" class="status-animation" data-status="">
+          <!-- ⬇ 여기에 상태별 애니메이션을 삽입하세요 (data-status 값으로 분기) ⬇ -->
+          <div class="status-anim-placeholder" id="status-anim-slot">
+            <div class="status-anim-emoji" id="status-anim-emoji">🚚</div>
+          </div>
+          <!-- ⬆ placeholder: 실제 애니메이션으로 교체 가능 ⬆ -->
+          <div class="status-anim-text">
+            <h2 id="status-anim-title" class="status-anim-title">배송 상태</h2>
+            <p id="status-anim-caption" class="status-anim-caption"></p>
+            <div class="status-progress">
+              <div class="status-progress-bar" id="status-progress-bar"></div>
+            </div>
+            <span id="status-progress-label" class="status-progress-label"></span>
+          </div>
+        </div>
 
         <!-- 요약 카드 -->
         <div class="summary-card">
@@ -78,9 +97,42 @@
           <ol id="journey-steps" class="journey-steps"></ol>
         </div>
 
-        <!-- ===== 상세 추적 타임라인 ===== -->
+        <!-- ===== 주문요약 / 배송정보 (2단) ===== -->
+        <div class="info-grid">
+          <!-- 주문요약 -->
+          <div class="info-card">
+            <h3 class="block-title">주문요약</h3>
+            <dl class="kv">
+              <div><dt>주문번호</dt><dd id="order-no">—</dd></div>
+              <div><dt>주문일시</dt><dd id="order-date">—</dd></div>
+              <div><dt>결제수단</dt><dd id="order-pay">—</dd></div>
+            </dl>
+            <ul id="order-items" class="order-items"></ul>
+            <dl class="kv kv-total">
+              <div><dt>상품금액</dt><dd id="order-subtotal">—</dd></div>
+              <div><dt>배송비</dt><dd id="order-shipping">—</dd></div>
+              <div class="total-row"><dt>총 결제금액</dt><dd id="order-total">—</dd></div>
+            </dl>
+          </div>
+
+          <!-- 배송정보 -->
+          <div class="info-card">
+            <h3 class="block-title">배송정보</h3>
+            <dl class="kv">
+              <div><dt>보내는 분</dt><dd id="del-sender">—</dd></div>
+              <div><dt>출발지</dt><dd id="del-sender-addr">—</dd></div>
+              <div><dt>받는 분</dt><dd id="del-receiver">—</dd></div>
+              <div><dt>받는 주소</dt><dd id="del-receiver-addr">—</dd></div>
+              <div><dt>연락처</dt><dd id="del-phone">—</dd></div>
+              <div><dt>배송요청</dt><dd id="del-request">—</dd></div>
+              <div><dt>택배사 문의</dt><dd id="del-carrier-tel">—</dd></div>
+            </dl>
+          </div>
+        </div>
+
+        <!-- ===== 국내 배송조회 세부 ===== -->
         <div class="history">
-          <h3 class="block-title">상세 배송 현황</h3>
+          <h3 class="block-title">국내 배송 상세 현황</h3>
           <ul id="history-list" class="timeline"></ul>
         </div>
       </div>
@@ -127,6 +179,54 @@
         <div class="recommends">
           <h3 class="block-title">함께 보면 좋은 상품</h3>
           <ul id="recommend-list" class="recommend-list"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 브랜드 (인스타 피드 / 철학 / 쇼핑몰) ===== -->
+    <section id="brand" class="brand-section" hidden>
+      <div class="container">
+
+        <!-- 인스타그램 피드 -->
+        <div class="insta">
+          <div class="insta-head">
+            <h3 class="block-title">📷 인스타그램 피드 · 리뷰</h3>
+            <a id="insta-handle" class="insta-handle" href="#" target="_blank" rel="noopener"></a>
+          </div>
+          <ul id="insta-feed" class="insta-feed"></ul>
+        </div>
+
+        <!-- 브랜드 철학 -->
+        <div class="philosophy">
+          <h3 class="block-title">브랜드 철학</h3>
+          <p id="brand-tagline" class="brand-tagline"></p>
+          <p id="brand-philosophy" class="brand-philosophy"></p>
+          <ul id="brand-values" class="brand-values"></ul>
+        </div>
+
+        <!-- 쇼핑몰 바로가기 배너 -->
+        <a id="shop-banner" class="shop-banner" href="#" target="_blank" rel="noopener">
+          <div>
+            <span class="shop-banner-label">쇼핑몰 바로가기</span>
+            <strong id="shop-banner-name" class="shop-banner-name"></strong>
+          </div>
+          <span class="shop-banner-arrow">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ===== 문의하기 ===== -->
+    <section id="contact" class="contact-section" hidden>
+      <div class="container">
+        <h3 class="block-title">문의하기</h3>
+        <div class="contact-grid">
+          <ul id="contact-channels" class="contact-channels"></ul>
+          <form id="contact-form" class="contact-form">
+            <label>이름 <input type="text" name="name" required placeholder="홍길동" /></label>
+            <label>연락처/이메일 <input type="text" name="contact" required placeholder="010-0000-0000" /></label>
+            <label>문의내용 <textarea name="message" rows="4" required placeholder="문의하실 내용을 입력해 주세요"></textarea></label>
+            <button type="submit" class="btn btn-primary">문의 보내기</button>
+          </form>
         </div>
       </div>
     </section>
