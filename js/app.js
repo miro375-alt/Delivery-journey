@@ -26,6 +26,47 @@
     return "★".repeat(full) + "☆".repeat(5 - full);
   }
 
+  // 이미지 로드 실패 시 플레이스홀더(인라인 SVG, 오프라인에서도 동작)
+  const IMG_FALLBACK =
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">' +
+        '<rect width="100%" height="100%" fill="#eef1f7"/>' +
+        '<text x="50%" y="50%" font-size="48" text-anchor="middle" dominant-baseline="central">📦</text>' +
+        "</svg>"
+    );
+  document.addEventListener(
+    "error",
+    (e) => {
+      const t = e.target;
+      if (t && t.tagName === "IMG" && t.dataset.fbk !== "1") {
+        t.dataset.fbk = "1";
+        t.src = IMG_FALLBACK;
+        t.classList.add("img-fallback");
+      }
+    },
+    true // 캡처: error 이벤트는 버블링되지 않음
+  );
+
+  // ETA 카운트다운 (오늘 기준 D-day)
+  function renderEta(data) {
+    const el = $("eta-countdown");
+    if (!data.etaDate) { el.hidden = true; return; }
+    if (data.currentStep === "delivered") {
+      el.hidden = false;
+      el.textContent = "배송완료 ✓";
+      el.className = "eta-countdown done";
+      return;
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eta = new Date(data.etaDate + "T00:00:00");
+    const diff = Math.round((eta - today) / 86400000);
+    el.hidden = false;
+    el.className = "eta-countdown";
+    el.textContent = diff <= 0 ? "오늘 도착 예정 🛵" : diff === 1 ? "내일 도착 예정 (D-1)" : `도착까지 D-${diff}`;
+  }
+
   function setSectionsVisible(v) {
     [resultSec, productSec, brandSec, contactSec].forEach((s) => (s.hidden = !v));
   }
@@ -65,6 +106,7 @@
     const brand = product ? BRAND_DB[product.brand] : null;
 
     renderStatusAnimation(data);
+    renderEta(data);
     renderSummary(no, data);
     renderJourney(data);
     renderOrder(data);
