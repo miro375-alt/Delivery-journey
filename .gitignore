@@ -1,0 +1,8 @@
+# 검증/스크린샷 산출물
+shot-*.png
+*.local.png
+scratchpad-shot.png
+
+# 의존성/OS
+node_modules/
+.DS_Store
