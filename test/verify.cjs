@@ -22,18 +22,40 @@ function findChromium() {
   return undefined; // playwright 기본 경로 사용
 }
 
+// 실제 배포(https)와 동일하게 http 로 띄우기 위한 초경량 정적 서버
+function startServer(root) {
+  const http = require("http");
+  const types = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
+    ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml" };
+  const server = http.createServer((req, res) => {
+    let p = decodeURIComponent(req.url.split("?")[0]);
+    if (p === "/") p = "/index.html";
+    const file = path.join(root, p);
+    fs.readFile(file, (err, buf) => {
+      if (err) { res.statusCode = 404; res.end("not found"); return; }
+      res.setHeader("Content-Type", types[path.extname(file)] || "application/octet-stream");
+      res.end(buf);
+    });
+  });
+  return new Promise((resolve) => server.listen(0, () => resolve({ server, port: server.address().port })));
+}
+
 (async () => {
   const { chromium } = findPlaywright();
   const exe = findChromium();
+  const { server, port } = await startServer(path.join(__dirname, ".."));
   const browser = await chromium.launch(exe ? { executablePath: exe } : {});
   const page = await browser.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push("PAGEERROR: " + e.message));
   page.on("console", (m) => {
-    if (m.type() === "error" && !/net::ERR_/.test(m.text())) errors.push("CONSOLE: " + m.text());
+    // 리소스 로드 실패(net::ERR_/404)는 폴백이 처리하는 의도된 케이스 → 무시.
+    // 실제 JS 오류만 잡는다(pageerror + 그 외 console.error).
+    const t = m.text();
+    if (m.type() === "error" && !/net::ERR_|Failed to load resource/.test(t)) errors.push("CONSOLE: " + t);
   });
 
-  const url = "file://" + path.join(__dirname, "..", "index.html");
+  const url = `http://localhost:${port}/index.html`;
   await page.goto(url);
 
   let fail = 0;
@@ -80,6 +102,7 @@ function findChromium() {
   if (errors.length) fail++;
 
   await browser.close();
+  server.close();
   console.log("\n" + (fail ? `❌ 실패 ${fail}건` : "✅ 전체 통과"));
   process.exit(fail ? 1 : 0);
 })();

@@ -454,5 +454,38 @@
     }
   }
 
-  autoTrackFromUrl();
+  // ----- 자동화 산출물(data/*.json) 병합 -----
+  // cron(GitHub Actions)이 API로 생성한 파일이 있으면 시드 위에 덮어씀. 없으면 조용히 폴백.
+  async function loadJson(path) {
+    try {
+      const res = await fetch(path, { cache: "no-store" });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (_) {
+      return null; // file:// 또는 파일 없음 → 폴백
+    }
+  }
+  async function loadExternalData() {
+    const [catalog, promos, igA, igB] = await Promise.all([
+      loadJson("data/catalog.json"),
+      loadJson("data/promotions.json"),
+      loadJson("data/insta-aguard.json"),
+      loadJson("data/insta-babystandard.json"),
+    ]);
+    if (Array.isArray(catalog) && catalog.length) {
+      CATALOG.length = 0;
+      catalog.forEach((c) => CATALOG.push(c));
+      Object.keys(CATALOG_BY_ID).forEach((k) => delete CATALOG_BY_ID[k]);
+      CATALOG.forEach((c) => (CATALOG_BY_ID[c.id] = c));
+    }
+    if (promos && typeof promos === "object") Object.assign(PROMOTIONS, promos);
+    if (Array.isArray(igA) && BRAND_DB.aguard) BRAND_DB.aguard.instaFeed = igA;
+    if (Array.isArray(igB) && BRAND_DB.babystandard) BRAND_DB.babystandard.instaFeed = igB;
+  }
+
+  // 초기화: 외부 데이터 병합 후 자동 조회
+  (async function init() {
+    await loadExternalData();
+    autoTrackFromUrl();
+  })();
 })();
