@@ -1,0 +1,19 @@
+name: Deploy to NAS (self-hosted)
+
+# NAS에 self-hosted 러너(라벨: nas)를 등록하면, 푸시할 때마다 NAS가
+# 최신 코드를 받아 컨테이너를 재빌드/재시작합니다. (완전 자동)
+
+on:
+  push:
+    branches: ["claude/shipping-product-info-system-kigrde"]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, nas] # NAS 러너에 'nas' 라벨 부여
+    steps:
+      - uses: actions/checkout@v4
+      - name: 컨테이너 빌드 & 재시작
+        run: |
+          docker compose up -d --build
+          docker image prune -f
