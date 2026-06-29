@@ -47,7 +47,9 @@ const ROUTE_CHARACTER = {
 };
 
 /* ---- 연령대(추천 매칭용) 순서: 인접도 계산에 사용 ---- */
-const AGE_GROUPS = ["0-6개월", "6-12개월", "12-24개월", "24-36개월", "36-48개월", "48개월+"];
+// 아가드몰 "월령별 추천" 카테고리 체계와 일치. (인접도 계산 = 배열 순서)
+// ⚠️ 13개월 이상 구간은 추정값 — 실제 카페24 카테고리명으로 확정 필요(자동 매핑은 카테고리명 기준).
+const AGE_GROUPS = ["출산준비물", "1~3개월", "4~6개월", "7~9개월", "10~12개월", "13~18개월", "19~24개월", "24개월~"];
 
 const TRACKING_DB = {
   "519719884106": {
@@ -127,7 +129,7 @@ const TRACKING_DB = {
    ========================================================= */
 const CATALOG = [
   // --- 아가드 (aguard) ---
-  { id: "ag-1", brand: "aguard", mall: "aguard", ageGroup: "6-12개월", category: "안전용품",
+  { id: "ag-1", brand: "aguard", mall: "aguard", ageGroup: "7~9개월", category: "안전용품",
     name: "예시: 코너 가드 4개입", price: 12900, rating: 4.8, reviewsCount: 1284,
     image: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=600&q=80&auto=format&fit=crop",
     url: "https://aguardmall.com",
@@ -137,21 +139,21 @@ const CATALOG = [
       { author: "초보맘", rating: 5, date: "2026-06-20", text: "(예시) 모서리 다 붙였더니 안심돼요. 실제 후기로 교체 예정." },
       { author: "두아이맘", rating: 4, date: "2026-06-12", text: "(예시) 접착력 좋고 깔끔합니다." },
     ] },
-  { id: "ag-2", brand: "aguard", mall: "aguard", ageGroup: "0-6개월", category: "안전용품",
+  { id: "ag-2", brand: "aguard", mall: "aguard", ageGroup: "1~3개월", category: "안전용품",
     name: "예시: 콘센트 안전커버 세트", price: 8900, rating: 4.7, reviewsCount: 540,
     image: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&q=80&auto=format&fit=crop",
     url: "https://aguardmall.com" },
-  { id: "ag-3", brand: "aguard", mall: "aguard", ageGroup: "12-24개월", category: "안전용품",
+  { id: "ag-3", brand: "aguard", mall: "aguard", ageGroup: "13~18개월", category: "안전용품",
     name: "예시: 도어 핑거 가드", price: 15900, rating: 4.6, reviewsCount: 320,
     image: "https://images.unsplash.com/photo-1558877385-8c1b8e6e6f8a?w=600&q=80&auto=format&fit=crop",
     url: "https://aguardmall.com" },
-  { id: "ag-4", brand: "aguard", mall: "aguard", ageGroup: "24-36개월", category: "생활용품",
+  { id: "ag-4", brand: "aguard", mall: "aguard", ageGroup: "24개월~", category: "생활용품",
     name: "예시: 미끄럼방지 매트", price: 23900, rating: 4.5, reviewsCount: 210,
     image: "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=600&q=80&auto=format&fit=crop",
     url: "https://aguardmall.com" },
 
   // --- 베이비스탠다드 (babystandard) ---
-  { id: "bs-1", brand: "babystandard", mall: "babystandard", ageGroup: "0-6개월", category: "수유/이유",
+  { id: "bs-1", brand: "babystandard", mall: "babystandard", ageGroup: "4~6개월", category: "수유/이유",
     name: "예시: 실리콘 이유식 식기 세트", price: 48000, rating: 4.6, reviewsCount: 532,
     image: "https://images.unsplash.com/photo-1522771930-78b8b3e6e6f6?w=600&q=80&auto=format&fit=crop",
     url: "https://babystandard.kr",
@@ -161,15 +163,15 @@ const CATALOG = [
       { author: "이유식시작", rating: 5, date: "2026-06-22", text: "(예시) 흡착 잘되고 세척 편해요. 실제 후기로 교체 예정." },
       { author: "베이비맘", rating: 4, date: "2026-06-15", text: "(예시) 색감 예쁘고 부드러워요." },
     ] },
-  { id: "bs-2", brand: "babystandard", mall: "babystandard", ageGroup: "6-12개월", category: "수유/이유",
+  { id: "bs-2", brand: "babystandard", mall: "babystandard", ageGroup: "7~9개월", category: "수유/이유",
     name: "예시: 흡착 이유식 그릇", price: 18900, rating: 4.7, reviewsCount: 410,
     image: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&q=80&auto=format&fit=crop",
     url: "https://babystandard.kr" },
-  { id: "bs-3", brand: "babystandard", mall: "babystandard", ageGroup: "12-24개월", category: "외출용품",
+  { id: "bs-3", brand: "babystandard", mall: "babystandard", ageGroup: "13~18개월", category: "외출용품",
     name: "예시: 실리콘 빕(턱받이)", price: 12000, rating: 4.8, reviewsCount: 690,
     image: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600&q=80&auto=format&fit=crop",
     url: "https://babystandard.kr" },
-  { id: "bs-4", brand: "babystandard", mall: "babystandard", ageGroup: "24-36개월", category: "생활용품",
+  { id: "bs-4", brand: "babystandard", mall: "babystandard", ageGroup: "19~24개월", category: "생활용품",
     name: "예시: 유아 식판 세트", price: 21000, rating: 4.5, reviewsCount: 180,
     image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=600&q=80&auto=format&fit=crop",
     url: "https://babystandard.kr" },
