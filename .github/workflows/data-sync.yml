@@ -1,0 +1,56 @@
+name: Data Sync (카페24 / 인스타)
+
+# 토큰(Secrets)이 없으면 각 스크립트가 스스로 skip → 안전(실패 안 함).
+# 토큰이 있으면 data/*.json 생성 후 변경분만 커밋 → pages 워크플로가 자동 재배포.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *" # 6시간마다 (UTC)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: "data-sync"
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      # 카페24
+      CAFE24_CLIENT_ID: ${{ secrets.CAFE24_CLIENT_ID }}
+      CAFE24_CLIENT_SECRET: ${{ secrets.CAFE24_CLIENT_SECRET }}
+      CAFE24_MALLID_AGUARD: ${{ secrets.CAFE24_MALLID_AGUARD }}
+      CAFE24_REFRESH_AGUARD: ${{ secrets.CAFE24_REFRESH_AGUARD }}
+      CAFE24_MALLID_BABYSTANDARD: ${{ secrets.CAFE24_MALLID_BABYSTANDARD }}
+      CAFE24_REFRESH_BABYSTANDARD: ${{ secrets.CAFE24_REFRESH_BABYSTANDARD }}
+      # 인스타그램
+      IG_TOKEN_AGUARD: ${{ secrets.IG_TOKEN_AGUARD }}
+      IG_USERID_AGUARD: ${{ secrets.IG_USERID_AGUARD }}
+      IG_TOKEN_BABYSTANDARD: ${{ secrets.IG_TOKEN_BABYSTANDARD }}
+      IG_USERID_BABYSTANDARD: ${{ secrets.IG_USERID_BABYSTANDARD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 카페24 동기화
+        run: node scripts/fetch-cafe24.js
+
+      - name: 인스타그램 동기화
+        run: node scripts/fetch-instagram.js
+
+      - name: 변경분 커밋
+        run: |
+          git config user.name "data-sync-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/*.json 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "데이터 변경 없음 → 커밋 생략"
+          else
+            git commit -m "chore(data): 자동 동기화"
+            git push
+          fi

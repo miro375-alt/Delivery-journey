@@ -64,6 +64,20 @@
 
 ---
 
+### Iteration 5 — API 연동 스캐폴딩(토큰 대기)
+- **Plan**: 토큰만 넣으면 작동하는 cron+스크립트 사전 구축(사용자 요청).
+- **Develop**: ① scripts/lib.js ② fetch-cafe24.js(상품/월령카테고리→ageGroup/쿠폰, refresh OAuth, 페이지네이션) ③ fetch-instagram.js(Graph media) ④ tracking-serverless.example.js(배송조회 서버리스 템플릿) ⑤ .github/workflows/data-sync.yml(6h cron, 시크릿 없으면 skip, 변경분만 커밋) ⑥ scripts/README(활성화법·refresh_token 회전 주의).
+- **Verify**: 스크립트 node -c 통과 / 시크릿 없이 실행 시 안전 skip(exit 0, 실데이터 미생성) / 프론트 verify.cjs 전체 통과.
+- **비판적 회고**: ① 실제 API 응답 형태는 토큰 발급 후 1회 검증 필요(엔드포인트/scope/버전 미세조정 가능성). ② 카페24 refresh_token 회전 자동갱신 단계 미구현(토큰 받으면 추가). ③ 상품 URL이 cafe24 기본도메인 — 커스텀도메인(aguardmall.com)로 교체 필요. ④ 행사 배너(기프트박스)는 표준 API 밖 → 하이브리드 필요.
+
+---
+
+## ⏳ 토큰 발급되면 즉시 할 일 (사용자 대기)
+- 카페24 6 Secret → Data Sync 1회 실행 → catalog/promotions 실데이터 검증·미세조정
+- refresh_token 자동갱신 단계 추가
+- 인스타 4 Secret → insta-* 실데이터 검증
+- 스마트택배 키 → 서버리스 배포 + track() 실연동 전환
+
 ## 개선 백로그 (우선순위 높은 순, 매 회차 갱신)
 
 1. **접근성(a11y)**: 키보드 포커스 링, 명도 대비(WCAG AA), 탭 순서, 스크린리더 레이블
