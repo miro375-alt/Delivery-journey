@@ -1,10 +1,11 @@
 /* =========================================================
-   목업(가짜) 데이터 — 배송 / 주문 / 제품 / 브랜드
-   - 실제 API 연동 시 TRACKING_DB 조회 부분을 fetch 로 교체.
-   - key: 운송장 번호 (문자열)
+   목업/시드 데이터 — 배송 / 주문 / 제품 / 브랜드 / 추천
+   - 자사몰: 아가드(aguard), 베이비스탠다드(babystandard)  [카페24 + 사방넷]
+   - 제품/카탈로그는 예시 시드값. 실제 데이터는 추후 엑셀→CATALOG 로 교체.
+   - 실제 API 연동 시 TRACKING_DB 조회를 fetch 로 교체.
    ========================================================= */
 
-// 배송여정 단계 정의 (순서 고정)
+// 배송여정 단계 (순서 고정)
 const JOURNEY_STEPS = [
   { key: "ordered",   label: "주문접수", icon: "📝" },
   { key: "prepared",  label: "상품준비", icon: "📦" },
@@ -14,8 +15,7 @@ const JOURNEY_STEPS = [
   { key: "delivered", label: "배송완료", icon: "🏠" },
 ];
 
-// 상태 애니메이션 메타 (추후 사용자가 Lottie/video/gif 삽입)
-// data-status 값으로 #status-animation 슬롯에 매핑됩니다.
+// 상태 애니메이션 메타 (큰 히어로 영역, 추후 Lottie/video 교체)
 const STATUS_ANIMATION = {
   ordered:   { emoji: "📝", title: "주문이 접수되었어요", caption: "곧 상품 준비를 시작합니다" },
   prepared:  { emoji: "📦", title: "상품을 정성껏 포장 중이에요", caption: "출고 준비 중" },
@@ -25,6 +25,30 @@ const STATUS_ANIMATION = {
   delivered: { emoji: "🎉", title: "배송이 완료되었어요", caption: "이용해 주셔서 감사합니다" },
 };
 
+/* ---- 배송 경로 맵: 경유지 노드 (정지 이미지) ---- */
+// img 파일이 없으면 emoji 로 자동 폴백. 규격은 ASSETS.md 참조.
+const ROUTE_NODES = [
+  { key: "warehouse", label: "물류센터", emoji: "🏭", img: "assets/route/node-warehouse.png" },
+  { key: "hub",       label: "허브",     emoji: "🏢", img: "assets/route/node-hub.png" },
+  { key: "terminal",  label: "터미널",   emoji: "🏬", img: "assets/route/node-terminal.png" },
+  { key: "branch",    label: "배송지점", emoji: "🏪", img: "assets/route/node-branch.png" },
+  { key: "home",      label: "도착",     emoji: "🏠", img: "assets/route/node-home.png" },
+];
+
+/* ---- 배송 경로 맵: 단계별 캐릭터 + 경로상 위치(at: 노드 인덱스 0~4) ---- */
+// img(gif) 파일이 없으면 emoji 로 자동 폴백. 규격은 ASSETS.md 참조.
+const ROUTE_CHARACTER = {
+  ordered:   { emoji: "📝", img: "assets/route/char-ordered.gif",   at: 0,   label: "주문접수" },
+  prepared:  { emoji: "📦", img: "assets/route/char-prepared.gif",  at: 0,   label: "상품준비" },
+  picked:    { emoji: "🏷️", img: "assets/route/char-picked.gif",    at: 0.5, label: "출발 준비" },
+  transit:   { emoji: "🚛", img: "assets/route/char-transit.gif",   at: 1.6, label: "간선 이동중" },
+  delivery:  { emoji: "🛵", img: "assets/route/char-delivery.gif",  at: 3.4, label: "배송중" },
+  delivered: { emoji: "🎉", img: "assets/route/char-delivered.gif", at: 4,   label: "도착 완료" },
+};
+
+/* ---- 연령대(추천 매칭용) 순서: 인접도 계산에 사용 ---- */
+const AGE_GROUPS = ["0-6개월", "6-12개월", "12-24개월", "24-36개월", "36-48개월", "48개월+"];
+
 const TRACKING_DB = {
   "519719884106": {
     carrier: "스마트로지스",
@@ -33,31 +57,23 @@ const TRACKING_DB = {
     eta: "6월 27일 (토) 도착 예정",
     etaDate: "2026-06-27",
     currentStep: "delivery",
-    product: "prod-1",
-
-    // 주문요약
+    product: "ag-1",
     order: {
       orderNo: "20260625-0098213",
       orderDate: "2026-06-25 14:02",
       payMethod: "신용카드 (간편결제)",
-      items: [
-        { name: "유기농 콜드프레스 주스 12종 세트", option: "기본 구성", qty: 1, price: 32900,
-          image: "https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=200&q=80&auto=format&fit=crop" },
-      ],
+      items: [{ name: "예시 상품 A", option: "기본", qty: 1, price: 32900,
+        image: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=200&q=80&auto=format&fit=crop" }],
       shippingFee: 0,
     },
-
-    // 배송정보
     delivery: {
-      sender: "FRESH GARDEN",
+      sender: "아가드",
       senderAddr: "경기 용인시 처인구 물류로 12",
       receiverName: "김지리",
       receiverAddr: "서울 강남구 테헤란로 123, 4층 (역삼동)",
       receiverPhone: "010-****-1234",
       request: "부재 시 문 앞에 놓아주세요",
     },
-
-    // 상세 추적 이력 (app.js에서 역순 정렬)
     history: [
       { time: "2026-06-25 14:02", status: "주문접수", where: "온라인 주문 완료", step: "ordered" },
       { time: "2026-06-25 18:30", status: "상품준비중", where: "용인 물류센터", step: "prepared" },
@@ -75,28 +91,23 @@ const TRACKING_DB = {
     eta: "6월 26일 (금) 배송완료",
     etaDate: "2026-06-26",
     currentStep: "delivered",
-    product: "prod-2",
-
+    product: "bs-1",
     order: {
       orderNo: "20260623-0044120",
       orderDate: "2026-06-23 10:11",
       payMethod: "계좌간편결제",
-      items: [
-        { name: "무선 아로마 디퓨저 + 오일 3종", option: "화이트", qty: 1, price: 48000,
-          image: "https://images.unsplash.com/photo-1602874801006-e26d3d17d2b1?w=200&q=80&auto=format&fit=crop" },
-      ],
+      items: [{ name: "예시 상품 B", option: "라이트그레이", qty: 1, price: 48000,
+        image: "https://images.unsplash.com/photo-1522771930-78b8b3e6e6f6?w=200&q=80&auto=format&fit=crop" }],
       shippingFee: 3000,
     },
-
     delivery: {
-      sender: "NORDIC HOME",
+      sender: "베이비스탠다드",
       senderAddr: "경기 이천시 마장면 물류단지로 80",
       receiverName: "이민수",
       receiverAddr: "부산 사상구 가야대로 999 (주례동)",
       receiverPhone: "010-****-7788",
       request: "경비실에 맡겨주세요",
     },
-
     history: [
       { time: "2026-06-23 10:11", status: "주문접수", where: "온라인 주문 완료", step: "ordered" },
       { time: "2026-06-23 16:45", status: "상품준비중", where: "이천 물류센터", step: "prepared" },
@@ -110,125 +121,134 @@ const TRACKING_DB = {
 };
 
 /* =========================================================
-   제품 데이터
+   통합 상품 카탈로그 (추천 엔진 소스)
+   ⚠️ 아래는 구조 확인용 예시 시드. 실제 데이터는 엑셀→이 배열로 교체.
+   필수 필드: id, brand, mall, ageGroup, category, name, price, image, url
    ========================================================= */
-const PRODUCT_DB = {
-  "prod-1": {
-    brand: "brand-fresh",
-    name: "유기농 콜드프레스 주스 12종 세트",
-    image: "https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=600&q=80&auto=format&fit=crop",
-    rating: 4.8,
-    reviewsCount: 1284,
-    price: 32900,
-    priceOrigin: 45000,
-    desc: "착즙 그대로, 첨가물 없이. 매일 아침 마시는 100% 유기농 콜드프레스 주스 12종을 한 박스에 담았습니다.",
-    features: [
-      "무첨가·무가당 100% 착즙 원액",
-      "저온 살균으로 영양소 보존",
-      "낱개 포장으로 신선하게",
-      "냉장 보관 · 출고일 포함 14일 이내 섭취 권장",
-    ],
+const CATALOG = [
+  // --- 아가드 (aguard) ---
+  { id: "ag-1", brand: "aguard", mall: "aguard", ageGroup: "6-12개월", category: "안전용품",
+    name: "예시: 코너 가드 4개입", price: 12900, rating: 4.8, reviewsCount: 1284,
+    image: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=600&q=80&auto=format&fit=crop",
+    url: "https://aguardmall.com",
+    desc: "(예시 설명) 모서리 충돌을 막아주는 안전 가드. 실제 상품 정보로 교체 예정.",
+    features: ["예시 특징 1", "예시 특징 2", "예시 특징 3"],
     reviews: [
-      { author: "건강한아침", rating: 5, date: "2026-06-20", text: "매일 아침 하나씩 마시는데 속이 편하고 맛도 좋아요. 재구매 의사 100%!" },
-      { author: "주스러버", rating: 4, date: "2026-06-15", text: "당도가 낮아서 처음엔 밍밍했는데 익숙해지니 자연스러운 단맛이 좋네요." },
-      { author: "미니멀리스트", rating: 5, date: "2026-06-10", text: "포장 꼼꼼하고 배송 빨라요. 12종이라 골라먹는 재미가 있습니다." },
-    ],
-    recommends: ["rec-1", "rec-2", "rec-3"],
-  },
+      { author: "초보맘", rating: 5, date: "2026-06-20", text: "(예시) 모서리 다 붙였더니 안심돼요. 실제 후기로 교체 예정." },
+      { author: "두아이맘", rating: 4, date: "2026-06-12", text: "(예시) 접착력 좋고 깔끔합니다." },
+    ] },
+  { id: "ag-2", brand: "aguard", mall: "aguard", ageGroup: "0-6개월", category: "안전용품",
+    name: "예시: 콘센트 안전커버 세트", price: 8900, rating: 4.7, reviewsCount: 540,
+    image: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&q=80&auto=format&fit=crop",
+    url: "https://aguardmall.com" },
+  { id: "ag-3", brand: "aguard", mall: "aguard", ageGroup: "12-24개월", category: "안전용품",
+    name: "예시: 도어 핑거 가드", price: 15900, rating: 4.6, reviewsCount: 320,
+    image: "https://images.unsplash.com/photo-1558877385-8c1b8e6e6f8a?w=600&q=80&auto=format&fit=crop",
+    url: "https://aguardmall.com" },
+  { id: "ag-4", brand: "aguard", mall: "aguard", ageGroup: "24-36개월", category: "생활용품",
+    name: "예시: 미끄럼방지 매트", price: 23900, rating: 4.5, reviewsCount: 210,
+    image: "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=600&q=80&auto=format&fit=crop",
+    url: "https://aguardmall.com" },
 
-  "prod-2": {
-    brand: "brand-nordic",
-    name: "무선 아로마 디퓨저 + 오일 3종",
-    image: "https://images.unsplash.com/photo-1602874801006-e26d3d17d2b1?w=600&q=80&auto=format&fit=crop",
-    rating: 4.6,
-    reviewsCount: 532,
-    price: 48000,
-    priceOrigin: 69000,
-    desc: "USB 충전식 무선 디퓨저로 어디서나 은은한 향을. 라벤더·시트러스·우드 3종 에센셜 오일을 함께 드립니다.",
-    features: [
-      "무선 충전식 · 최대 8시간 연속 사용",
-      "7색 무드등 내장",
-      "자동 꺼짐 안전 기능",
-      "천연 에센셜 오일 3종 포함",
-    ],
+  // --- 베이비스탠다드 (babystandard) ---
+  { id: "bs-1", brand: "babystandard", mall: "babystandard", ageGroup: "0-6개월", category: "수유/이유",
+    name: "예시: 실리콘 이유식 식기 세트", price: 48000, rating: 4.6, reviewsCount: 532,
+    image: "https://images.unsplash.com/photo-1522771930-78b8b3e6e6f6?w=600&q=80&auto=format&fit=crop",
+    url: "https://babystandard.kr",
+    desc: "(예시 설명) 부드러운 실리콘 식기 세트. 실제 상품 정보로 교체 예정.",
+    features: ["예시 특징 1", "예시 특징 2", "예시 특징 3"],
     reviews: [
-      { author: "집순이라이프", rating: 5, date: "2026-06-22", text: "무선이라 침실 어디든 둘 수 있어서 좋아요. 향도 은은하니 딱 좋습니다." },
-      { author: "향기수집가", rating: 4, date: "2026-06-18", text: "디자인 예쁘고 조용해요. 오일이 좀 더 많았으면 하는 아쉬움은 있네요." },
-    ],
-    recommends: ["rec-4", "rec-5", "rec-1"],
-  },
-};
+      { author: "이유식시작", rating: 5, date: "2026-06-22", text: "(예시) 흡착 잘되고 세척 편해요. 실제 후기로 교체 예정." },
+      { author: "베이비맘", rating: 4, date: "2026-06-15", text: "(예시) 색감 예쁘고 부드러워요." },
+    ] },
+  { id: "bs-2", brand: "babystandard", mall: "babystandard", ageGroup: "6-12개월", category: "수유/이유",
+    name: "예시: 흡착 이유식 그릇", price: 18900, rating: 4.7, reviewsCount: 410,
+    image: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&q=80&auto=format&fit=crop",
+    url: "https://babystandard.kr" },
+  { id: "bs-3", brand: "babystandard", mall: "babystandard", ageGroup: "12-24개월", category: "외출용품",
+    name: "예시: 실리콘 빕(턱받이)", price: 12000, rating: 4.8, reviewsCount: 690,
+    image: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600&q=80&auto=format&fit=crop",
+    url: "https://babystandard.kr" },
+  { id: "bs-4", brand: "babystandard", mall: "babystandard", ageGroup: "24-36개월", category: "생활용품",
+    name: "예시: 유아 식판 세트", price: 21000, rating: 4.5, reviewsCount: 180,
+    image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=600&q=80&auto=format&fit=crop",
+    url: "https://babystandard.kr" },
+];
+
+// id → 카탈로그 항목 빠른 조회
+const CATALOG_BY_ID = CATALOG.reduce((m, p) => ((m[p.id] = p), m), {});
 
 /* =========================================================
-   추천 상품 풀
+   추천 엔진
+   - 구매한 제품(brand/mall/ageGroup/category) 기준으로 2개 추천
+   - 점수: 같은 연령대(+3)/인접 연령대(+1) + 같은 브랜드(+2) + 같은 몰(+1)
+           + 같은 카테고리(+1). 자기 자신 제외. 동점이면 평점순.
    ========================================================= */
-const RECOMMEND_DB = {
-  "rec-1": { name: "유기농 그래놀라 500g", image: "https://images.unsplash.com/photo-1517686469429-8bdb88b9f907?w=400&q=80&auto=format&fit=crop", price: 12900, rating: 4.7 },
-  "rec-2": { name: "원목 캔들 홀더 세트", image: "https://images.unsplash.com/photo-1602607213323-9483c3a17e6e?w=400&q=80&auto=format&fit=crop", price: 18500, rating: 4.5 },
-  "rec-3": { name: "프리미엄 핸드크림 3종", image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&q=80&auto=format&fit=crop", price: 24000, rating: 4.9 },
-  "rec-4": { name: "라벤더 룸스프레이", image: "https://images.unsplash.com/photo-1595425970377-c9703cf48b6d?w=400&q=80&auto=format&fit=crop", price: 15900, rating: 4.6 },
-  "rec-5": { name: "린넨 무드 쿠션 커버", image: "https://images.unsplash.com/photo-1584100936595-c0654b55a2e6?w=400&q=80&auto=format&fit=crop", price: 21000, rating: 4.4 },
-};
+function recommendFor(product, limit = 2) {
+  if (!product) return [];
+  const ai = AGE_GROUPS.indexOf(product.ageGroup);
+  const scored = CATALOG.filter((c) => c.id !== product.id).map((c) => {
+    let s = 0;
+    const ci = AGE_GROUPS.indexOf(c.ageGroup);
+    if (ai >= 0 && ci >= 0) {
+      const d = Math.abs(ai - ci);
+      if (d === 0) s += 3; else if (d === 1) s += 1;
+    }
+    if (c.brand === product.brand) s += 2;
+    if (c.mall === product.mall) s += 1;
+    if (c.category === product.category) s += 1;
+    return { item: c, score: s };
+  });
+  scored.sort((a, b) => b.score - a.score || b.item.rating - a.item.rating);
+  return scored.slice(0, limit).map((x) => x.item);
+}
 
 /* =========================================================
-   브랜드 데이터 (철학 / 인스타 피드 / 쇼핑몰 / 문의)
+   브랜드 데이터 (철학 / 인스타 / 쇼핑몰 / 문의)
+   ⚠️ philosophy/values/contact 는 예시 카피 — 실제 문구로 교체 권장.
+   instaFeed 는 자동화 전까지 placeholder. (AUTOMATION.md 참조)
    ========================================================= */
 const BRAND_DB = {
-  "brand-fresh": {
-    name: "FRESH GARDEN",
-    tagline: "자연을 가장 가까이",
+  aguard: {
+    name: "아가드",
+    tagline: "우리 아이 안전의 기준",
     philosophy:
-      "우리는 흙에서 식탁까지의 거리를 줄이는 일을 합니다. 불필요한 첨가물 대신 제철 원물의 힘을 믿고, " +
-      "농부와 직접 계약 재배한 재료만을 사용합니다. 더 적게 가공하고, 더 정직하게 담는 것 — 그것이 프레시가든의 약속입니다.",
+      "(예시 카피) 아가드는 아이가 머무는 모든 공간을 더 안전하게 만드는 일에 집중합니다. " +
+      "꼼꼼한 안전 설계와 검증된 소재로, 보호자가 안심할 수 있는 환경을 만듭니다.",
     values: [
-      { icon: "🌱", title: "유기농 원물", desc: "계약 재배 · 무농약 인증" },
-      { icon: "♻️", title: "친환경 포장", desc: "재활용 가능 패키지 100%" },
-      { icon: "🤝", title: "공정한 거래", desc: "산지 농가와 직거래" },
+      { icon: "🛡️", title: "안전 최우선", desc: "유해물질 시험 통과" },
+      { icon: "🔍", title: "꼼꼼한 설계", desc: "디테일까지 안전하게" },
+      { icon: "🤝", title: "신뢰", desc: "보호자가 믿는 브랜드" },
     ],
-    shopUrl: "https://example.com/freshgarden",
-    instaHandle: "@fresh_garden_official",
-    instaFeed: [
-      { image: "https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=400&q=80&auto=format&fit=crop", likes: 842, caption: "오늘 아침의 한 잔 🍊 #콜드프레스 #모닝루틴", isReview: false },
-      { image: "https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=400&q=80&auto=format&fit=crop", likes: 1203, caption: "고객님 후기 📸 '아이도 잘 먹어요!' ⭐⭐⭐⭐⭐", isReview: true },
-      { image: "https://images.unsplash.com/photo-1547514701-42782101795e?w=400&q=80&auto=format&fit=crop", likes: 657, caption: "산지에서 바로 🌿 #제철과일 #직거래", isReview: false },
-      { image: "https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?w=400&q=80&auto=format&fit=crop", likes: 998, caption: "리뷰 이벤트 당첨자 발표! 🎁", isReview: true },
-      { image: "https://images.unsplash.com/photo-1576673442511-7e39b6545c87?w=400&q=80&auto=format&fit=crop", likes: 1540, caption: "여름 한정 자몽에이드 출시 🍋", isReview: false },
-      { image: "https://images.unsplash.com/photo-1497534446932-c925b458314a?w=400&q=80&auto=format&fit=crop", likes: 721, caption: "'매일 마시는 습관' 후기 모음 💬", isReview: true },
-    ],
-    contact: {
-      kakao: "@freshgarden",
-      tel: "1600-1234",
-      email: "help@freshgarden.example.com",
-      hours: "평일 10:00~17:00 (점심 12~13시 / 주말·공휴일 휴무)",
-    },
+    shopUrl: "https://aguardmall.com",
+    instaHandle: "@aguard_official",
+    instaUrl: "https://www.instagram.com/aguard_official/",
+    instaFeed: [], // 자동화 전까지 비움 → JS가 placeholder 렌더
+    contact: { kakao: "@아가드", tel: "고객센터", email: "help@aguardmall.com", hours: "평일 10:00~17:00 (점심 12~13시 / 주말·공휴일 휴무)" },
   },
 
-  "brand-nordic": {
-    name: "NORDIC HOME",
-    tagline: "단순함이 주는 편안함",
+  babystandard: {
+    name: "베이비스탠다드",
+    tagline: "아이에게 맞는 기준",
     philosophy:
-      "북유럽의 절제된 미학에서 출발합니다. 화려함보다 오래 곁에 둘 수 있는 물건, " +
-      "공간을 채우기보다 비우는 디자인을 지향합니다. 좋은 소재와 정직한 마감으로 일상의 온도를 높입니다.",
+      "(예시 카피) 베이비스탠다드는 아이의 일상에 꼭 맞는 '기준'이 되는 제품을 제안합니다. " +
+      "안전한 소재와 실용적인 디자인으로 매일의 육아를 조금 더 편안하게 만듭니다.",
     values: [
-      { icon: "🪵", title: "지속가능 소재", desc: "FSC 인증 원목 사용" },
-      { icon: "✨", title: "미니멀 디자인", desc: "군더더기 없는 형태" },
-      { icon: "🔧", title: "오래 쓰는 품질", desc: "2년 무상 A/S" },
+      { icon: "🍼", title: "안심 소재", desc: "유아 사용 기준 충족" },
+      { icon: "✨", title: "실용 디자인", desc: "매일 쓰기 편하게" },
+      { icon: "💛", title: "함께 성장", desc: "아이와 보호자 모두" },
     ],
-    shopUrl: "https://example.com/nordichome",
-    instaHandle: "@nordic_home_kr",
-    instaFeed: [
-      { image: "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&q=80&auto=format&fit=crop", likes: 932, caption: "거실의 작은 변화 🕯️ #홈스타일링", isReview: false },
-      { image: "https://images.unsplash.com/photo-1567016432779-094069958ea5?w=400&q=80&auto=format&fit=crop", likes: 654, caption: "고객님 공간 후기 🏠 ⭐⭐⭐⭐⭐", isReview: true },
-      { image: "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=400&q=80&auto=format&fit=crop", likes: 1120, caption: "은은한 우드 향 🌲 #디퓨저", isReview: false },
-      { image: "https://images.unsplash.com/photo-1545048702-79362596cdc9?w=400&q=80&auto=format&fit=crop", likes: 845, caption: "재구매 후기 💬 '선물용으로 최고'", isReview: true },
-      { image: "https://images.unsplash.com/photo-1522444195799-478538b28823?w=400&q=80&auto=format&fit=crop", likes: 1330, caption: "신상 캔들 컬렉션 ✨", isReview: false },
-      { image: "https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=400&q=80&auto=format&fit=crop", likes: 712, caption: "이달의 베스트 리뷰 🏆", isReview: true },
-    ],
-    contact: {
-      kakao: "@nordichome",
-      tel: "1600-5678",
-      email: "cs@nordichome.example.com",
-      hours: "평일 09:30~18:00 (주말·공휴일 휴무)",
-    },
+    shopUrl: "https://babystandard.kr",
+    instaHandle: "@babystandard_official",
+    instaUrl: "https://www.instagram.com/babystandard_official/",
+    instaFeed: [],
+    contact: { kakao: "@베이비스탠다드", tel: "고객센터", email: "cs@babystandard.kr", hours: "평일 10:00~17:00 (주말·공휴일 휴무)" },
   },
+};
+
+/* ---- 진행중 행사/프로모션 (자동화 전까지 시드값) ---- */
+// AUTOMATION.md 참조: 카페24 API 또는 주기적 export 로 교체 예정.
+const PROMOTIONS = {
+  aguard: [],
+  babystandard: [],
 };

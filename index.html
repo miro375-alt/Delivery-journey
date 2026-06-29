@@ -98,6 +98,23 @@
           <ol id="journey-steps" class="journey-steps"></ol>
         </div>
 
+        <!-- ===== 배송 경로 맵 (캐릭터 이동) ===== -->
+        <div class="route">
+          <h3 class="block-title">배송 경로</h3>
+          <div class="route-map" id="route-map">
+            <div class="route-track">
+              <div class="route-line"></div>
+              <div class="route-line-fill" id="route-line-fill"></div>
+              <ol class="route-nodes" id="route-nodes"></ol>
+              <!-- 이동하는 캐릭터 (assets/route/char-*.gif, 없으면 emoji 폴백) -->
+              <div class="route-char" id="route-char">
+                <div class="route-char-bubble" id="route-char-bubble"></div>
+                <img class="route-char-img" id="route-char-img" alt="배송 캐릭터" />
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ===== 주문요약 / 배송정보 (2단) ===== -->
         <div class="info-grid">
           <!-- 주문요약 -->

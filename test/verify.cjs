@@ -49,15 +49,21 @@ function findChromium() {
     const r = {};
     for (const sel of ["#result", "#product", "#brand", "#contact"]) r[sel] = await page.$eval(sel, (el) => !el.hidden);
     r.journey = await page.$$eval("#journey-steps .journey-step", (e) => e.length);
+    r.route = await page.$$eval("#route-nodes .route-node", (e) => e.length);
+    r.routeChar = await page.$eval("#route-char-img", (e) => !!e.getAttribute("src"));
     r.history = await page.$$eval("#history-list .timeline-item", (e) => e.length);
     r.insta = await page.$$eval("#insta-feed .insta-item", (e) => e.length);
+    r.recommends = await page.$$eval("#recommend-list .recommend-item", (e) => e.length);
     r.eta = await page.$eval("#eta-countdown", (e) => e.textContent);
     r.status = await page.$eval("#status-animation", (e) => e.dataset.status);
     console.log(`\n[${no}]`);
     expect("결과 섹션 노출", r["#result"] && r["#product"] && r["#brand"] && r["#contact"], r);
     expect("배송여정 6단계", r.journey === 6, r.journey);
+    expect("배송 경로 노드 5", r.route === 5, r.route);
+    expect("경로 캐릭터 표시", r.routeChar, r.routeChar);
     expect("이력 ≥ 6", r.history >= 6, r.history);
-    expect("인스타 6", r.insta === 6, r.insta);
+    expect("인스타 6칸", r.insta === 6, r.insta);
+    expect("추천 2개", r.recommends === 2, r.recommends);
     expect("ETA 표시", r.eta && r.eta.length > 0, r.eta);
     expect("status 주입", !!r.status, r.status);
   }

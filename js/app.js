@@ -27,21 +27,27 @@
   }
 
   // 이미지 로드 실패 시 플레이스홀더(인라인 SVG, 오프라인에서도 동작)
-  const IMG_FALLBACK =
-    "data:image/svg+xml;utf8," +
-    encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">' +
-        '<rect width="100%" height="100%" fill="#eef1f7"/>' +
-        '<text x="50%" y="50%" font-size="48" text-anchor="middle" dominant-baseline="central">📦</text>' +
-        "</svg>"
+  // <img data-emoji="🚛"> 가 있으면 해당 이모지로, 없으면 📦 로 폴백.
+  function emojiSvg(emoji, transparent) {
+    return (
+      "data:image/svg+xml;utf8," +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">' +
+          (transparent ? "" : '<rect width="100%" height="100%" fill="#eef1f7"/>') +
+          '<text x="50%" y="50%" font-size="120" text-anchor="middle" dominant-baseline="central">' +
+          emoji +
+          "</text></svg>"
+      )
     );
+  }
   document.addEventListener(
     "error",
     (e) => {
       const t = e.target;
       if (t && t.tagName === "IMG" && t.dataset.fbk !== "1") {
         t.dataset.fbk = "1";
-        t.src = IMG_FALLBACK;
+        const emoji = t.dataset.emoji;
+        t.src = emojiSvg(emoji || "📦", !!emoji); // 캐릭터/노드(emoji)는 배경 투명
         t.classList.add("img-fallback");
       }
     },
@@ -102,13 +108,14 @@
     clearError();
     emptyState.hidden = true;
 
-    const product = PRODUCT_DB[data.product];
+    const product = CATALOG_BY_ID[data.product];
     const brand = product ? BRAND_DB[product.brand] : null;
 
     renderStatusAnimation(data);
     renderEta(data);
     renderSummary(no, data);
     renderJourney(data);
+    renderRoute(data);
     renderOrder(data);
     renderDelivery(data);
     renderHistory(data);
@@ -182,6 +189,44 @@
     }).join("");
   }
 
+  // ----- 배송 경로 맵 (캐릭터 이동) -----
+  function renderRoute(data) {
+    const n = ROUTE_NODES.length;
+    const currentIdx = JOURNEY_STEPS.findIndex((s) => s.key === data.currentStep);
+
+    // 노드 렌더 (지나온 노드는 active)
+    const char = ROUTE_CHARACTER[data.currentStep] || { at: 0 };
+    $("route-nodes").innerHTML = ROUTE_NODES.map((node, i) => {
+      const pos = (i / (n - 1)) * 100;
+      const passed = char.at >= i - 0.001;
+      return `
+        <li class="route-node ${passed ? "passed" : ""}" style="left:${pos}%">
+          <img class="route-node-img" src="${esc(node.img)}" data-emoji="${node.emoji}" alt="${esc(node.label)}" />
+          <span class="route-node-label">${esc(node.label)}</span>
+        </li>`;
+    }).join("");
+
+    // 진행 라인 채움 (캐릭터 위치까지)
+    const fillPct = (char.at / (n - 1)) * 100;
+    requestAnimationFrame(() => {
+      $("route-line-fill").style.width = fillPct + "%";
+      $("route-char").style.left = fillPct + "%";
+    });
+
+    // 캐릭터 (재사용 엘리먼트 → 폴백 상태 리셋 후 재설정)
+    const img = $("route-char-img");
+    img.dataset.fbk = "";
+    img.classList.remove("img-fallback");
+    img.dataset.emoji = char.emoji || "📦";
+    img.alt = char.label || "배송";
+    if (char.img) {
+      img.src = char.img; // 파일 없으면 error→emoji 폴백 자동
+    } else {
+      img.src = emojiSvg(char.emoji || "📦", true);
+    }
+    $("route-char-bubble").textContent = char.label || "";
+  }
+
   // ----- 주문요약 -----
   function renderOrder(data) {
     const o = data.order;
@@ -251,10 +296,10 @@
     $("product-image").alt = p.name;
     $("product-brand").textContent = (BRAND_DB[p.brand] && BRAND_DB[p.brand].name) || "";
     $("product-name").textContent = p.name;
-    $("product-stars").textContent = stars(p.rating);
-    $("product-score").textContent = p.rating.toFixed(1);
-    $("product-reviews-count").textContent = `(${p.reviewsCount.toLocaleString("ko-KR")}개 리뷰)`;
-    $("product-desc").textContent = p.desc;
+    $("product-stars").textContent = stars(p.rating || 0);
+    $("product-score").textContent = (p.rating || 0).toFixed(1);
+    $("product-reviews-count").textContent = `(${(p.reviewsCount || 0).toLocaleString("ko-KR")}개 리뷰)`;
+    $("product-desc").textContent = p.desc || "";
     $("product-price").textContent = won(p.price);
 
     const originEl = $("product-price-origin");
@@ -267,8 +312,8 @@
       discEl.textContent = "";
     }
 
-    $("product-features").innerHTML = p.features.map((f) => `<li>${esc(f)}</li>`).join("");
-    $("review-list").innerHTML = p.reviews
+    $("product-features").innerHTML = (p.features || []).map((f) => `<li>${esc(f)}</li>`).join("");
+    $("review-list").innerHTML = (p.reviews || [])
       .map(
         (r) => `
         <li class="review-item">
@@ -283,23 +328,25 @@
       .join("");
   }
 
-  // ----- 추천 상품 -----
+  // ----- 추천 상품 (연령대·브랜드·구매몰 기반 엔진) -----
   function renderRecommends(p) {
-    const ids = (p && p.recommends) || Object.keys(RECOMMEND_DB).slice(0, 3);
-    $("recommend-list").innerHTML = ids
-      .map((id) => RECOMMEND_DB[id])
-      .filter(Boolean)
-      .map(
-        (r) => `
+    const recs = recommendFor(p, 2);
+    $("recommend-list").innerHTML = recs
+      .map((r) => {
+        const brandName = (BRAND_DB[r.brand] && BRAND_DB[r.brand].name) || "";
+        return `
       <li class="recommend-item">
-        <img src="${esc(r.image)}" alt="${esc(r.name)}" loading="lazy" />
-        <div class="rec-body">
-          <p class="rec-name">${esc(r.name)}</p>
-          <div class="rec-price">${won(r.price)}</div>
-          <div class="rec-rating">★ ${r.rating.toFixed(1)}</div>
-        </div>
-      </li>`
-      )
+        <a href="${esc(r.url || "#")}" target="_blank" rel="noopener">
+          <img src="${esc(r.image)}" alt="${esc(r.name)}" loading="lazy" />
+          <div class="rec-body">
+            <span class="rec-brand">${esc(brandName)} · ${esc(r.ageGroup || "")}</span>
+            <p class="rec-name">${esc(r.name)}</p>
+            <div class="rec-price">${won(r.price)}</div>
+            <div class="rec-rating">★ ${(r.rating || 0).toFixed(1)}</div>
+          </div>
+        </a>
+      </li>`;
+      })
       .join("");
   }
 
@@ -308,21 +355,37 @@
     if (!b) return;
     const handle = $("insta-handle");
     handle.textContent = b.instaHandle;
-    handle.href = `https://instagram.com/${b.instaHandle.replace(/^@/, "")}`;
+    handle.href = b.instaUrl || `https://instagram.com/${b.instaHandle.replace(/^@/, "")}`;
 
-    $("insta-feed").innerHTML = b.instaFeed
-      .map(
-        (f) => `
+    const feed = b.instaFeed || [];
+    if (feed.length === 0) {
+      // 자동화 전: 실제 계정으로 연결되는 placeholder 6칸 (AUTOMATION.md)
+      $("insta-feed").innerHTML = Array.from({ length: 6 })
+        .map(
+          () => `
+        <li class="insta-item insta-placeholder">
+          <a href="${esc(b.instaUrl || "#")}" target="_blank" rel="noopener" aria-label="${esc(b.name)} 인스타그램">
+            <span class="insta-ph-ico">📷</span>
+            <span class="insta-ph-text">${esc(b.instaHandle)}</span>
+          </a>
+        </li>`
+        )
+        .join("");
+    } else {
+      $("insta-feed").innerHTML = feed
+        .map(
+          (f) => `
         <li class="insta-item">
           <img src="${esc(f.image)}" alt="" loading="lazy" />
           <div class="insta-overlay">
             ${f.isReview ? '<span class="insta-tag">리뷰</span>' : ""}
             <p class="insta-caption">${esc(f.caption)}</p>
-            <span class="insta-likes">♥ ${f.likes.toLocaleString("ko-KR")}</span>
+            <span class="insta-likes">♥ ${(f.likes || 0).toLocaleString("ko-KR")}</span>
           </div>
         </li>`
-      )
-      .join("");
+        )
+        .join("");
+    }
 
     $("brand-tagline").textContent = `“${b.tagline}”`;
     $("brand-philosophy").textContent = b.philosophy;
