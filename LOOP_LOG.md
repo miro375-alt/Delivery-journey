@@ -78,6 +78,12 @@
 - **Verify**: 서버 부팅 OK(/healthz, 정적 200, /api/track 키없음 503, 경로탈출 404), 동기화 시크릿없이 skip·정상간격 1회, 프론트 verify.cjs 전체 통과·런타임 에러 0.
 - **비판적 회고**: ① /api/track 매핑은 스마트택배 실응답으로 1회 점검 필요. ② 송장↔주문↔상품 연결(사방넷) 미구현 → 실배송조회 시 제품/추천 섹션 비게 됨. ③ refresh_token 자동갱신 미구현. ④ NAS 접근 불가로 실제 배포는 담당자 수행 필요(가이드 제공). ⑤ 리버스프록시 서브패스 배포 시 api 상대경로 조정 필요(문서화).
 
+### Iteration 7 — PHP 백엔드(회사 Web Station, 파일 업로드 배포)
+- **Plan**: 회사 공용 NAS가 PHP Web Station + 파일 업로드만 가능 → Docker/SSH 없는 PHP 스택으로 전환.
+- **Develop**: ① lib.php(cfg/http/마스킹/map_tracking) ② config.sample.php(+config.php gitignore) ③ api/track.php(스마트택배 프록시·PII 마스킹) ④ cron/sync.php(카페24+인스타→data/*.json, 토큰가드, CLI/웹 겸용) ⑤ 프론트 track() → api/track.php ⑥ DEPLOY-PHP.md(파일 업로드·config·외부cron 가이드).
+- **Verify**: php -l 4개 통과 / php 내장서버 — index 200, api/track.php 키없음 503, cron 토큰없음 403, CLI sync 안전 skip / 프론트 verify.cjs 통과(목업 폴백).
+- **비판적 회고**: ① Node/Docker 스택은 이제 미사용(보관) — 혼선 줄이려면 추후 정리/이동 고려. ② sync 자동화는 관리자 권한 없으면 외부 cron 의존. ③ track 실응답 매핑은 키 발급 후 점검 필요. ④ 문서가 많아짐(README에 현재 배포방식=PHP 명시 필요).
+
 ## ⏳ 토큰 발급되면 즉시 할 일 (사용자 대기)
 - 카페24 6 Secret → Data Sync 1회 실행 → catalog/promotions 실데이터 검증·미세조정
 - refresh_token 자동갱신 단계 추가

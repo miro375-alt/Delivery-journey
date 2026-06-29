@@ -7,6 +7,7 @@ scratchpad-shot.png
 .env
 .env.*
 !.env.example
+config.php
 
 # 의존성/OS
 node_modules/

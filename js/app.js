@@ -92,7 +92,7 @@
   // 백엔드(NAS /api/track) 조회 — 없거나 실패하면 null → 목업 폴백
   async function fetchTracking(no) {
     try {
-      const res = await fetch(`api/track?invoice=${encodeURIComponent(no)}`);
+      const res = await fetch(`api/track.php?invoice=${encodeURIComponent(no)}`);
       if (!res.ok) return null;
       const d = await res.json();
       if (!d || d.error || !Array.isArray(d.history) || !d.history.length) return null;
