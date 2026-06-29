@@ -84,6 +84,12 @@
 - **Verify**: php -l 4개 통과 / php 내장서버 — index 200, api/track.php 키없음 503, cron 토큰없음 403, CLI sync 안전 skip / 프론트 verify.cjs 통과(목업 폴백).
 - **비판적 회고**: ① Node/Docker 스택은 이제 미사용(보관) — 혼선 줄이려면 추후 정리/이동 고려. ② sync 자동화는 관리자 권한 없으면 외부 cron 의존. ③ track 실응답 매핑은 키 발급 후 점검 필요. ④ 문서가 많아짐(README에 현재 배포방식=PHP 명시 필요).
 
+### Iteration 8 — 자가 업데이트(self-update) [NAS가 GitHub에서 자동 pull]
+- **Plan**: 클라우드(나)는 GitHub만 도달 가능(egress allowlist 확인). NAS로 들어가는 길은 전무 → NAS-initiated pull만 가능. SSH/Docker/관리자 없이 자동 갱신 필요.
+- **Develop**: cron/selfupdate.php — codeload zip 다운로드→ZipArchive 해제→config.php/data 보존하며 덮어쓰기→정리. 토큰가드, CLI/웹 겸용. DEPLOY-PHP.md 자동갱신 안내.
+- **Verify**: php -l 통과 / 격리 폴더 end-to-end 실행 — GitHub 실다운로드 32파일 적용, config.php·data/catalog.json 보존, index.html 최신화, .update_tmp 정리 모두 ✓.
+- **비판적 회고**: ① 적용 중 부분쓰기 위험(원자적 교체 아님) — 소규모라 실무상 OK이나 추후 staging→swap 고려. ② 외부 cron 의존(관리자 없으면). ③ ZipArchive/curl 미지원 서버 대비 폴백 없음(메시지로 안내). ④ 브랜치 merge되면 BRANCH 상수 갱신 필요.
+
 ## ⏳ 토큰 발급되면 즉시 할 일 (사용자 대기)
 - 카페24 6 Secret → Data Sync 1회 실행 → catalog/promotions 실데이터 검증·미세조정
 - refresh_token 자동갱신 단계 추가

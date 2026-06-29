@@ -40,8 +40,19 @@ cron/sync.php                            ← 카페24/인스타 동기화 → da
 ---
 
 ## 업데이트 방법 (제가 개선분을 올리면)
-- 변경된 파일만 다시 업로드하면 끝.
-- 또는 NAS에서 git 으로 받는다면 `git pull` (이 경우 `config.php`·`data/*.json` 은 유지됨 — gitignore).
+
+### ⭐ 완전 자동 — 자가 업데이트(self-update) [권장, SSH/관리자 불필요]
+NAS가 GitHub에서 최신 코드를 **스스로 받아** 갱신합니다. `config.php`(키)와 `data/*.json`은 보존됩니다.
+- 한 번만 처음 업로드 + `config.php`의 `SYNC_TOKEN` 설정
+- 그 다음, 아래 URL이 주기적으로 호출되게만 하면 됨(둘 중 하나):
+  - **외부 무료 cron**(cron-job.org 등): `https://track.도메인/cwjung/logis/cron/selfupdate.php?token=<SYNC_TOKEN>` 를 예: 1시간마다
+  - **DSM 작업 스케줄러**(관리자 가능 시): `php /volume1/web/cwjung/logis/cron/selfupdate.php`
+- 그러면 제가 GitHub에 푸시한 개선이 **사장님이 NAS를 안 만져도** 자동 반영됩니다.
+- ⚠️ 전제: NAS PHP에 `ZipArchive`, `curl` 확장 사용 가능(시놀로지 기본 PHP는 보통 OK).
+
+### 수동
+- 변경된 파일만 File Station으로 다시 업로드.
+- git clone 받은 경우 `git pull` (config.php·data/*.json 유지 — gitignore).
 
 ## 보안 체크 ✅
 - `config.php`(키)는 서버에만, 외부 공유 금지
