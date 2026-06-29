@@ -89,15 +89,29 @@
     errorBox.textContent = "";
   }
 
+  // 백엔드(NAS /api/track) 조회 — 없거나 실패하면 null → 목업 폴백
+  async function fetchTracking(no) {
+    try {
+      const res = await fetch(`api/track?invoice=${encodeURIComponent(no)}`);
+      if (!res.ok) return null;
+      const d = await res.json();
+      if (!d || d.error || !Array.isArray(d.history) || !d.history.length) return null;
+      return d;
+    } catch (_) {
+      return null; // 백엔드 없음(정적 호스팅) → 폴백
+    }
+  }
+
   // ----- 조회 실행 -----
-  function track(rawNo) {
+  async function track(rawNo) {
     const no = (rawNo || "").trim();
     if (!no) {
       showError("운송장 번호를 입력해 주세요.");
       return;
     }
 
-    const data = TRACKING_DB[no];
+    let data = TRACKING_DB[no];
+    if (!data) data = await fetchTracking(no); // 실데이터(NAS) 시도
     if (!data) {
       showError(
         "해당 운송장 번호의 배송 정보를 찾을 수 없습니다. 예시 번호(519719884106 또는 884201337755)로 확인해 보세요."

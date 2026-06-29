@@ -107,7 +107,7 @@ async function fetchMall(m) {
   return { items, promos };
 }
 
-(async function main() {
+async function run() {
   if (!haveEnv(["CAFE24_CLIENT_ID", "CAFE24_CLIENT_SECRET"])) {
     log("카페24 공통 시크릿 없음 → 전체 skip");
     return;
@@ -124,4 +124,7 @@ async function fetchMall(m) {
   if (all.length) writeData("catalog.json", all);
   else log("생성된 상품 없음 → catalog.json 미기록");
   if (Object.keys(promotions).length) writeData("promotions.json", promotions);
-})();
+}
+
+module.exports = { run };
+if (require.main === module) run();

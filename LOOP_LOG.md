@@ -72,6 +72,12 @@
 
 ---
 
+### Iteration 6 — NAS 풀스택 패키지(고객 공개 + 백엔드 NAS)
+- **Plan**: 사용자 선택(고객 외부공개 + NAS가 프론트·동기화·배송조회 전부 담당)에 맞춘 배포 패키지.
+- **Develop**: ① server/server.js(무의존성 Node: 정적서빙 + /api/track 스마트택배(키 서버보관·PII 마스킹) + 6h 동기화 cron 대체) ② scripts run() export 리팩터(서버/CLI 공용) ③ Dockerfile + docker-compose(data 볼륨·env_file·리버스프록시 전제) ④ .env.example + .gitignore(.env 차단) ⑤ 프론트 track() 비동기화 → /api/track 우선, 실패 시 목업 폴백 ⑥ DEPLOY-NAS.md(시놀로지 Docker·DDNS·리버스프록시·HTTPS·보안) ⑦ setInterval 2^31 오버플로 클램프.
+- **Verify**: 서버 부팅 OK(/healthz, 정적 200, /api/track 키없음 503, 경로탈출 404), 동기화 시크릿없이 skip·정상간격 1회, 프론트 verify.cjs 전체 통과·런타임 에러 0.
+- **비판적 회고**: ① /api/track 매핑은 스마트택배 실응답으로 1회 점검 필요. ② 송장↔주문↔상품 연결(사방넷) 미구현 → 실배송조회 시 제품/추천 섹션 비게 됨. ③ refresh_token 자동갱신 미구현. ④ NAS 접근 불가로 실제 배포는 담당자 수행 필요(가이드 제공). ⑤ 리버스프록시 서브패스 배포 시 api 상대경로 조정 필요(문서화).
+
 ## ⏳ 토큰 발급되면 즉시 할 일 (사용자 대기)
 - 카페24 6 Secret → Data Sync 1회 실행 → catalog/promotions 실데이터 검증·미세조정
 - refresh_token 자동갱신 단계 추가

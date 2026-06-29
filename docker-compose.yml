@@ -1,0 +1,14 @@
+services:
+  logis:
+    build: .
+    container_name: logis
+    ports:
+      - "8080:8080" # 외부 공개는 NAS 리버스 프록시(HTTPS)로 연결 권장
+    env_file:
+      - .env # 키 보관 (절대 git 에 커밋하지 말 것 — .gitignore 처리됨)
+    environment:
+      - PORT=8080
+      - SYNC_INTERVAL_HOURS=6
+    volumes:
+      - ./data:/app/data # 동기화된 data/*.json 영속화
+    restart: unless-stopped

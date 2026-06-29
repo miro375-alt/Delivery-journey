@@ -30,8 +30,11 @@ async function fetchBrand(b) {
   else log(`${b.brand}: 미디어 없음`);
 }
 
-(async function main() {
+async function run() {
   for (const b of BRANDS) {
     try { await fetchBrand(b); } catch (e) { log(`${b.brand} 실패: ${e.message}`); }
   }
-})();
+}
+
+module.exports = { run };
+if (require.main === module) run();

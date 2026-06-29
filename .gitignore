@@ -3,6 +3,11 @@ shot-*.png
 *.local.png
 scratchpad-shot.png
 
+# 비밀키 (절대 커밋 금지)
+.env
+.env.*
+!.env.example
+
 # 의존성/OS
 node_modules/
 .DS_Store
