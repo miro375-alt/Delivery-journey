@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      URL: https://script.google.com/macros/s/AKfycbwpuSJ41ELtkv4OFgWYBYNjE5U8stxh8MVdN97Qlf-1W0UFXCXS0uRyTP0a8LwwPZqZ/exec
+      URL: https://script.google.com/macros/s/AKfycbymHbyntYlh4AfC1o4lW3GNQtZ9cm6-WxkKW-ehkjxtlcxxBi3nY3G84f_65XaRzfRIig/exec
     steps:
       - name: GET 헬스체크
         run: |
