@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>택배 배송 접수</title>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --danger: #dc2626;
+    --green: #16a34a;
+    --bg: #f4f6fa;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #d7dde6;
+    --radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    background: var(--bg); color: var(--text);
+    -webkit-text-size-adjust: 100%;
+  }
+  .screen { display: none; min-height: 100dvh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ── 공통 헤더 ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; background: var(--card); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .topbar .logo { font-weight: 800; font-size: 17px; letter-spacing: -0.3px; user-select: none; -webkit-user-select: none; }
+  .badge-queue {
+    font-size: 12px; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d;
+    padding: 3px 10px; border-radius: 999px; display: none;
+  }
+  .badge-queue.show { display: inline-block; }
+
+  /* ── 시작 화면 ── */
+  #scr-start { justify-content: center; align-items: center; text-align: center; gap: 28px; padding: 24px; }
+  #scr-start h1 { font-size: 30px; letter-spacing: -0.5px; }
+  #scr-start p { color: var(--muted); font-size: 17px; line-height: 1.6; }
+  .btn-start {
+    font-size: 24px; font-weight: 700; color: #fff; background: var(--primary);
+    border: none; border-radius: 20px; padding: 26px 64px; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(37,99,235,.3);
+  }
+  .btn-start:active { background: var(--primary-dark); transform: scale(.98); }
+  .start-foot { position: absolute; bottom: 22px; left: 0; right: 0; color: var(--muted); font-size: 13px; }
+
+  /* ── 폼 화면 ── */
+  #scr-form main { flex: 1; padding: 20px 20px 120px; max-width: 680px; width: 100%; margin: 0 auto; }
+  .section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
+  .section h3 { font-size: 15px; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
+  label.fld { display: block; font-size: 14px; font-weight: 600; margin: 12px 0 6px; }
+  label.fld:first-of-type { margin-top: 0; }
+  label.fld .req { color: var(--danger); }
+  input[type=text], input[type=tel], textarea {
+    width: 100%; font-size: 18px; padding: 14px; border: 1.5px solid var(--border);
+    border-radius: 10px; background: #fff; color: var(--text); outline: none;
+  }
+  input:focus, textarea:focus { border-color: var(--primary); }
+  input.err { border-color: var(--danger); background: #fef2f2; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .row2 { grid-template-columns: 1fr; } }
+
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .seg button {
+    font-size: 16px; font-weight: 600; padding: 16px 8px; border-radius: 10px;
+    border: 1.5px solid var(--border); background: #fff; color: var(--text); cursor: pointer;
+  }
+  .seg button.on { border-color: var(--primary); background: #eff6ff; color: var(--primary); font-weight: 700; }
+  .seg button small { display: block; font-weight: 500; font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .seg button.on small { color: var(--primary); }
+
+  .staff-check {
+    display: none; margin-top: 12px; padding: 14px; border-radius: 10px;
+    background: #fff7ed; border: 1.5px dashed #fb923c;
+  }
+  .staff-check.show { display: block; }
+  .check-line { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; line-height: 1.5; cursor: pointer; }
+  .check-line input[type=checkbox] { width: 24px; height: 24px; margin-top: 1px; flex-shrink: 0; accent-color: var(--primary); }
+
+  .toggle-line { display: flex; align-items: center; gap: 10px; font-size: 15px; cursor: pointer; margin-top: 12px; }
+  .toggle-line input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--primary); }
+  #recipientFields { display: none; margin-top: 4px; }
+  #recipientFields.show { display: block; }
+
+  .addr-row { display: flex; gap: 10px; }
+  .addr-row input { flex: 1; }
+  .btn-zip {
+    flex-shrink: 0; font-size: 16px; font-weight: 600; padding: 0 20px; border-radius: 10px;
+    border: none; background: var(--primary); color: #fff; cursor: pointer;
+  }
+  .manual-note { display: none; font-size: 13px; color: #b45309; margin-top: 6px; }
+  .manual-note.show { display: block; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .chips button {
+    font-size: 14px; padding: 9px 14px; border-radius: 999px;
+    border: 1.5px solid var(--border); background: #fff; cursor: pointer; color: var(--text);
+  }
+  .chips button.on { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+
+  details.privacy { font-size: 13.5px; color: var(--muted); margin-top: 10px; }
+  details.privacy summary { cursor: pointer; color: var(--primary); font-weight: 600; }
+  details.privacy p { margin-top: 8px; line-height: 1.7; }
+
+  .submitbar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+    padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
+    background: rgba(255,255,255,.95); border-top: 1px solid var(--border);
+  }
+  .submitbar .inner { max-width: 680px; margin: 0 auto; display: flex; gap: 10px; }
+  .btn-cancel {
+    font-size: 16px; padding: 0 22px; border-radius: 12px; border: 1.5px solid var(--border);
+    background: #fff; color: var(--muted); cursor: pointer;
+  }
+  .btn-submit {
+    flex: 1; font-size: 20px; font-weight: 700; color: #fff; background: var(--primary);
+    border: none; border-radius: 12px; padding: 18px; cursor: pointer;
+  }
+  .btn-submit:disabled { background: #b6c3d9; cursor: default; }
+  .form-err { color: var(--danger); font-size: 14px; text-align: center; margin-bottom: 8px; display: none; }
+  .form-err.show { display: block; }
+
+  /* ── 우편번호 레이어 ── */
+  #zipLayer {
+    display: none; position: fixed; inset: 0; z-index: 50; background: rgba(15,23,42,.5);
+  }
+  #zipLayer.show { display: flex; align-items: center; justify-content: center; }
+  #zipBox {
+    width: min(560px, 94vw); height: min(560px, 82dvh); background: #fff;
+    border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
+  }
+  #zipBox .zip-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  #zipBox .zip-head b { font-size: 16px; }
+  #zipClose { font-size: 15px; border: none; background: none; color: var(--muted); cursor: pointer; padding: 6px; }
+  #zipEmbed { flex: 1; }
+
+  /* ── 완료 화면 ── */
+  #scr-done { justify-content: center; align-items: center; text-align: center; gap: 18px; padding: 24px; }
+  .done-icon { width: 88px; height: 88px; border-radius: 50%; background: #dcfce7; color: var(--green); font-size: 46px; display: flex; align-items: center; justify-content: center; }
+  #scr-done h1 { font-size: 28px; }
+  .done-no-label { color: var(--muted); font-size: 15px; margin-top: 8px; }
+  .done-no { font-size: 44px; font-weight: 800; letter-spacing: 1px; color: var(--primary); }
+  .done-hint { color: var(--muted); font-size: 15.5px; line-height: 1.7; }
+  .done-count { color: var(--muted); font-size: 14px; margin-top: 14px; }
+  .btn-home { margin-top: 6px; font-size: 16px; font-weight: 600; padding: 14px 36px; border-radius: 12px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; }
+
+  /* ── 스태프 화면 ── */
+  #scr-staff main { flex: 1; padding: 20px; max-width: 680px; width: 100%; margin: 0 auto; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
+  .stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; }
+  .stat b { display: block; font-size: 30px; }
+  .stat span { font-size: 13px; color: var(--muted); }
+  .stat b.warn { color: var(--danger); }
+  .staff-actions { display: grid; gap: 10px; }
+  .staff-actions button, .staff-actions .cfg {
+    font-size: 16px; padding: 15px; border-radius: 12px; border: 1.5px solid var(--border);
+    background: var(--card); cursor: pointer; text-align: left; color: var(--text);
+  }
+  .staff-actions .danger { color: var(--danger); border-color: #fecaca; }
+  .cfg label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .cfg input { width: 100%; font-size: 15px; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; }
+  #staffMsg { font-size: 14px; color: var(--green); min-height: 20px; margin-top: 10px; text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- ═══════ ① 시작 화면 ═══════ -->
+<section id="scr-start" class="screen active">
+  <div class="topbar" style="position:absolute;top:0;left:0;right:0;">
+    <span class="logo" id="logoPress">📦 택배 접수</span>
+    <span class="badge-queue" id="qBadge1"></span>
+  </div>
+  <h1>택배 배송 접수</h1>
+  <p>결제하신 상품을 택배로 받아보실 고객님은<br>아래 버튼을 눌러 배송 정보를 입력해주세요.</p>
+  <button class="btn-start" onclick="showScreen('form')">택배 배송 접수 시작</button>
+  <div class="start-foot" id="eventName"></div>
+</section>
+
+<!-- ═══════ ② 접수 폼 ═══════ -->
+<section id="scr-form" class="screen">
+  <div class="topbar">
+    <span class="logo">📦 배송 정보 입력</span>
+    <span class="badge-queue" id="qBadge2"></span>
+  </div>
+  <main>
+    <div class="section">
+      <h3>주문 확인</h3>
+      <label class="fld">영수증(주문) 번호 <span class="req">*</span></label>
+      <input type="text" id="orderNo" inputmode="numeric" autocomplete="off" placeholder="영수증에 적힌 주문번호">
+
+      <label class="fld">주문 금액 <span class="req">*</span></label>
+      <div class="seg" id="amountSeg">
+        <button type="button" data-v="3만원 이상">3만원 이상<small>배송비 무료</small></button>
+        <button type="button" data-v="3만원 미만">3만원 미만<small>배송비 <span class="feeTxt"></span>원 선결제</small></button>
+      </div>
+      <div class="staff-check" id="feeCheck">
+        <label class="check-line">
+          <input type="checkbox" id="feePaid">
+          <span>배송비 <b class="feeTxt"></b>원 선결제 확인 <b>(스태프 확인 항목)</b></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>주문자 정보</h3>
+      <div class="row2">
+        <div>
+          <label class="fld">이름 <span class="req">*</span></label>
+          <input type="text" id="name" autocomplete="off" placeholder="홍길동">
+        </div>
+        <div>
+          <label class="fld">휴대폰 번호 <span class="req">*</span></label>
+          <input type="tel" id="phone" inputmode="numeric" autocomplete="off" placeholder="010-0000-0000" maxlength="13">
+        </div>
+      </div>
+      <label class="toggle-line">
+        <input type="checkbox" id="diffRecipient">
+        <span>받는 분이 주문자와 달라요</span>
+      </label>
+      <div id="recipientFields">
+        <div class="row2">
+          <div>
+            <label class="fld">받는 분 이름 <span class="req">*</span></label>
+            <input type="text" id="rName" autocomplete="off">
+          </div>
+          <div>
+            <label class="fld">받는 분 휴대폰 <span class="req">*</span></label>
+            <input type="tel" id="rPhone" inputmode="numeric" autocomplete="off" placeholder="010-0000-0000" maxlength="13">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>배송지</h3>
+      <label class="fld">주소 <span class="req">*</span></label>
+      <div class="addr-row">
+        <input type="text" id="zipcode" placeholder="우편번호" readonly style="max-width:130px;">
+        <input type="text" id="addr1" placeholder="주소 검색을 눌러주세요" readonly>
+        <button type="button" class="btn-zip" onclick="openPostcode()">주소 검색</button>
+      </div>
+      <div class="manual-note" id="manualNote">⚠ 주소 검색을 사용할 수 없어 직접 입력으로 전환되었습니다. 우편번호와 주소를 정확히 입력해주세요.</div>
+      <label class="fld">상세주소 <span class="req">*</span></label>
+      <input type="text" id="addr2" autocomplete="off" placeholder="동·호수 등 상세주소">
+    </div>
+
+    <div class="section">
+      <h3>배송 요청사항 (선택)</h3>
+      <div class="chips" id="memoChips">
+        <button type="button" data-v="문 앞에 놓아주세요">문 앞</button>
+        <button type="button" data-v="경비실에 맡겨주세요">경비실</button>
+        <button type="button" data-v="배송 전 연락주세요">배송 전 연락</button>
+      </div>
+      <input type="text" id="memo" autocomplete="off" placeholder="직접 입력">
+    </div>
+
+    <div class="section">
+      <label class="check-line">
+        <input type="checkbox" id="consent">
+        <span>개인정보 수집·이용에 동의합니다. <span class="req">*</span></span>
+      </label>
+      <details class="privacy">
+        <summary>동의 내용 전문 보기</summary>
+        <p>· 수집 항목: 이름, 연락처, 주소<br>
+           · 수집 목적: 구매하신 상품의 택배 배송<br>
+           · 보유 기간: 배송 완료 후 3개월 이내 파기<br>
+           · 동의를 거부하실 수 있으나, 거부 시 택배 배송 접수가 불가합니다.</p>
+      </details>
+    </div>
+  </main>
+
+  <div class="submitbar">
+    <div class="form-err" id="formErr"></div>
+    <div class="inner">
+      <button class="btn-cancel" onclick="resetToStart()">취소</button>
+      <button class="btn-submit" id="btnSubmit" onclick="submitOrder()">접수하기</button>
+    </div>
+  </div>
+</section>
+
+<!-- 우편번호 검색 레이어 -->
+<div id="zipLayer">
+  <div id="zipBox">
+    <div class="zip-head">
+      <b>주소 검색</b>
+      <button id="zipClose" onclick="closePostcode()">닫기 ✕</button>
+    </div>
+    <div id="zipEmbed"></div>
+  </div>
+</div>
+
+<!-- ═══════ ③ 완료 화면 ═══════ -->
+<section id="scr-done" class="screen">
+  <div class="done-icon">✓</div>
+  <h1>접수가 완료되었습니다</h1>
+  <div>
+    <div class="done-no-label">접수번호</div>
+    <div class="done-no" id="doneNo"></div>
+  </div>
+  <p class="done-hint">스태프에게 영수증을 보여주시면<br>접수번호를 기재해드립니다.<br><br>상품은 <b>영업일 기준 2~3일 내</b> 발송됩니다.</p>
+  <button class="btn-home" onclick="resetToStart()">처음으로</button>
+  <div class="done-count" id="doneCount"></div>
+</section>
+
+<!-- ═══════ ④ 스태프 화면 ═══════ -->
+<section id="scr-staff" class="screen">
+  <div class="topbar">
+    <span class="logo">🔧 스태프 관리</span>
+    <button class="btn-cancel" onclick="resetToStart()" style="padding:8px 16px;">닫기</button>
+  </div>
+  <main>
+    <div class="stat-grid">
+      <div class="stat"><b id="stToday">0</b><span>오늘 접수</span></div>
+      <div class="stat"><b id="stSent">0</b><span>전송 완료</span></div>
+      <div class="stat"><b id="stQueue" class="">0</b><span>미전송</span></div>
+    </div>
+    <div class="staff-actions">
+      <button onclick="flushQueue(true)">🔄 미전송 건 지금 재전송</button>
+      <button onclick="exportCsv()">⬇️ 전체 접수 내역 CSV 백업</button>
+      <div class="cfg">
+        <label>Apps Script 웹앱 URL</label>
+        <input type="text" id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <div class="cfg">
+        <label>단말기 코드 (태블릿마다 다르게: T1, T2…)</label>
+        <input type="text" id="cfgDevice" placeholder="T1" maxlength="6">
+      </div>
+      <button onclick="saveConfig()">💾 설정 저장</button>
+      <button onclick="testSend()">🧪 연결 테스트 (시트에 테스트 행 추가)</button>
+      <button class="danger" onclick="clearLocal()">🗑 로컬 백업 데이터 전체 삭제 (행사 종료 후)</button>
+    </div>
+    <div id="staffMsg"></div>
+  </main>
+</section>
+
+<script>
+/* ══════════════ 설정 ══════════════ */
+const CONFIG = {
+  EVENT_NAME: '2026 박람회',      // 시작 화면 하단 표기
+  SHIPPING_FEE: 3500,             // 3만원 미만 배송비(원)
+  DONE_RESET_SEC: 10,             // 완료 화면 자동 복귀(초)
+  RETRY_INTERVAL_MS: 30000,       // 미전송 큐 재전송 주기
+};
+// 웹앱 URL·단말기 코드는 스태프 화면에서 설정 (localStorage 저장 — 파일 수정 불필요)
+
+const LS = {
+  url:    'expo_webapp_url',
+  device: 'expo_device_code',
+  queue:  'expo_queue',      // 미전송 접수 목록
+  sent:   'expo_sent',       // 전송 완료 목록 (CSV 백업용)
+  seq:    'expo_seq_',       // + YYYYMMDD → 일자별 일련번호
+};
+
+const $ = id => document.getElementById(id);
+const getJson = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const setJson = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+/* ══════════════ 화면 전환 ══════════════ */
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('scr-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+}
+let doneTimer = null;
+function resetToStart() {
+  clearInterval(doneTimer);
+  resetForm();
+  showScreen('start');
+}
+
+/* ══════════════ 폼 상태 ══════════════ */
+let amountBand = '';   // '3만원 이상' | '3만원 미만'
+
+document.querySelectorAll('.feeTxt').forEach(el => el.textContent = CONFIG.SHIPPING_FEE.toLocaleString());
+$('eventName').textContent = CONFIG.EVENT_NAME;
+
+$('amountSeg').addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  amountBand = btn.dataset.v;
+  document.querySelectorAll('#amountSeg button').forEach(b => b.classList.toggle('on', b === btn));
+  $('feeCheck').classList.toggle('show', amountBand === '3만원 미만');
+  if (amountBand !== '3만원 미만') $('feePaid').checked = false;
+});
+
+$('diffRecipient').addEventListener('change', e => {
+  $('recipientFields').classList.toggle('show', e.target.checked);
+});
+
+$('memoChips').addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  const on = !btn.classList.contains('on');
+  document.querySelectorAll('#memoChips button').forEach(b => b.classList.remove('on'));
+  btn.classList.toggle('on', on);
+  $('memo').value = on ? btn.dataset.v : '';
+});
+
+function hyphenize(el) {
+  el.addEventListener('input', () => {
+    const d = el.value.replace(/\D/g, '').slice(0, 11);
+    el.value = d.length > 7 ? d.replace(/(\d{3})(\d{3,4})(\d{1,4})/, '$1-$2-$3')
+             : d.length > 3 ? d.replace(/(\d{3})(\d+)/, '$1-$2') : d;
+  });
+}
+hyphenize($('phone'));
+hyphenize($('rPhone'));
+
+function resetForm() {
+  ['orderNo','name','phone','rName','rPhone','zipcode','addr1','addr2','memo'].forEach(id => $(id).value = '');
+  ['feePaid','diffRecipient','consent'].forEach(id => $(id).checked = false);
+  amountBand = '';
+  document.querySelectorAll('#amountSeg button, #memoChips button').forEach(b => b.classList.remove('on'));
+  $('feeCheck').classList.remove('show');
+  $('recipientFields').classList.remove('show');
+  document.querySelectorAll('input.err').forEach(i => i.classList.remove('err'));
+  $('formErr').classList.remove('show');
+  $('btnSubmit').disabled = false;
+  $('zipcode').readOnly = $('addr1').readOnly = true;
+  $('manualNote').classList.remove('show');
+}
+
+/* ══════════════ 우편번호 검색 (다음/카카오) ══════════════ */
+let postcodeReady = false;
+function loadPostcodeScript() {
+  return new Promise((res, rej) => {
+    if (postcodeReady) return res();
+    const s = document.createElement('script');
+    s.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+    s.onload = () => { postcodeReady = true; res(); };
+    s.onerror = rej;
+    document.head.appendChild(s);
+    setTimeout(() => postcodeReady ? null : rej(new Error('timeout')), 7000);
+  });
+}
+function openPostcode() {
+  loadPostcodeScript().then(() => {
+    $('zipLayer').classList.add('show');
+    $('zipEmbed').innerHTML = '';
+    new daum.Postcode({
+      oncomplete: d => {
+        $('zipcode').value = d.zonecode;
+        $('addr1').value = d.roadAddress || d.jibunAddress;
+        closePostcode();
+        $('addr2').focus();
+      },
+      width: '100%', height: '100%',
+    }).embed($('zipEmbed'));
+  }).catch(() => {
+    // 오프라인 등으로 스크립트 로드 실패 → 수동 입력 폴백
+    $('zipcode').readOnly = $('addr1').readOnly = false;
+    $('addr1').placeholder = '주소를 직접 입력해주세요';
+    $('manualNote').classList.add('show');
+    $('zipcode').focus();
+  });
+}
+function closePostcode() { $('zipLayer').classList.remove('show'); }
+
+/* ══════════════ 검증 + 제출 ══════════════ */
+function markErr(id, on) { $(id).classList.toggle('err', on); return on; }
+function validate() {
+  let bad = false;
+  const phoneOk = v => /^01[016789]-\d{3,4}-\d{4}$/.test(v);
+  bad |= markErr('orderNo', !$('orderNo').value.trim());
+  bad |= markErr('name', $('name').value.trim().length < 2);
+  bad |= markErr('phone', !phoneOk($('phone').value));
+  if ($('diffRecipient').checked) {
+    bad |= markErr('rName', $('rName').value.trim().length < 2);
+    bad |= markErr('rPhone', !phoneOk($('rPhone').value));
+  }
+  bad |= markErr('zipcode', !$('zipcode').value.trim());
+  bad |= markErr('addr1', !$('addr1').value.trim());
+  bad |= markErr('addr2', !$('addr2').value.trim());
+
+  let msg = '';
+  if (bad) msg = '빨간색으로 표시된 항목을 확인해주세요.';
+  else if (!amountBand) msg = '주문 금액을 선택해주세요.';
+  else if (amountBand === '3만원 미만' && !$('feePaid').checked) msg = '스태프의 배송비 결제 확인이 필요합니다.';
+  else if (!$('consent').checked) msg = '개인정보 수집·이용 동의가 필요합니다.';
+
+  $('formErr').textContent = msg;
+  $('formErr').classList.toggle('show', !!msg);
+  return !msg;
+}
+
+function todayKey() {
+  const n = new Date();
+  return n.getFullYear() + String(n.getMonth() + 1).padStart(2, '0') + String(n.getDate()).padStart(2, '0');
+}
+function nextReceiptNo() {
+  const day = todayKey();
+  const seq = (parseInt(localStorage.getItem(LS.seq + day)) || 0) + 1;
+  localStorage.setItem(LS.seq + day, seq);
+  const device = localStorage.getItem(LS.device) || 'T1';
+  return `E${day.slice(4)}-${device}-${String(seq).padStart(3, '0')}`;
+}
+function makeUuid() {
+  return (crypto.randomUUID && crypto.randomUUID()) ||
+    'xxxx-4xxx-yxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+    }) + '-' + Date.now();
+}
+
+function submitOrder() {
+  if (!validate()) return;
+  $('btnSubmit').disabled = true;   // 이중 제출 방지
+
+  const diff = $('diffRecipient').checked;
+  const p = {
+    uuid: makeUuid(),
+    receiptNo: nextReceiptNo(),
+    ts: new Date().toLocaleString('sv-SE'),   // YYYY-MM-DD HH:mm:ss
+    orderNo: $('orderNo').value.trim(),
+    amountBand,
+    feePaid: amountBand === '3만원 미만' ? ($('feePaid').checked ? 'Y' : 'N') : '-',
+    name: $('name').value.trim(),
+    phone: $('phone').value,
+    rName: diff ? $('rName').value.trim() : $('name').value.trim(),
+    rPhone: diff ? $('rPhone').value : $('phone').value,
+    zipcode: $('zipcode').value.trim(),
+    addr1: $('addr1').value.trim(),
+    addr2: $('addr2').value.trim(),
+    memo: $('memo').value.trim(),
+    consent: 'Y',
+    device: localStorage.getItem(LS.device) || 'T1',
+  };
+
+  const q = getJson(LS.queue, []);
+  q.push(p);
+  setJson(LS.queue, q);   // 큐 저장 먼저 → 전송 실패해도 유실 없음
+
+  showDone(p.receiptNo);
+  flushQueue();
+}
+
+function showDone(no) {
+  $('doneNo').textContent = no;
+  showScreen('done');
+  let left = CONFIG.DONE_RESET_SEC;
+  $('doneCount').textContent = `${left}초 후 처음 화면으로 돌아갑니다`;
+  clearInterval(doneTimer);
+  doneTimer = setInterval(() => {
+    if (--left <= 0) return resetToStart();
+    $('doneCount').textContent = `${left}초 후 처음 화면으로 돌아갑니다`;
+  }, 1000);
+}
+
+/* ══════════════ 전송 큐 ══════════════ */
+let flushing = false;
+async function flushQueue(manual) {
+  const url = localStorage.getItem(LS.url);
+  if (flushing) return;
+  const q = getJson(LS.queue, []);
+  updateBadges();
+  if (!q.length) { if (manual) staffMsg('미전송 건이 없습니다.'); return; }
+  if (!url) { if (manual) staffMsg('웹앱 URL을 먼저 설정해주세요.', true); return; }
+
+  flushing = true;
+  try {
+    while (true) {
+      const cur = getJson(LS.queue, []);
+      if (!cur.length) break;
+      const item = cur[0];
+      const ok = await sendOne(url, item);
+      if (!ok) break;   // 실패 → 다음 주기에 재시도
+      const after = getJson(LS.queue, []).filter(x => x.uuid !== item.uuid);
+      setJson(LS.queue, after);
+      const sent = getJson(LS.sent, []);
+      sent.push(item);
+      setJson(LS.sent, sent);
+      updateBadges();
+    }
+  } finally {
+    flushing = false;
+    updateBadges();
+    if (manual) {
+      const left = getJson(LS.queue, []).length;
+      staffMsg(left ? `전송 실패 — ${left}건 남음 (네트워크 확인)` : '모든 접수가 전송되었습니다 ✓', !!left);
+    }
+  }
+}
+async function sendOne(url, payload) {
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      // Apps Script는 preflight(OPTIONS)를 처리하지 못하므로 text/plain 사용
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) return false;
+    const j = await r.json();
+    return j && j.ok === true;
+  } catch { return false; }
+}
+setInterval(flushQueue, CONFIG.RETRY_INTERVAL_MS);
+window.addEventListener('online', () => flushQueue());
+
+function updateBadges() {
+  const n = getJson(LS.queue, []).length;
+  ['qBadge1', 'qBadge2'].forEach(id => {
+    const el = $(id);
+    el.textContent = `미전송 ${n}건`;
+    el.classList.toggle('show', n > 0);
+  });
+}
+
+/* ══════════════ 스태프 화면 ══════════════ */
+let pressTimer = null;
+$('logoPress').addEventListener('touchstart', startPress);
+$('logoPress').addEventListener('mousedown', startPress);
+['touchend', 'touchmove', 'mouseup', 'mouseleave'].forEach(ev =>
+  $('logoPress').addEventListener(ev, () => clearTimeout(pressTimer)));
+function startPress() {
+  clearTimeout(pressTimer);
+  pressTimer = setTimeout(openStaff, 5000);   // 로고 5초 롱프레스
+}
+function openStaff() {
+  $('cfgUrl').value = localStorage.getItem(LS.url) || '';
+  $('cfgDevice').value = localStorage.getItem(LS.device) || 'T1';
+  refreshStats();
+  showScreen('staff');
+}
+function refreshStats() {
+  const sent = getJson(LS.sent, []), queue = getJson(LS.queue, []);
+  const day = todayKey();
+  const today = [...sent, ...queue].filter(x => (x.ts || '').replace(/-/g, '').startsWith(day)).length;
+  $('stToday').textContent = today;
+  $('stSent').textContent = sent.length;
+  $('stQueue').textContent = queue.length;
+  $('stQueue').classList.toggle('warn', queue.length > 0);
+}
+function saveConfig() {
+  localStorage.setItem(LS.url, $('cfgUrl').value.trim());
+  localStorage.setItem(LS.device, ($('cfgDevice').value.trim() || 'T1').toUpperCase());
+  staffMsg('설정이 저장되었습니다 ✓');
+}
+async function testSend() {
+  const url = $('cfgUrl').value.trim();
+  if (!url) return staffMsg('웹앱 URL을 입력해주세요.', true);
+  localStorage.setItem(LS.url, url);
+  staffMsg('테스트 전송 중…');
+  const ok = await sendOne(url, {
+    uuid: makeUuid(), receiptNo: 'TEST-' + Date.now(), ts: new Date().toLocaleString('sv-SE'),
+    orderNo: '(연결테스트)', amountBand: '-', feePaid: '-', name: '테스트', phone: '-',
+    rName: '-', rPhone: '-', zipcode: '-', addr1: '-', addr2: '-', memo: '연결 테스트 행 — 삭제하세요',
+    consent: '-', device: localStorage.getItem(LS.device) || 'T1',
+  });
+  staffMsg(ok ? '연결 성공 — 시트에 테스트 행이 추가되었습니다 ✓' : '연결 실패 — URL/배포 설정을 확인해주세요.', !ok);
+}
+function exportCsv() {
+  const rows = [...getJson(LS.sent, []), ...getJson(LS.queue, [])];
+  if (!rows.length) return staffMsg('내보낼 데이터가 없습니다.', true);
+  const cols = ['receiptNo','ts','orderNo','amountBand','feePaid','name','phone','rName','rPhone','zipcode','addr1','addr2','memo','consent','uuid','device'];
+  const head = ['접수번호','접수시각','영수증번호','주문금액구분','배송비결제확인','주문자명','주문자연락처','수령인명','수령인연락처','우편번호','기본주소','상세주소','배송요청사항','개인정보동의','UUID','단말기'];
+  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = '\uFEFF' + [head.join(','), ...rows.map(r => cols.map(c => esc(r[c])).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `택배접수백업_${todayKey()}.csv`;
+  a.click();
+  staffMsg(`${rows.length}건을 CSV로 내보냈습니다 ✓`);
+}
+function clearLocal() {
+  const q = getJson(LS.queue, []).length;
+  if (q > 0 && !confirm(`미전송 ${q}건이 있습니다! 정말 삭제할까요?`)) return;
+  if (!confirm('로컬에 저장된 접수 백업을 모두 삭제합니다. 계속할까요?')) return;
+  localStorage.removeItem(LS.queue);
+  localStorage.removeItem(LS.sent);
+  refreshStats(); updateBadges();
+  staffMsg('로컬 데이터를 삭제했습니다.');
+}
+function staffMsg(msg, isErr) {
+  const el = $('staffMsg');
+  el.textContent = msg;
+  el.style.color = isErr ? 'var(--danger)' : 'var(--green)';
+}
+
+/* ══════════════ 초기화 ══════════════ */
+updateBadges();
+flushQueue();
+</script>
+</body>
+</html>
