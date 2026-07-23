@@ -62,19 +62,19 @@ P 단말기   Q 중복의심
 
 `order.html`은 정적 파일 1개이며, **내부 서버(회사 NAS Web Station)에 올려서 운영합니다.**
 
-### NAS 업로드 (DEPLOY-PHP.md와 같은 방식)
-1. File Station(또는 SMB)으로 `expo/order.html`을 웹폴더에 업로드:
+### NAS 업로드 — `logis/`와 분리된 전용 폴더 사용
+1. File Station(또는 SMB)으로 `cwjung` 아래에 **새 폴더 `expo`**를 만들고 `order.html` 업로드:
    ```
-   www/cwjung/logis/expo/order.html
+   www/cwjung/expo/order.html
    ```
 2. 접속 URL 확인:
-   - 외부/현장: `https://track.도메인/cwjung/logis/expo/order.html`
-   - 사내 LAN: `http://NAS_IP/cwjung/logis/expo/order.html`
+   - 외부/현장: `https://track.도메인/cwjung/expo/order.html`
+   - 사내 LAN: `http://NAS_IP/cwjung/expo/order.html`
 3. PHP·config.php 등 다른 파일은 필요 없습니다 — 이 파일 1개면 됩니다.
 
-> ⚠️ **자가 업데이트 주의**: NAS의 `cron/selfupdate.php`는 현재 다른 브랜치
-> (`claude/shipping-product-info-system-kigrde`)를 추적하므로 `expo/` 폴더는 자동 반영되지 않습니다.
-> 페이지가 수정되면 `expo/order.html`만 다시 업로드하세요 (추후 브랜치 병합 시 자동 반영 가능).
+> `logis/` 밖의 전용 폴더라서 배송조회 시스템의 자가 업데이트(`selfupdate.php`)와
+> 전혀 간섭이 없고, 행사가 끝나면 폴더째 삭제하면 정리 끝입니다.
+> 페이지가 수정되면 `order.html` 하나만 다시 업로드하세요.
 
 ### 내부 서버로 돌려도 인터넷은 필요합니다
 NAS는 **페이지를 서빙하는 역할**만 하고, 태블릿에서 두 가지 외부 통신은 그대로 일어납니다:
