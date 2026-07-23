@@ -1,5 +1,9 @@
 name: Expo Webapp 진단
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'expo/diag-trigger.txt'
 
 jobs:
   test:
