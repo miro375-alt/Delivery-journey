@@ -522,8 +522,8 @@ function nextReceiptNo() {
   const day = todayKey();
   const seq = (parseInt(localStorage.getItem(LS.seq + day)) || 0) + 1;
   localStorage.setItem(LS.seq + day, seq);
-  const device = localStorage.getItem(LS.device) || 'T1';
-  return `E${day.slice(4)}-${device}-${String(seq).padStart(3, '0')}`;
+  // 예: 0723_001 (단말기 구분은 시트의 '단말기' 컬럼으로만 기록)
+  return `${day.slice(4)}_${String(seq).padStart(3, '0')}`;
 }
 function makeUuid() {
   return (crypto.randomUUID && crypto.randomUUID()) ||
