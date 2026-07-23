@@ -60,12 +60,32 @@ P 단말기   Q 중복의심
 
 ## 3단계. 접수 페이지 호스팅
 
-`order.html`은 정적 파일 1개라 아무 곳에나 올리면 됩니다. 권장 순서:
+`order.html`은 정적 파일 1개이며, **내부 서버(회사 NAS Web Station)에 올려서 운영합니다.**
 
-- **GitHub Pages** (이 저장소 → Settings → Pages) → `https://<계정>.github.io/Delivery-journey/expo/order.html`
-- 또는 기존 NAS Web Station, 또는 Netlify Drop 등
+### NAS 업로드 (DEPLOY-PHP.md와 같은 방식)
+1. File Station(또는 SMB)으로 `expo/order.html`을 웹폴더에 업로드:
+   ```
+   www/cwjung/logis/expo/order.html
+   ```
+2. 접속 URL 확인:
+   - 외부/현장: `https://track.도메인/cwjung/logis/expo/order.html`
+   - 사내 LAN: `http://NAS_IP/cwjung/logis/expo/order.html`
+3. PHP·config.php 등 다른 파일은 필요 없습니다 — 이 파일 1개면 됩니다.
 
-> 로컬 파일(file://)로 열어도 동작은 하지만, 홈화면 웹앱 등록을 위해 URL 호스팅을 권장합니다.
+> ⚠️ **자가 업데이트 주의**: NAS의 `cron/selfupdate.php`는 현재 다른 브랜치
+> (`claude/shipping-product-info-system-kigrde`)를 추적하므로 `expo/` 폴더는 자동 반영되지 않습니다.
+> 페이지가 수정되면 `expo/order.html`만 다시 업로드하세요 (추후 브랜치 병합 시 자동 반영 가능).
+
+### 내부 서버로 돌려도 인터넷은 필요합니다
+NAS는 **페이지를 서빙하는 역할**만 하고, 태블릿에서 두 가지 외부 통신은 그대로 일어납니다:
+- 주소 검색: `t1.daumcdn.net` (카카오)
+- 접수 저장: `script.google.com` (구글시트)
+
+즉 **태블릿이 붙는 와이파이에 인터넷 아웃바운드가 있어야** 시트 저장이 됩니다.
+잠깐 끊기는 것은 오프라인 큐가 흡수하지만, 행사장 인터넷이 아예 없다면 미리 알려주세요 —
+접수 데이터를 NAS에 저장하는 PHP 백엔드 변형을 만들어야 합니다.
+
+> 참고: LAN에서 http로 서빙해도 전 기능이 동작합니다 (http 페이지 → https Apps Script 호출은 브라우저가 허용).
 
 ---
 
