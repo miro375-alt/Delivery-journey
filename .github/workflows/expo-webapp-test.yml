@@ -1,0 +1,23 @@
+name: Expo Webapp 진단
+on: workflow_dispatch
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      URL: https://script.google.com/macros/s/AKfycbwpuSJ41ELtkv4OFgWYBYNjE5U8stxh8MVdN97Qlf-1W0UFXCXS0uRyTP0a8LwwPZqZ/exec
+    steps:
+      - name: GET 헬스체크
+        run: |
+          echo "== GET $URL =="
+          curl -sL -o /tmp/get.txt -w "HTTP %{http_code}\n" "$URL"
+          head -c 1500 /tmp/get.txt; echo
+
+      - name: POST 테스트 행 추가
+        run: |
+          echo "== POST =="
+          curl -sL -o /tmp/post.txt -w "HTTP %{http_code}\n" \
+            -H "Content-Type: text/plain;charset=utf-8" \
+            -d '{"uuid":"gh-diag-001","receiptNo":"진단_001","ts":"2026-07-23 17:30:00","orderNo":"(진단테스트)","name":"진단봇","phone":"-","rName":"-","rPhone":"-","zipcode":"-","addr1":"-","addr2":"-","memo":"GitHub Actions 진단 행 - 삭제하세요","consent":"-","device":"CI"}' \
+            "$URL"
+          head -c 1500 /tmp/post.txt; echo
