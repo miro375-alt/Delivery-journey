@@ -188,6 +188,7 @@
       <h3>주문 확인</h3>
       <label class="fld">영수증(주문) 번호 <span class="req">*</span></label>
       <input type="text" id="orderNo" inputmode="numeric" autocomplete="off" placeholder="영수증에 적힌 주문번호">
+      <div class="manual-note" id="orderDup">⚠ 이 영수증 번호로 이미 접수된 건이 있습니다. 스태프에게 확인해주세요.</div>
 
       <label class="fld">주문 금액 <span class="req">*</span></label>
       <div class="seg" id="amountSeg">
@@ -427,6 +428,16 @@ $('memoChips').addEventListener('click', e => {
   $('memo').value = on ? btn.dataset.v : '';
 });
 
+// 이 단말기에서 이미 접수된 영수증 번호인지 (전송완료 + 대기 큐 모두 확인)
+function isDupOrderNo(no) {
+  if (!no) return false;
+  return [...getJson(LS.sent, []), ...getJson(LS.queue, [])]
+    .some(x => String(x.orderNo) === no);
+}
+$('orderNo').addEventListener('input', () => {
+  $('orderDup').classList.toggle('show', isDupOrderNo($('orderNo').value.trim()));
+});
+
 function hyphenize(el) {
   el.addEventListener('input', () => {
     const d = el.value.replace(/\D/g, '').slice(0, 11);
@@ -449,6 +460,7 @@ function resetForm() {
   $('btnSubmit').disabled = false;
   $('zipcode').readOnly = $('addr1').readOnly = true;
   $('manualNote').classList.remove('show');
+  $('orderDup').classList.remove('show');
 }
 
 /* ══════════════ 우편번호 검색 (다음/카카오) ══════════════ */
@@ -535,6 +547,10 @@ function makeUuid() {
 
 function submitOrder() {
   if (!validate()) return;
+  if (isDupOrderNo($('orderNo').value.trim()) &&
+      !confirm('⚠ 이미 같은 영수증 번호로 접수된 건이 있습니다.\n\n그래도 접수하시겠습니까?\n(스태프 확인 후 진행해주세요)')) {
+    return;
+  }
   $('btnSubmit').disabled = true;   // 이중 제출 방지
 
   const diff = $('diffRecipient').checked;
