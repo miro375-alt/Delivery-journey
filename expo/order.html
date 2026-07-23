@@ -174,6 +174,21 @@
 </head>
 <body>
 
+<!-- ═══════ ⓪ 현장 잠금 화면 ═══════ -->
+<section id="scr-lock" class="screen">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px;padding:24px;">
+    <div style="font-size:52px;">🔒</div>
+    <h1 style="font-size:24px;">스태프 잠금</h1>
+    <p style="color:var(--muted);font-size:15px;text-align:center;">행사 운영을 시작하려면<br>스태프 계정으로 잠금을 해제해주세요.</p>
+    <div style="width:min(360px,90vw);display:grid;gap:10px;">
+      <input type="text" id="lockId" placeholder="아이디" autocomplete="off" autocapitalize="none">
+      <input type="password" id="lockPw" placeholder="비밀번호" autocomplete="off">
+      <div class="form-err" id="lockErr" style="margin:0;">아이디 또는 비밀번호가 올바르지 않습니다.</div>
+      <button class="btn-submit" style="padding:15px;" onclick="tryUnlock()">잠금 해제</button>
+    </div>
+  </div>
+</section>
+
 <!-- ═══════ ① 시작 화면 ═══════ -->
 <section id="scr-start" class="screen active">
   <div class="topbar" style="position:absolute;top:0;left:0;right:0;">
@@ -338,6 +353,7 @@
       </div>
       <button onclick="saveConfig()">💾 설정 저장</button>
       <button onclick="testSend()">🧪 연결 테스트 (시트에 테스트 행 추가)</button>
+      <button onclick="relock()">🔒 태블릿 잠그기 (잠금 화면으로)</button>
       <button class="danger" onclick="clearLocal()">🗑 로컬 백업 데이터 전체 삭제 (행사 종료 후)</button>
     </div>
     <div id="staffMsg"></div>
@@ -354,7 +370,11 @@ const CONFIG = {
 };
 // 웹앱 URL·단말기 코드는 스태프 화면에서 설정 (localStorage 저장 — 파일 수정 불필요)
 
+// 현장 잠금 — 계정은 소스에 평문으로 두지 않고 해시만 보관
+const LOCK_HASH = '1ffnkq0';
+
 const LS = {
+  unlock: 'expo_unlocked',
   url:    'expo_webapp_url',
   device: 'expo_device_code',
   queue:  'expo_queue',      // 미전송 접수 목록
@@ -376,7 +396,33 @@ let doneTimer = null;
 function resetToStart() {
   clearInterval(doneTimer);
   resetForm();
-  showScreen('start');
+  showScreen(isUnlocked() ? 'start' : 'lock');
+}
+
+/* ══════════════ 현장 잠금 ══════════════ */
+function lockHash(s) {
+  let x = 5381;
+  for (const c of s) x = ((x * 33) ^ c.charCodeAt(0)) >>> 0;
+  return x.toString(36);
+}
+function isUnlocked() { return localStorage.getItem(LS.unlock) === LOCK_HASH; }
+function tryUnlock() {
+  const id = $('lockId').value.trim().toLowerCase();
+  const pw = $('lockPw').value;
+  if (lockHash(id + ':' + pw) === LOCK_HASH) {
+    localStorage.setItem(LS.unlock, LOCK_HASH);
+    $('lockId').value = $('lockPw').value = '';
+    $('lockErr').classList.remove('show');
+    showScreen('start');
+  } else {
+    $('lockErr').classList.add('show');
+    $('lockPw').value = '';
+  }
+}
+$('lockPw').addEventListener('keydown', e => e.key === 'Enter' && tryUnlock());
+function relock() {
+  localStorage.removeItem(LS.unlock);
+  showScreen('lock');
 }
 
 /* ══════════════ 폼 상태 ══════════════ */
@@ -686,6 +732,7 @@ function staffMsg(msg, isErr) {
 }
 
 /* ══════════════ 초기화 ══════════════ */
+if (!isUnlocked()) showScreen('lock');
 updateBadges();
 flushQueue();
 </script>
