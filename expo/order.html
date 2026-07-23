@@ -190,17 +190,6 @@
       <input type="text" id="orderNo" inputmode="numeric" autocomplete="off" placeholder="영수증에 적힌 주문번호">
       <div class="manual-note" id="orderDup">⚠ 이 영수증 번호로 이미 접수된 건이 있습니다. 스태프에게 확인해주세요.</div>
 
-      <label class="fld">주문 금액 <span class="req">*</span></label>
-      <div class="seg" id="amountSeg">
-        <button type="button" data-v="3만원 이상">3만원 이상<small>배송비 무료</small></button>
-        <button type="button" data-v="3만원 미만">3만원 미만<small>배송비 <span class="feeTxt"></span>원 선결제</small></button>
-      </div>
-      <div class="staff-check" id="feeCheck">
-        <label class="check-line">
-          <input type="checkbox" id="feePaid">
-          <span>배송비 <b class="feeTxt"></b>원 선결제 확인 <b>(스태프 확인 항목)</b></span>
-        </label>
-      </div>
     </div>
 
     <div class="section">
@@ -340,12 +329,13 @@
 <script>
 /* ══════════════ 설정 ══════════════ */
 const CONFIG = {
-  EVENT_NAME: '2026 박람회',      // 시작 화면 하단 표기
-  SHIPPING_FEE: 3500,             // 3만원 미만 배송비(원)
+  EVENT_NAME: '2026 박람회',
   DONE_RESET_SEC: 10,             // 완료 화면 자동 복귀(초)
   RETRY_INTERVAL_MS: 30000,       // 미전송 큐 재전송 주기
+  // 기본 내장 웹앱 URL — 어느 기기에서 열어도 설정 없이 바로 전송됨.
+  // 스태프 화면에서 URL을 입력하면 그 값이 우선 적용됨(비상용 덮어쓰기).
+  WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbwpuSJ41ELtkv4OFgWYBYNjE5U8stxh8MVdN97Qlf-1W0UFXCXS0uRyTP0a8LwwPZqZ/exec',
 };
-// 웹앱 URL·단말기 코드는 스태프 화면에서 설정 (localStorage 저장 — 파일 수정 불필요)
 
 // 현장 잠금 — 계정은 소스에 평문으로 두지 않고 해시만 보관
 const LOCK_HASH = '1ffnkq0';
@@ -404,18 +394,6 @@ function relock() {
 }
 
 /* ══════════════ 폼 상태 ══════════════ */
-let amountBand = '';   // '3만원 이상' | '3만원 미만'
-
-document.querySelectorAll('.feeTxt').forEach(el => el.textContent = CONFIG.SHIPPING_FEE.toLocaleString());
-
-$('amountSeg').addEventListener('click', e => {
-  const btn = e.target.closest('button'); if (!btn) return;
-  amountBand = btn.dataset.v;
-  document.querySelectorAll('#amountSeg button').forEach(b => b.classList.toggle('on', b === btn));
-  $('feeCheck').classList.toggle('show', amountBand === '3만원 미만');
-  if (amountBand !== '3만원 미만') $('feePaid').checked = false;
-});
-
 $('diffRecipient').addEventListener('change', e => {
   $('recipientFields').classList.toggle('show', e.target.checked);
 });
@@ -450,10 +428,8 @@ hyphenize($('rPhone'));
 
 function resetForm() {
   ['orderNo','name','phone','rName','rPhone','zipcode','addr1','addr2','memo'].forEach(id => $(id).value = '');
-  ['feePaid','diffRecipient','consent'].forEach(id => $(id).checked = false);
-  amountBand = '';
-  document.querySelectorAll('#amountSeg button, #memoChips button').forEach(b => b.classList.remove('on'));
-  $('feeCheck').classList.remove('show');
+  ['diffRecipient','consent'].forEach(id => $(id).checked = false);
+  document.querySelectorAll('#memoChips button').forEach(b => b.classList.remove('on'));
   $('recipientFields').classList.remove('show');
   document.querySelectorAll('input.err').forEach(i => i.classList.remove('err'));
   $('formErr').classList.remove('show');
@@ -517,8 +493,6 @@ function validate() {
 
   let msg = '';
   if (bad) msg = '빨간색으로 표시된 항목을 확인해주세요.';
-  else if (!amountBand) msg = '주문 금액을 선택해주세요.';
-  else if (amountBand === '3만원 미만' && !$('feePaid').checked) msg = '스태프의 배송비 결제 확인이 필요합니다.';
   else if (!$('consent').checked) msg = '개인정보 수집·이용 동의가 필요합니다.';
 
   $('formErr').textContent = msg;
@@ -559,8 +533,8 @@ function submitOrder() {
     receiptNo: nextReceiptNo(),
     ts: new Date().toLocaleString('sv-SE'),   // YYYY-MM-DD HH:mm:ss
     orderNo: $('orderNo').value.trim(),
-    amountBand,
-    feePaid: amountBand === '3만원 미만' ? ($('feePaid').checked ? 'Y' : 'N') : '-',
+    amountBand: '',
+    feePaid: '',
     name: $('name').value.trim(),
     phone: $('phone').value,
     rName: diff ? $('rName').value.trim() : $('name').value.trim(),
@@ -594,9 +568,13 @@ function showDone(no) {
 }
 
 /* ══════════════ 전송 큐 ══════════════ */
+// 스태프 화면에 입력한 URL이 있으면 우선, 없으면 내장 기본 URL 사용
+function getWebappUrl() {
+  return localStorage.getItem(LS.url) || CONFIG.WEBAPP_URL;
+}
 let flushing = false;
 async function flushQueue(manual) {
-  const url = localStorage.getItem(LS.url);
+  const url = getWebappUrl();
   if (flushing) return;
   const q = getJson(LS.queue, []);
   updateBadges();
@@ -662,6 +640,7 @@ function startPress() {
 }
 function openStaff() {
   $('cfgUrl').value = localStorage.getItem(LS.url) || '';
+  $('cfgUrl').placeholder = '기본 내장 URL 사용 중 — 바꿀 때만 입력';
   $('cfgDevice').value = localStorage.getItem(LS.device) || 'T1';
   refreshStats();
   showScreen('staff');
@@ -681,9 +660,9 @@ function saveConfig() {
   staffMsg('설정이 저장되었습니다 ✓');
 }
 async function testSend() {
-  const url = $('cfgUrl').value.trim();
-  if (!url) return staffMsg('웹앱 URL을 입력해주세요.', true);
-  localStorage.setItem(LS.url, url);
+  const typed = $('cfgUrl').value.trim();
+  if (typed) localStorage.setItem(LS.url, typed);
+  const url = typed || CONFIG.WEBAPP_URL;
   staffMsg('테스트 전송 중…');
   const ok = await sendOne(url, {
     uuid: makeUuid(), receiptNo: 'TEST-' + Date.now(), ts: new Date().toLocaleString('sv-SE'),
