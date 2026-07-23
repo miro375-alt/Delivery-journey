@@ -19,14 +19,14 @@ var EVENT_NAME = '2026 박람회';
 // ────────────────────────────────────────────────────
 
 var HEADERS = [
-  '접수번호', '접수시각', '영수증번호', '주문금액구분', '배송비결제확인',
+  '접수번호', '접수시각', '영수증번호',
   '주문자명', '주문자연락처', '수령인명', '수령인연락처', '우편번호',
   '기본주소', '상세주소', '배송요청사항', '개인정보동의', '클라이언트UUID',
   '단말기', '중복의심',
 ];
 
 var COL_ORDER_NO = 3;   // C: 영수증번호
-var COL_UUID = 15;      // O: 클라이언트UUID
+var COL_UUID = 13;      // M: 클라이언트UUID
 
 function doGet() {
   // 헬스체크용 — 브라우저에서 배포 URL을 열면 상태 확인 가능
@@ -52,7 +52,6 @@ function doPost(e) {
 
     sheet.appendRow([
       data.receiptNo || '', data.ts || new Date(), orderNo,
-      data.amountBand || '', data.feePaid || '',
       data.name || '', prefix(data.phone), data.rName || '', prefix(data.rPhone),
       prefix(data.zipcode), data.addr1 || '', data.addr2 || '',
       data.memo || '', data.consent || '', uuid,
@@ -106,8 +105,7 @@ function notify(data, dupFlag) {
       '새 택배 접수가 등록되었습니다.\n\n' +
       '접수번호: ' + (data.receiptNo || '') + '\n' +
       '접수시각: ' + (data.ts || '') + '\n' +
-      '영수증번호: ' + (data.orderNo || '') + (dupFlag ? '  ⚠ 동일 번호 접수 이력 있음' : '') + '\n' +
-      '주문금액: ' + (data.amountBand || '') + ' / 배송비결제: ' + (data.feePaid || '') + '\n\n' +
+      '영수증번호: ' + (data.orderNo || '') + (dupFlag ? '  ⚠ 동일 번호 접수 이력 있음' : '') + '\n\n' +
       '주문자: ' + (data.name || '') + ' (' + (data.phone || '') + ')\n' +
       '수령인: ' + (data.rName || '') + ' (' + (data.rPhone || '') + ')\n' +
       '주소: [' + (data.zipcode || '') + '] ' + (data.addr1 || '') + ' ' + (data.addr2 || '') + '\n' +

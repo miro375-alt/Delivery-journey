@@ -533,8 +533,6 @@ function submitOrder() {
     receiptNo: nextReceiptNo(),
     ts: new Date().toLocaleString('sv-SE'),   // YYYY-MM-DD HH:mm:ss
     orderNo: $('orderNo').value.trim(),
-    amountBand: '',
-    feePaid: '',
     name: $('name').value.trim(),
     phone: $('phone').value,
     rName: diff ? $('rName').value.trim() : $('name').value.trim(),
@@ -666,7 +664,7 @@ async function testSend() {
   staffMsg('테스트 전송 중…');
   const ok = await sendOne(url, {
     uuid: makeUuid(), receiptNo: 'TEST-' + Date.now(), ts: new Date().toLocaleString('sv-SE'),
-    orderNo: '(연결테스트)', amountBand: '-', feePaid: '-', name: '테스트', phone: '-',
+    orderNo: '(연결테스트)', name: '테스트', phone: '-',
     rName: '-', rPhone: '-', zipcode: '-', addr1: '-', addr2: '-', memo: '연결 테스트 행 — 삭제하세요',
     consent: '-', device: localStorage.getItem(LS.device) || 'T1',
   });
@@ -675,8 +673,8 @@ async function testSend() {
 function exportCsv() {
   const rows = [...getJson(LS.sent, []), ...getJson(LS.queue, [])];
   if (!rows.length) return staffMsg('내보낼 데이터가 없습니다.', true);
-  const cols = ['receiptNo','ts','orderNo','amountBand','feePaid','name','phone','rName','rPhone','zipcode','addr1','addr2','memo','consent','uuid','device'];
-  const head = ['접수번호','접수시각','영수증번호','주문금액구분','배송비결제확인','주문자명','주문자연락처','수령인명','수령인연락처','우편번호','기본주소','상세주소','배송요청사항','개인정보동의','UUID','단말기'];
+  const cols = ['receiptNo','ts','orderNo','name','phone','rName','rPhone','zipcode','addr1','addr2','memo','consent','uuid','device'];
+  const head = ['접수번호','접수시각','영수증번호','주문자명','주문자연락처','수령인명','수령인연락처','우편번호','기본주소','상세주소','배송요청사항','개인정보동의','UUID','단말기'];
   const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const csv = '\uFEFF' + [head.join(','), ...rows.map(r => cols.map(c => esc(r[c])).join(','))].join('\n');
   const a = document.createElement('a');
