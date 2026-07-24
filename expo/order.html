@@ -457,9 +457,9 @@ $('orderNo').addEventListener('input', () => {
   renderDupWarn();
   setOrderCheck(null);
   clearTimeout(dupCheckTimer);
+  const seq = ++dupCheckSeq;   // 입력이 바뀔 때마다 세대 증가 → 진행 중이던 이전 조회는 도착해도 무시됨
   if (!no) return;
   dupCheckTimer = setTimeout(async () => {
-    const seq = ++dupCheckSeq;
     setOrderCheck('checking');
     const hit = await checkOrderOnServer(no);
     if (seq !== dupCheckSeq) return;   // 그 사이 값이 바뀜 — 낡은 응답 무시
