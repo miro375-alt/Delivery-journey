@@ -188,6 +188,7 @@
       <label class="fld">영수증(주문) 번호 <span class="req">*</span></label>
       <input type="text" id="orderNo" inputmode="numeric" autocomplete="off" placeholder="영수증에 적힌 주문번호">
       <div class="manual-note" id="orderDup">⚠ 이 영수증 번호로 이미 접수된 건이 있습니다. 스태프에게 확인해주세요.</div>
+      <div class="manual-note" id="orderTypo">⚠ 완성되지 않은 한글(ㅁ, ㅇ 등)이 섞여 있어요. 오타가 아닌지 확인해주세요.</div>
 
     </div>
 
@@ -197,10 +198,12 @@
         <div>
           <label class="fld">이름 <span class="req">*</span></label>
           <input type="text" id="name" autocomplete="off" placeholder="홍길동">
+          <div class="manual-note" id="nameTypo">⚠ 이름에 완성되지 않은 글자나 숫자가 있어요. 오타가 아닌지 확인해주세요.</div>
         </div>
         <div>
           <label class="fld">휴대폰 번호 <span class="req">*</span></label>
           <input type="tel" id="phone" inputmode="numeric" autocomplete="off" placeholder="010-0000-0000" maxlength="13">
+          <div class="manual-note" id="phoneTypo">⚠ 휴대폰 번호는 010으로 시작해야 해요.</div>
         </div>
       </div>
       <label class="toggle-line">
@@ -212,10 +215,12 @@
           <div>
             <label class="fld">받는 분 이름 <span class="req">*</span></label>
             <input type="text" id="rName" autocomplete="off">
+            <div class="manual-note" id="rNameTypo">⚠ 이름에 완성되지 않은 글자나 숫자가 있어요. 오타가 아닌지 확인해주세요.</div>
           </div>
           <div>
             <label class="fld">받는 분 휴대폰 <span class="req">*</span></label>
             <input type="tel" id="rPhone" inputmode="numeric" autocomplete="off" placeholder="010-0000-0000" maxlength="13">
+            <div class="manual-note" id="rPhoneTypo">⚠ 휴대폰 번호는 010으로 시작해야 해요.</div>
           </div>
         </div>
       </div>
@@ -232,6 +237,7 @@
       <div class="manual-note" id="manualNote">⚠ 주소 검색을 사용할 수 없어 직접 입력으로 전환되었습니다. 우편번호와 주소를 정확히 입력해주세요.</div>
       <label class="fld">상세주소 <span class="req">*</span></label>
       <input type="text" id="addr2" autocomplete="off" placeholder="동·호수 등 상세주소">
+      <div class="manual-note" id="addr2Typo">⚠ 완성되지 않은 한글(ㅁ, ㅇ 등)이 섞여 있어요. 오타가 아닌지 확인해주세요.</div>
     </div>
 
     <div class="section">
@@ -421,6 +427,26 @@ function hyphenize(el) {
 hyphenize($('phone'));
 hyphenize($('rPhone'));
 
+/* ══════════════ 오탈자 의심 경고 (입력 중 실시간) ══════════════ */
+const JAMO_RE = /[ㄱ-ㅎㅏ-ㅣ]/;   // 완성되지 않은 한글 자모(ㅁ, ㅇ, ㅏ 등)
+function watchTypo(inputId, warnId, testFn) {
+  $(inputId).addEventListener('input', () => {
+    $(warnId).classList.toggle('show', testFn($(inputId).value));
+  });
+}
+watchTypo('orderNo', 'orderTypo', v => JAMO_RE.test(v));
+watchTypo('name',    'nameTypo',  v => JAMO_RE.test(v) || /\d/.test(v));
+watchTypo('rName',   'rNameTypo', v => JAMO_RE.test(v) || /\d/.test(v));
+watchTypo('addr2',   'addr2Typo', v => JAMO_RE.test(v));
+watchTypo('phone',   'phoneTypo', v => v.replace(/\D/g, '').length >= 2 && !/^01/.test(v));
+watchTypo('rPhone',  'rPhoneTypo', v => v.replace(/\D/g, '').length >= 2 && !/^01/.test(v));
+
+/* ══════════════ 개인정보 동의 → 접수 버튼 활성화 ══════════════ */
+$('consent').addEventListener('change', () => {
+  $('btnSubmit').disabled = !$('consent').checked;
+});
+$('btnSubmit').disabled = !$('consent').checked;
+
 function resetForm() {
   ['orderNo','name','phone','rName','rPhone','zipcode','addr1','addr2','memo'].forEach(id => $(id).value = '');
   ['diffRecipient','consent'].forEach(id => $(id).checked = false);
@@ -428,10 +454,9 @@ function resetForm() {
   $('recipientFields').classList.remove('show');
   document.querySelectorAll('input.err').forEach(i => i.classList.remove('err'));
   $('formErr').classList.remove('show');
-  $('btnSubmit').disabled = false;
+  $('btnSubmit').disabled = true;   // 동의 체크가 풀렸으므로 다시 비활성
   $('zipcode').readOnly = $('addr1').readOnly = true;
-  $('manualNote').classList.remove('show');
-  $('orderDup').classList.remove('show');
+  document.querySelectorAll('.manual-note').forEach(n => n.classList.remove('show'));
 }
 
 /* ══════════════ 우편번호 검색 (다음/카카오) ══════════════ */
