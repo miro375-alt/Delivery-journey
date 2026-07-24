@@ -474,20 +474,24 @@ function closePostcode() { $('zipLayer').classList.remove('show'); }
 function markErr(id, on) { $(id).classList.toggle('err', on); return on; }
 function validate() {
   let bad = false;
-  const phoneOk = v => /^01[016789]-\d{3,4}-\d{4}$/.test(v);
+  // 010은 11자리(010-0000-0000) 고정, 구형 01X는 10~11자리 허용
+  const phoneOk = v => /^(010-\d{4}|01[16789]-\d{3,4})-\d{4}$/.test(v);
   bad |= markErr('orderNo', !$('orderNo').value.trim());
   bad |= markErr('name', $('name').value.trim().length < 2);
-  bad |= markErr('phone', !phoneOk($('phone').value));
+  let phoneBad = markErr('phone', !phoneOk($('phone').value));
+  bad |= phoneBad;
   if ($('diffRecipient').checked) {
     bad |= markErr('rName', $('rName').value.trim().length < 2);
-    bad |= markErr('rPhone', !phoneOk($('rPhone').value));
+    const rPhoneBad = markErr('rPhone', !phoneOk($('rPhone').value));
+    bad |= rPhoneBad; phoneBad |= rPhoneBad;
   }
   bad |= markErr('zipcode', !$('zipcode').value.trim());
   bad |= markErr('addr1', !$('addr1').value.trim());
   bad |= markErr('addr2', !$('addr2').value.trim());
 
   let msg = '';
-  if (bad) msg = '빨간색으로 표시된 항목을 확인해주세요.';
+  if (phoneBad) msg = '휴대폰 번호 자릿수가 맞지 않습니다. 010-0000-0000 형식(11자리)으로 입력해주세요.';
+  else if (bad) msg = '빨간색으로 표시된 항목을 확인해주세요.';
   else if (!$('consent').checked) msg = '개인정보 수집·이용 동의가 필요합니다.';
 
   $('formErr').textContent = msg;
