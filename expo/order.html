@@ -416,8 +416,35 @@ function isDupOrderNo(no) {
   return [...getJson(LS.sent, []), ...getJson(LS.queue, [])]
     .some(x => String(x.orderNo) === no);
 }
+// 중복 검사 = 이 기기 기록(즉시) + 서버 시트 전체(입력 멈추면 조회) — 다른 태블릿 접수분도 잡음
+let dupCheckTimer = null, dupServerHit = false, dupCheckSeq = 0, dupCheckedValue = null;
+function renderDupWarn() {
+  const no = $('orderNo').value.trim();
+  $('orderDup').classList.toggle('show', !!no && (isDupOrderNo(no) || dupServerHit));
+}
+async function checkOrderOnServer(no, timeoutMs) {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs || 4000);
+    const r = await fetch(getWebappUrl() + '?checkOrder=' + encodeURIComponent(no), { signal: ctrl.signal });
+    clearTimeout(t);
+    const j = await r.json();
+    return !!(j && j.exists);
+  } catch (_) { return false; }   // 오프라인 등 확인 불가 → 경고 없이 통과(서버가 저장 시 플래그)
+}
 $('orderNo').addEventListener('input', () => {
-  $('orderDup').classList.toggle('show', isDupOrderNo($('orderNo').value.trim()));
+  const no = $('orderNo').value.trim();
+  dupServerHit = false; dupCheckedValue = null;
+  renderDupWarn();
+  clearTimeout(dupCheckTimer);
+  if (!no) return;
+  dupCheckTimer = setTimeout(async () => {
+    const seq = ++dupCheckSeq;
+    const hit = await checkOrderOnServer(no);
+    if (seq !== dupCheckSeq) return;   // 그 사이 값이 바뀜 — 낡은 응답 무시
+    dupServerHit = hit; dupCheckedValue = no;
+    renderDupWarn();
+  }, 600);
 });
 
 function hyphenize(el) {
@@ -545,7 +572,10 @@ function makeUuid() {
 
 async function submitOrder() {
   if (!validate()) return;
-  if (isDupOrderNo($('orderNo').value.trim()) &&
+  const no = $('orderNo').value.trim();
+  let dup = isDupOrderNo(no) || dupServerHit;
+  if (!dup && no !== dupCheckedValue) dup = await checkOrderOnServer(no, 3000);   // 입력 직후 바로 제출한 경우 최종 확인
+  if (dup &&
       !confirm('⚠ 이미 같은 영수증 번호로 접수된 건이 있습니다.\n\n그래도 접수하시겠습니까?\n(스태프 확인 후 진행해주세요)')) {
     return;
   }

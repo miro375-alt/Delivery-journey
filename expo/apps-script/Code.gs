@@ -28,7 +28,13 @@ var HEADERS = [
 var COL_ORDER_NO = 3;   // C: 영수증번호
 var COL_UUID = 13;      // M: 클라이언트UUID
 
-function doGet() {
+function doGet(e) {
+  // 영수증번호 중복 조회 — 태블릿이 입력 중 실시간으로 시트 전체를 확인
+  if (e && e.parameter && e.parameter.checkOrder) {
+    var sheet = getSheet();
+    var hit = findInColumn(sheet, COL_ORDER_NO, String(e.parameter.checkOrder));
+    return jsonOut({ ok: true, exists: !!hit, receiptNo: hit ? String(sheet.getRange(hit, 1).getValue()) : '' });
+  }
   // 헬스체크용 — 브라우저에서 배포 URL을 열면 상태 확인 가능
   return jsonOut({ ok: true, service: 'expo-order', event: EVENT_NAME });
 }
