@@ -88,6 +88,10 @@
   }
   .manual-note { display: none; font-size: 13px; color: #b45309; margin-top: 6px; }
   .manual-note.show { display: block; }
+  .order-check { display: none; font-size: 13px; margin-top: 6px; }
+  .order-check.show { display: block; }
+  .order-check.checking, .order-check.fail { color: var(--muted); }
+  .order-check.ok { color: #15803d; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   .chips button {
@@ -191,6 +195,7 @@
       <input type="text" id="orderNo" inputmode="numeric" autocomplete="off" placeholder="영수증에 적힌 주문번호">
       <div class="manual-note" id="orderDup">⚠ 이 영수증 번호로 이미 접수된 건이 있습니다. 스태프에게 확인해주세요.</div>
       <div class="manual-note" id="orderTypo">⚠ 완성되지 않은 한글(ㅁ, ㅇ 등)이 섞여 있어요. 오타가 아닌지 확인해주세요.</div>
+      <div class="order-check" id="orderCheck"></div>
 
     </div>
 
@@ -422,6 +427,7 @@ function renderDupWarn() {
   const no = $('orderNo').value.trim();
   $('orderDup').classList.toggle('show', !!no && (isDupOrderNo(no) || dupServerHit));
 }
+// true=중복 / false=사용 가능 / null=확인 불가(오프라인·구버전 서버)
 async function checkOrderOnServer(no, timeoutMs) {
   try {
     const ctrl = new AbortController();
@@ -429,21 +435,40 @@ async function checkOrderOnServer(no, timeoutMs) {
     const r = await fetch(getWebappUrl() + '?checkOrder=' + encodeURIComponent(no), { signal: ctrl.signal });
     clearTimeout(t);
     const j = await r.json();
-    return !!(j && j.exists);
-  } catch (_) { return false; }   // 오프라인 등 확인 불가 → 경고 없이 통과(서버가 저장 시 플래그)
+    return (j && typeof j.exists === 'boolean') ? j.exists : null;
+  } catch (_) { return null; }   // 확인 불가 → 경고 없이 통과(서버가 저장 시 플래그)
+}
+function setOrderCheck(state) {
+  const el = $('orderCheck');
+  el.classList.remove('show', 'checking', 'ok', 'fail');
+  el.textContent = '';
+  const map = {
+    checking: ['🔍 접수 이력 확인 중…', 'checking'],
+    ok:       ['✓ 접수 가능한 번호입니다', 'ok'],
+    fail:     ['ℹ 접수 이력을 확인하지 못했어요 (접수는 가능합니다)', 'fail'],
+  };
+  if (!state || !map[state]) return;
+  el.textContent = map[state][0];
+  el.classList.add('show', map[state][1]);
 }
 $('orderNo').addEventListener('input', () => {
   const no = $('orderNo').value.trim();
   dupServerHit = false; dupCheckedValue = null;
   renderDupWarn();
+  setOrderCheck(null);
   clearTimeout(dupCheckTimer);
   if (!no) return;
   dupCheckTimer = setTimeout(async () => {
     const seq = ++dupCheckSeq;
+    setOrderCheck('checking');
     const hit = await checkOrderOnServer(no);
     if (seq !== dupCheckSeq) return;   // 그 사이 값이 바뀜 — 낡은 응답 무시
-    dupServerHit = hit; dupCheckedValue = no;
+    dupCheckedValue = no;
+    dupServerHit = hit === true;
     renderDupWarn();
+    if (hit === true) setOrderCheck(null);                              // 중복 경고(orderDup)가 대신 표시됨
+    else if (hit === false) setOrderCheck(isDupOrderNo(no) ? null : 'ok');
+    else setOrderCheck('fail');
   }, 600);
 });
 
@@ -487,6 +512,7 @@ function resetForm() {
   $('btnSubmit').disabled = true;   // 동의 체크가 풀렸으므로 다시 비활성
   $('zipcode').readOnly = $('addr1').readOnly = true;
   document.querySelectorAll('.manual-note').forEach(n => n.classList.remove('show'));
+  setOrderCheck(null);
 }
 
 /* ══════════════ 우편번호 검색 (다음/카카오) ══════════════ */
