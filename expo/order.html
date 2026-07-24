@@ -117,6 +117,8 @@
   .btn-submit:disabled { background: #b6c3d9; cursor: default; }
   .form-err { color: var(--danger); font-size: 14px; text-align: center; margin-bottom: 8px; display: none; }
   .form-err.show { display: block; }
+  .send-status { color: var(--muted); font-size: 14px; text-align: center; margin-bottom: 8px; display: none; }
+  .send-status.show { display: block; }
 
   /* ── 우편번호 레이어 ── */
   #zipLayer {
@@ -268,6 +270,7 @@
 
   <div class="submitbar">
     <div class="form-err" id="formErr"></div>
+    <div class="send-status" id="sendStatus"></div>
     <div class="inner">
       <button class="btn-cancel" onclick="resetToStart()">지우기</button>
       <button class="btn-submit" id="btnSubmit" onclick="submitOrder()">접수하기</button>
@@ -549,6 +552,22 @@ async function submitOrder() {
   $('btnSubmit').disabled = true;   // 이중 제출 방지
   $('btnSubmit').textContent = '전송 중…';
 
+  // 전송 진행 상태 표시 — 오래 걸려도 멈춘 것처럼 보이지 않게 단계별 안내
+  const stages = [
+    [0,    '📡 데이터 전송 중…'],
+    [3000, '🌐 온라인 연결 확인 중…'],
+    [6500, '⏳ 연결이 지연되어 다시 시도하고 있어요…'],
+  ];
+  const t0 = Date.now();
+  $('sendStatus').textContent = stages[0][1];
+  $('sendStatus').classList.add('show');
+  const stageTimer = setInterval(() => {
+    const el = Date.now() - t0;
+    for (let i = stages.length - 1; i >= 0; i--) {
+      if (el >= stages[i][0]) { $('sendStatus').textContent = stages[i][1]; break; }
+    }
+  }, 300);
+
   const diff = $('diffRecipient').checked;
   const p = {
     uuid: makeUuid(),
@@ -566,8 +585,10 @@ async function submitOrder() {
     device: localStorage.getItem(LS.device) || 'T1',
   };
 
-  // 접수번호는 서버가 발급 → 즉시 전송을 먼저 시도 (6초 제한)
-  const resp = await sendOne(getWebappUrl(), p, 6000);
+  // 접수번호는 서버가 발급 → 즉시 전송을 먼저 시도 (10초 제한 — Apps Script 콜드스타트 감안)
+  const resp = await sendOne(getWebappUrl(), p, 10000);
+  clearInterval(stageTimer);
+  $('sendStatus').classList.remove('show');
   $('btnSubmit').textContent = '접수하기';
   if (resp) {
     const sent = getJson(LS.sent, []);
