@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="상세페이지 검수 체크리스트 — 게시 전 필수 점검 도구" />
+  <title>상세페이지 검수 체크리스트</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --brand: #2f6bff;
+      --brand-dark: #1d4fd1;
+      --brand-soft: #eaf0ff;
+      --ink: #1a1d24;
+      --ink-2: #555b66;
+      --ink-3: #8b93a1;
+      --line: #e6e9ef;
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --ok: #18a957;
+      --ok-soft: #e6f7ee;
+      --warn: #f59e0b;
+      --warn-soft: #fef3e2;
+      --bad: #e5484d;
+      --bad-soft: #fdebec;
+      --radius: 16px;
+      --shadow: 0 6px 24px rgba(20, 30, 60, 0.08);
+      --shadow-sm: 0 2px 8px rgba(20, 30, 60, 0.06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { width: 100%; max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+    .site-header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+    }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 19px; }
+    .header-actions { display: flex; gap: 8px; }
+
+    .btn {
+      border: 1px solid var(--line); background: var(--card); color: var(--ink);
+      padding: 8px 14px; border-radius: 10px; font: inherit; font-weight: 700; font-size: 13px;
+      cursor: pointer; transition: 0.15s;
+    }
+    .btn:hover { border-color: var(--brand); color: var(--brand); }
+    .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .btn-primary:hover { background: var(--brand-dark); color: #fff; }
+    .btn-danger:hover { border-color: var(--bad); color: var(--bad); }
+
+    main { padding: 28px 0 80px; }
+    .layout { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
+
+    /* ===== 검수 정보 ===== */
+    .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 22px; }
+    .meta-card { margin-bottom: 24px; }
+    .meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .field label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-2); margin-bottom: 4px; }
+    .field input, .field select {
+      width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px;
+      font: inherit; font-size: 14px; background: #fff; color: var(--ink);
+    }
+    .field input:focus, .field select:focus { outline: 2px solid var(--brand-soft); border-color: var(--brand); }
+    .field-wide { grid-column: span 3; }
+
+    h1 { font-size: 24px; font-weight: 900; margin: 0 0 4px; }
+    .page-sub { color: var(--ink-2); font-size: 14px; margin: 0 0 22px; }
+
+    /* ===== 체크리스트 ===== */
+    .cat { margin-bottom: 22px; }
+    .cat-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 4px 4px 10px;
+    }
+    .cat-title { font-size: 16px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+    .cat-count { font-size: 12px; color: var(--ink-3); font-weight: 700; }
+    .item {
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+      padding: 14px 16px; margin-bottom: 8px; transition: border-color 0.15s;
+    }
+    .item[data-state="pass"] { border-color: var(--ok); background: linear-gradient(0deg, var(--ok-soft), var(--card) 60%); }
+    .item[data-state="hold"] { border-color: var(--warn); background: linear-gradient(0deg, var(--warn-soft), var(--card) 60%); }
+    .item-row { display: flex; align-items: flex-start; gap: 12px; }
+    .item-body { flex: 1; min-width: 0; }
+    .item-label { font-size: 14px; font-weight: 700; }
+    .item-help { font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }
+    .badge-req {
+      display: inline-block; font-size: 11px; font-weight: 900; color: var(--bad);
+      background: var(--bad-soft); border-radius: 6px; padding: 1px 7px; margin-left: 6px; vertical-align: 2px;
+    }
+    .item-ctrl { display: flex; gap: 6px; flex-shrink: 0; }
+    .state-btn {
+      border: 1px solid var(--line); background: #fff; border-radius: 8px;
+      font: inherit; font-size: 12px; font-weight: 700; padding: 6px 11px; cursor: pointer; color: var(--ink-2);
+    }
+    .state-btn.on-pass { background: var(--ok); border-color: var(--ok); color: #fff; }
+    .state-btn.on-hold { background: var(--warn); border-color: var(--warn); color: #fff; }
+    .state-btn.on-na   { background: var(--ink-3); border-color: var(--ink-3); color: #fff; }
+    .item-memo {
+      display: none; width: 100%; margin-top: 10px; padding: 8px 12px;
+      border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: 13px; resize: vertical; min-height: 38px;
+    }
+    .item[data-state="hold"] .item-memo, .item-memo.has-text { display: block; }
+
+    /* ===== 요약 패널 ===== */
+    .summary { position: sticky; top: 80px; }
+    .summary h2 { font-size: 15px; font-weight: 900; margin: 0 0 14px; }
+    .progress-wrap { background: var(--bg); border-radius: 99px; height: 10px; overflow: hidden; margin: 6px 0 4px; }
+    .progress-bar { height: 100%; background: var(--brand); border-radius: 99px; width: 0; transition: width 0.3s; }
+    .stat-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
+    .stat-row:last-of-type { border-bottom: 0; }
+    .stat-row b { font-weight: 900; }
+    .verdict {
+      margin-top: 14px; border-radius: 12px; padding: 14px; text-align: center;
+      font-weight: 900; font-size: 15px;
+    }
+    .verdict.v-pass { background: var(--ok-soft); color: var(--ok); }
+    .verdict.v-hold { background: var(--warn-soft); color: #b45309; }
+    .verdict.v-fail { background: var(--bad-soft); color: var(--bad); }
+    .verdict.v-none { background: var(--bg); color: var(--ink-3); }
+    .verdict small { display: block; font-size: 12px; font-weight: 500; margin-top: 3px; }
+    .req-fails { margin: 10px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--bad); }
+    .req-fails li { padding: 2px 0; }
+    .summary-actions { display: grid; gap: 8px; margin-top: 16px; }
+
+    /* ===== 인쇄 ===== */
+    .print-only { display: none; }
+    @media print {
+      .site-header, .summary-actions, .item-ctrl, .btn { display: none !important; }
+      body { background: #fff; }
+      .layout { grid-template-columns: 1fr; }
+      .card, .item { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+      .summary { position: static; }
+      .print-only { display: block; font-size: 12px; color: var(--ink-2); margin-top: 20px; }
+      .item-memo { display: block; border: none; padding: 4px 0 0; }
+      .item-memo:placeholder-shown { display: none; }
+      .item::after { content: attr(data-state-label); float: right; font-weight: 900; font-size: 12px; }
+    }
+
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      .summary { position: static; }
+      .meta-grid { grid-template-columns: 1fr 1fr; }
+      .field-wide { grid-column: span 2; }
+      .item-row { flex-direction: column; }
+      .item-ctrl { width: 100%; }
+      .state-btn { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <span class="brand"><span>📋</span> 상세페이지 검수</span>
+      <div class="header-actions">
+        <button type="button" class="btn" id="btn-import">JSON 가져오기</button>
+        <button type="button" class="btn" id="btn-export">JSON 내보내기</button>
+        <button type="button" class="btn btn-primary" id="btn-print">인쇄 / PDF</button>
+        <input type="file" id="import-file" accept="application/json" hidden />
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <h1>상세페이지 검수 체크리스트</h1>
+      <p class="page-sub">게시 전 필수 점검 — 필수 항목이 1개라도 미통과면 게시할 수 없습니다. 입력 내용은 자동 저장됩니다. (프로세스 기준: REVIEW-PROCESS.md)</p>
+
+      <div class="card meta-card">
+        <div class="meta-grid">
+          <div class="field">
+            <label for="m-product">제품명 *</label>
+            <input id="m-product" data-meta="product" placeholder="예: 아가드 소프트 안전문" />
+          </div>
+          <div class="field">
+            <label for="m-brand">브랜드</label>
+            <select id="m-brand" data-meta="brand">
+              <option value="아가드">아가드</option>
+              <option value="베이비스탠다드">베이비스탠다드</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="m-stage">검수 단계</label>
+            <select id="m-stage" data-meta="stage">
+              <option value="1차 셀프검수">1차 셀프검수 (제작자)</option>
+              <option value="2차 크로스검수">2차 크로스검수 (동료)</option>
+              <option value="최종 승인">최종 승인 (책임자)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="m-reviewer">검수자</label>
+            <input id="m-reviewer" data-meta="reviewer" placeholder="이름" />
+          </div>
+          <div class="field">
+            <label for="m-date">검수일</label>
+            <input id="m-date" data-meta="date" type="date" />
+          </div>
+          <div class="field">
+            <label for="m-url">페이지 URL</label>
+            <input id="m-url" data-meta="url" placeholder="https://..." />
+          </div>
+        </div>
+      </div>
+
+      <div class="layout">
+        <div id="checklist"><!-- 체크리스트 렌더링 --></div>
+
+        <aside class="card summary" aria-live="polite">
+          <h2>검수 요약</h2>
+          <div class="stat-row"><span>진행률</span><b id="s-progress">0%</b></div>
+          <div class="progress-wrap"><div class="progress-bar" id="s-bar"></div></div>
+          <div class="stat-row"><span>✅ 통과</span><b id="s-pass">0</b></div>
+          <div class="stat-row"><span>⏸ 보류</span><b id="s-hold">0</b></div>
+          <div class="stat-row"><span>➖ 해당없음</span><b id="s-na">0</b></div>
+          <div class="stat-row"><span>미점검</span><b id="s-todo">0</b></div>
+          <div class="stat-row"><span>통과율(점검 대상 기준)</span><b id="s-rate">-</b></div>
+          <div class="verdict v-none" id="s-verdict">검수를 시작하세요</div>
+          <ul class="req-fails" id="s-reqfails"></ul>
+          <div class="summary-actions">
+            <button type="button" class="btn btn-danger" id="btn-reset">이 제품 기록 초기화</button>
+          </div>
+          <div class="print-only" id="print-meta"></div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ===== 체크리스트 정의 (항목 추가/수정은 여기서) =====
+    // req: true → 필수(blocker). 미통과 시 게시 불가.
+    const CHECKLIST = [
+      {
+        id: "A", icon: "🧾", title: "A. 기본 정보 정확성",
+        items: [
+          { id: "A1", req: true,  label: "제품명·모델명이 발주서/기준카드와 일치", help: "띄어쓰기·영문표기까지 동일한지 확인" },
+          { id: "A2", req: true,  label: "판매가·할인율·쿠폰가 표기 정확", help: "이미지 내 가격과 쇼핑몰 설정가 교차 확인" },
+          { id: "A3", req: true,  label: "옵션·구성품 목록/수량 정확", help: "색상·사이즈·구성품 개수, 옵션별 이미지 일치" },
+          { id: "A4", req: true,  label: "제조국·제조사·수입자 표기", help: "수입품은 수입자·원산지 필수" },
+          { id: "A5", req: false, label: "사용 월령(연령) 표기 정확", help: "아가드 월령 카테고리 기준과 일치" },
+          { id: "A6", req: false, label: "제품 규격(크기·무게·재질) 정확", help: "실측값 또는 시험성적서 기준" },
+        ],
+      },
+      {
+        id: "B", icon: "⚖️", title: "B. 법적 표기 · 인증 (전원 필수)",
+        items: [
+          { id: "B1", req: true,  label: "KC 인증마크 + 인증번호 표기", help: "어린이제품 안전인증/안전확인/공급자적합성확인 구분 확인" },
+          { id: "B2", req: true,  label: "상품정보제공고시 항목 누락 없음", help: "전자상거래법 필수 고시 — 품명·인증·AS책임자 등" },
+          { id: "B3", req: true,  label: "과대광고 표현 없음", help: "근거 없는 '최고/유일/1위', 의학적 효능·치료 표현 금지 (표시광고법)" },
+          { id: "B4", req: true,  label: "인증서·시험성적서 이미지 유효기간 확인", help: "만료된 성적서 노출 시 즉시 교체" },
+          { id: "B5", req: true,  label: "리뷰·사용 사진 게재 동의 확보", help: "고객 후기·인플루언서 이미지 출처와 사용 동의 기록" },
+          { id: "B6", req: false, label: "주의·경고 문구 포함", help: "질식·낙상 등 제품별 안전 주의사항" },
+        ],
+      },
+      {
+        id: "C", icon: "🎨", title: "C. 이미지 · 디자인 품질",
+        items: [
+          { id: "C1", req: true,  label: "오탈자·띄어쓰기·문법 오류 없음", help: "소리 내어 읽으며 최종 확인, 숫자 단위 포함" },
+          { id: "C2", req: false, label: "대표이미지(썸네일) 쇼핑몰 규격 준수", help: "권장 규격·배경·텍스트 삽입 규정 확인" },
+          { id: "C3", req: false, label: "상세 이미지 폭 규격 준수·해상도 선명", help: "기준 폭(예: 860px) 통일, 확대 시 깨짐 없음" },
+          { id: "C4", req: false, label: "모바일 기준 텍스트 가독성 확보", help: "축소 표시 시에도 읽히는 최소 폰트 크기" },
+          { id: "C5", req: false, label: "브랜드 로고·컬러·톤앤무드 규정 준수", help: "브랜드 가이드와 일치" },
+        ],
+      },
+      {
+        id: "D", icon: "🧲", title: "D. 콘텐츠 구성 (설득 구조)",
+        items: [
+          { id: "D1", req: false, label: "첫 화면(후킹)에서 핵심 소구점 전달", help: "3초 안에 '왜 이 제품인가'가 보이는가" },
+          { id: "D2", req: false, label: "문제제기 → 해결 → 증거 → 혜택 → CTA 흐름", help: "구매 설득 구조가 끊기지 않는가" },
+          { id: "D3", req: false, label: "증거 요소 포함 (인증·시험·리뷰)", help: "주장마다 근거가 붙어 있는가" },
+          { id: "D4", req: false, label: "사용법·설치법 안내 포함", help: "사진/단계별 설명, 필요 시 영상 링크" },
+          { id: "D5", req: false, label: "FAQ·교환/반품·AS 안내 포함", help: "CS 반복 문의 항목 선반영" },
+          { id: "D6", req: false, label: "경쟁사 대비 차별점 명시", help: "경쟁분석 결과 반영 여부" },
+        ],
+      },
+      {
+        id: "E", icon: "📱", title: "E. 사용성 · 기술 점검",
+        items: [
+          { id: "E1", req: true,  label: "모바일 실기기에서 최종 확인", help: "이미지 잘림·순서 오류·로딩 확인 (구매 대부분이 모바일)" },
+          { id: "E2", req: false, label: "이미지 용량 최적화·로딩 속도 확인", help: "장당 과대 용량 없는지, 전체 로딩 체감 확인" },
+          { id: "E3", req: false, label: "페이지 내 링크·쿠폰·이벤트 작동 확인", help: "기간 지난 이벤트 배너 없는지 포함" },
+          { id: "E4", req: false, label: "게시 후 실제 판매 페이지 표시 확인", help: "등록 직후 PC/모바일에서 재확인 (24시간 내)" },
+        ],
+      },
+    ];
+
+    const STATES = ["pass", "hold", "na"]; // 통과 / 보류 / 해당없음
+    const STATE_LABEL = { pass: "✅ 통과", hold: "⏸ 보류", na: "➖ 해당없음", "": "미점검" };
+    const ALL_ITEMS = CHECKLIST.flatMap(c => c.items);
+
+    // ===== 상태 저장 (제품별 기록 + 마지막 작업 자동 복원) =====
+    const LAST_KEY = "dp-review:_last";
+    const keyFor = (name) => "dp-review:" + ((name || "").trim() || "_default");
+    const loadKey = (key) => {
+      try { return JSON.parse(localStorage.getItem(key)) || {}; }
+      catch { return {}; }
+    };
+    let currentKey = keyFor(localStorage.getItem(LAST_KEY) || "");
+    let state = { meta: {}, items: {} }; // items[id] = { state, memo }
+    function saveState() {
+      localStorage.setItem(currentKey, JSON.stringify(state));
+      localStorage.setItem(LAST_KEY, (state.meta.product || "").trim());
+    }
+
+    // ===== 렌더링 =====
+    function renderChecklist() {
+      const root = document.getElementById("checklist");
+      root.innerHTML = "";
+      for (const cat of CHECKLIST) {
+        const sec = document.createElement("section");
+        sec.className = "cat";
+        sec.innerHTML = `
+          <div class="cat-head">
+            <span class="cat-title">${cat.icon} ${cat.title}</span>
+            <span class="cat-count" data-cat-count="${cat.id}"></span>
+          </div>`;
+        for (const item of cat.items) {
+          const el = document.createElement("div");
+          el.className = "item";
+          el.dataset.id = item.id;
+          el.innerHTML = `
+            <div class="item-row">
+              <div class="item-body">
+                <div class="item-label">${item.label}${item.req ? '<span class="badge-req">필수</span>' : ""}</div>
+                <div class="item-help">${item.help}</div>
+              </div>
+              <div class="item-ctrl" role="group" aria-label="${item.label} 판정">
+                <button type="button" class="state-btn" data-state="pass">통과</button>
+                <button type="button" class="state-btn" data-state="hold">보류</button>
+                <button type="button" class="state-btn" data-state="na">해당없음</button>
+              </div>
+            </div>
+            <textarea class="item-memo" placeholder="메모 / 보류 사유" rows="1"></textarea>`;
+          sec.appendChild(el);
+        }
+        root.appendChild(sec);
+      }
+    }
+
+    function applyState() {
+      for (const el of document.querySelectorAll(".item")) {
+        const rec = state.items[el.dataset.id] || {};
+        const st = rec.state || "";
+        el.dataset.state = st;
+        el.dataset.stateLabel = STATE_LABEL[st];
+        for (const btn of el.querySelectorAll(".state-btn")) {
+          btn.className = "state-btn" + (btn.dataset.state === st ? " on-" + st : "");
+        }
+        const memo = el.querySelector(".item-memo");
+        if (memo.value !== (rec.memo || "")) memo.value = rec.memo || "";
+        memo.classList.toggle("has-text", !!rec.memo);
+      }
+      for (const cat of CHECKLIST) {
+        const done = cat.items.filter(i => (state.items[i.id] || {}).state).length;
+        document.querySelector(`[data-cat-count="${cat.id}"]`).textContent = `${done}/${cat.items.length} 점검`;
+      }
+      for (const [k, v] of Object.entries(state.meta)) {
+        const input = document.querySelector(`[data-meta="${k}"]`);
+        if (input && input.value !== v) input.value = v;
+      }
+      renderSummary();
+    }
+
+    function renderSummary() {
+      const counts = { pass: 0, hold: 0, na: 0, todo: 0 };
+      const reqFails = [];
+      for (const item of ALL_ITEMS) {
+        const st = (state.items[item.id] || {}).state || "";
+        if (!st) counts.todo++;
+        else counts[st]++;
+        if (item.req && st !== "pass" && st !== "na") reqFails.push(item);
+      }
+      const total = ALL_ITEMS.length;
+      const done = total - counts.todo;
+      const progress = Math.round((done / total) * 100);
+      const target = counts.pass + counts.hold; // 점검 대상(해당없음 제외)
+      const rate = target ? Math.round((counts.pass / target) * 100) : null;
+
+      document.getElementById("s-progress").textContent = progress + "%";
+      document.getElementById("s-bar").style.width = progress + "%";
+      document.getElementById("s-pass").textContent = counts.pass;
+      document.getElementById("s-hold").textContent = counts.hold;
+      document.getElementById("s-na").textContent = counts.na;
+      document.getElementById("s-todo").textContent = counts.todo;
+      document.getElementById("s-rate").textContent = rate === null ? "-" : rate + "%";
+
+      const v = document.getElementById("s-verdict");
+      const fails = document.getElementById("s-reqfails");
+      fails.innerHTML = "";
+      if (done === 0) {
+        v.className = "verdict v-none"; v.textContent = "검수를 시작하세요";
+      } else if (reqFails.length > 0) {
+        v.className = "verdict v-fail";
+        v.innerHTML = "❌ 반려<small>필수 항목 " + reqFails.length + "개 미통과 — 게시 불가</small>";
+        for (const f of reqFails.slice(0, 8)) {
+          const li = document.createElement("li");
+          li.textContent = "· [" + f.id + "] " + f.label;
+          fails.appendChild(li);
+        }
+      } else if (counts.todo > 0) {
+        v.className = "verdict v-hold";
+        v.innerHTML = "⏳ 점검 진행 중<small>미점검 " + counts.todo + "개 항목 남음</small>";
+      } else if (rate >= 90) {
+        v.className = "verdict v-pass";
+        v.innerHTML = "✅ 승인 가능<small>필수 전체 통과 · 통과율 " + rate + "%</small>";
+      } else {
+        v.className = "verdict v-hold";
+        v.innerHTML = "⚠️ 조건부 보류<small>통과율 " + rate + "% (90% 미만) — 보류 항목 수정 후 재검수</small>";
+      }
+
+      const m = state.meta;
+      document.getElementById("print-meta").textContent =
+        `제품: ${m.product || "-"} / 브랜드: ${m.brand || "-"} / 단계: ${m.stage || "-"} / 검수자: ${m.reviewer || "-"} / 검수일: ${m.date || "-"}`;
+    }
+
+    // ===== 이벤트 =====
+    document.getElementById("checklist").addEventListener("click", (e) => {
+      const btn = e.target.closest(".state-btn");
+      if (!btn) return;
+      const id = btn.closest(".item").dataset.id;
+      const rec = state.items[id] || (state.items[id] = {});
+      rec.state = rec.state === btn.dataset.state ? "" : btn.dataset.state; // 재클릭 시 해제
+      saveState();
+      applyState();
+    });
+    document.getElementById("checklist").addEventListener("input", (e) => {
+      const memo = e.target.closest(".item-memo");
+      if (!memo) return;
+      const id = memo.closest(".item").dataset.id;
+      (state.items[id] || (state.items[id] = {})).memo = memo.value;
+      saveState();
+    });
+    for (const input of document.querySelectorAll("[data-meta]")) {
+      input.addEventListener("input", () => {
+        state.meta[input.dataset.meta] = input.value;
+        saveState();
+        applyState();
+      });
+    }
+    // 제품명 확정(blur/엔터) 시 해당 제품의 저장 기록으로 전환:
+    // 기존 기록이 있으면 불러오고, 없으면 현재 작업 내용을 새 제품 이름으로 이어간다.
+    document.getElementById("m-product").addEventListener("change", (e) => {
+      const newKey = keyFor(e.target.value);
+      if (newKey === currentKey) return;
+      currentKey = newKey;
+      if (localStorage.getItem(newKey)) {
+        state = { meta: {}, items: {}, ...loadKey(newKey) };
+        state.meta.product = e.target.value;
+      }
+      saveState();
+      applyState();
+    });
+
+    document.getElementById("btn-export").addEventListener("click", () => {
+      const name = (state.meta.product || "미지정").replace(/[\\/:*?"<>|]/g, "_");
+      const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), ...state }, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `검수_${name}_${state.meta.date || ""}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+    document.getElementById("btn-import").addEventListener("click", () => document.getElementById("import-file").click());
+    document.getElementById("import-file").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const data = JSON.parse(await file.text());
+        state = { meta: data.meta || {}, items: data.items || {} };
+        currentKey = keyFor(state.meta.product);
+        saveState();
+        applyState();
+        alert("검수 기록을 불러왔습니다: " + (state.meta.product || "제품명 없음"));
+      } catch { alert("JSON 파일을 읽을 수 없습니다."); }
+      e.target.value = "";
+    });
+    document.getElementById("btn-print").addEventListener("click", () => window.print());
+    document.getElementById("btn-reset").addEventListener("click", () => {
+      if (!confirm("현재 제품의 검수 기록을 모두 지울까요?")) return;
+      localStorage.removeItem(currentKey);
+      state = { meta: { product: state.meta.product, date: new Date().toISOString().slice(0, 10) }, items: {} };
+      applyState();
+    });
+
+    // ===== 초기화 (마지막 작업하던 제품 기록 자동 복원) =====
+    renderChecklist();
+    state = { meta: {}, items: {}, ...loadKey(currentKey) };
+    if (!state.meta.date) state.meta.date = new Date().toISOString().slice(0, 10);
+    applyState();
+  </script>
+</body>
+</html>
