@@ -31,19 +31,24 @@
 
   /* ── 공통 헤더 ── */
   .topbar {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
     padding: 14px 20px; background: var(--card); border-bottom: 1px solid var(--border);
     position: sticky; top: 0; z-index: 10;
   }
   .topbar .logo { font-weight: 800; font-size: 17px; letter-spacing: -0.3px; user-select: none; -webkit-user-select: none; }
+  .topbar .right { display: flex; align-items: center; gap: 8px; }
   .badge-queue {
     font-size: 12px; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d;
     padding: 3px 10px; border-radius: 999px; display: none;
   }
   .badge-queue.show { display: inline-block; }
+  .btn-link {
+    font-size: 13.5px; font-weight: 600; color: var(--primary); background: #eff6ff;
+    border: 1px solid #bfdbfe; border-radius: 999px; padding: 6px 12px; cursor: pointer;
+  }
 
   /* ── 폼 화면 ── */
-  #scr-form main { flex: 1; padding: 20px 20px 120px; max-width: 680px; width: 100%; margin: 0 auto; }
+  main.pad { flex: 1; padding: 20px 20px 120px; max-width: 680px; width: 100%; margin: 0 auto; }
   .section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
   .section h3 { font-size: 15px; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
   label.fld { display: block; font-size: 14px; font-weight: 600; margin: 12px 0 6px; }
@@ -57,24 +62,11 @@
   input.err { border-color: var(--danger); background: #fef2f2; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media (max-width: 480px) { .row2 { grid-template-columns: 1fr; } }
+  /* 숨은 함정칸 — 사람에게는 보이지 않고 자동 프로그램만 채운다 */
+  .hp { position: absolute; left: -9999px; top: -9999px; height: 0; width: 0; opacity: 0; }
 
-  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .seg button {
-    font-size: 16px; font-weight: 600; padding: 16px 8px; border-radius: 10px;
-    border: 1.5px solid var(--border); background: #fff; color: var(--text); cursor: pointer;
-  }
-  .seg button.on { border-color: var(--primary); background: #eff6ff; color: var(--primary); font-weight: 700; }
-  .seg button small { display: block; font-weight: 500; font-size: 12.5px; color: var(--muted); margin-top: 3px; }
-  .seg button.on small { color: var(--primary); }
-
-  .staff-check {
-    display: none; margin-top: 12px; padding: 14px; border-radius: 10px;
-    background: #fff7ed; border: 1.5px dashed #fb923c;
-  }
-  .staff-check.show { display: block; }
   .check-line { display: flex; align-items: flex-start; gap: 10px; font-size: 15px; line-height: 1.5; cursor: pointer; }
   .check-line input[type=checkbox] { width: 24px; height: 24px; margin-top: 1px; flex-shrink: 0; accent-color: var(--primary); }
-
   .toggle-line { display: flex; align-items: center; gap: 10px; font-size: 15px; cursor: pointer; margin-top: 12px; }
   .toggle-line input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--primary); }
   #recipientFields { display: none; margin-top: 4px; }
@@ -88,6 +80,25 @@
   }
   .manual-note { display: none; font-size: 13px; color: #b45309; margin-top: 6px; }
   .manual-note.show { display: block; }
+  .hint-note { font-size: 13px; margin-top: 6px; }
+  /* 로딩: 스켈레톤(화면 단위)과 스피너(버튼·진행 표시) */
+  @keyframes sk-shine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .sk { display: block; border-radius: 8px; background: linear-gradient(90deg, #e9eef5 25%, #f6f8fb 37%, #e9eef5 63%); background-size: 400% 100%; animation: sk-shine 1.4s ease infinite; }
+  .sk.line { height: 14px; margin: 10px 0; } .sk.title { height: 20px; width: 40%; margin-bottom: 14px; } .sk.input { height: 52px; margin: 10px 0; border-radius: 12px; }
+  .sk.btn { height: 60px; border-radius: 12px; }
+  .spinner { display: inline-block; width: 1em; height: 1em; border: 2.5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -0.15em; margin-right: 8px; }
+  .btn-submit.busy::before, .send-status.show::before { content: ''; display: inline-block; width: 1em; height: 1em; border: 2.5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -0.15em; margin-right: 8px; }
+  .zip-loading { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--muted); font-size: 15px; }
+  @media (prefers-reduced-motion: reduce) { .sk, .spinner, .btn-submit.busy::before, .send-status.show::before { animation-duration: 3s; } }
+  .prod-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .prod-row:last-child { border-bottom: none; }
+  .prod-row .pn { font-size: 16px; line-height: 1.35; }
+  .prod-row .pn span { display: block; font-size: 13px; color: var(--muted); }
+  .prod-row .qty { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .prod-row .qty button { width: 44px; height: 44px; font-size: 22px; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; cursor: pointer; }
+  .prod-row .qty b { min-width: 34px; text-align: center; font-size: 18px; color: var(--muted); }
+  .prod-row .qty b.on { color: var(--primary); }
   .order-check { display: none; font-size: 13px; margin-top: 6px; }
   .order-check.show { display: block; }
   .order-check.checking, .order-check.fail { color: var(--muted); }
@@ -119,36 +130,39 @@
     border: none; border-radius: 12px; padding: 18px; cursor: pointer;
   }
   .btn-submit:disabled { background: #b6c3d9; cursor: default; }
-  .form-err { color: var(--danger); font-size: 14px; text-align: center; margin-bottom: 8px; display: none; }
+  .btn-secondary { font-size: 16px; font-weight: 600; padding: 14px 24px; border-radius: 12px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; color: var(--text); }
+  .form-err { color: var(--danger); font-size: 14px; text-align: center; margin-bottom: 8px; display: none; line-height: 1.5; }
   .form-err.show { display: block; }
   .send-status { color: var(--muted); font-size: 14px; text-align: center; margin-bottom: 8px; display: none; }
   .send-status.show { display: block; }
+  .notice { font-size: 14px; line-height: 1.6; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; display: none; }
+  .notice.show { display: block; }
 
   /* ── 우편번호 레이어 ── */
-  #zipLayer {
-    display: none; position: fixed; inset: 0; z-index: 50; background: rgba(15,23,42,.5);
-  }
+  #zipLayer { display: none; position: fixed; inset: 0; z-index: 50; background: rgba(15,23,42,.5); }
   #zipLayer.show { display: flex; align-items: center; justify-content: center; }
-  #zipBox {
-    width: min(560px, 94vw); height: min(560px, 82dvh); background: #fff;
-    border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
-  }
+  #zipBox { width: min(560px, 94vw); height: min(560px, 82dvh); background: #fff; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
   #zipBox .zip-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
   #zipBox .zip-head b { font-size: 16px; }
   #zipClose { font-size: 15px; border: none; background: none; color: var(--muted); cursor: pointer; padding: 6px; }
   #zipEmbed { flex: 1; }
 
-  /* ── 완료 화면 ── */
-  #scr-done { justify-content: center; align-items: center; text-align: center; gap: 18px; padding: 24px; }
+  /* ── 완료 / 안내 화면 ── */
+  .center { justify-content: center; align-items: center; text-align: center; gap: 18px; padding: 24px; }
   .done-icon { width: 88px; height: 88px; border-radius: 50%; background: #dcfce7; color: var(--green); font-size: 46px; display: flex; align-items: center; justify-content: center; }
-  #scr-done h1 { font-size: 28px; }
+  .info-icon { width: 88px; height: 88px; border-radius: 50%; background: #e0e7ff; font-size: 44px; display: flex; align-items: center; justify-content: center; }
+  .center h1 { font-size: 26px; }
   .done-no-label { color: var(--muted); font-size: 15px; margin-top: 8px; }
   .done-no { font-size: 44px; font-weight: 800; letter-spacing: 1px; color: var(--primary); }
-  .done-hint { color: var(--muted); font-size: 15.5px; line-height: 1.7; }
+  .done-hint { color: var(--muted); font-size: 15.5px; line-height: 1.7; max-width: 480px; }
   .btn-home { margin-top: 6px; font-size: 16px; font-weight: 600; padding: 14px 36px; border-radius: 12px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  /* ── 배송지 수정 ── */
+  .edit-summary { font-size: 14.5px; line-height: 1.8; background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .edit-summary b { color: var(--primary); }
 
   /* ── 스태프 화면 ── */
-  #scr-staff main { flex: 1; padding: 20px; max-width: 680px; width: 100%; margin: 0 auto; }
   .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
   .stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; }
   .stat b { display: block; font-size: 30px; }
@@ -167,36 +181,52 @@
 </head>
 <body>
 
-<!-- ═══════ ⓪ 현장 잠금 화면 ═══════ -->
-<section id="scr-lock" class="screen">
-  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px;padding:24px;">
-    <div style="font-size:52px;">🔒</div>
-    <h1 style="font-size:24px;">스태프 잠금</h1>
-    <p style="color:var(--muted);font-size:15px;text-align:center;">행사 운영을 시작하려면<br>스태프 계정으로 잠금을 해제해주세요.</p>
-    <div style="width:min(360px,90vw);display:grid;gap:10px;">
-      <input type="text" id="lockId" placeholder="아이디" autocomplete="off" autocapitalize="none">
-      <input type="password" id="lockPw" placeholder="비밀번호" autocomplete="off">
-      <div class="form-err" id="lockErr" style="margin:0;">아이디 또는 비밀번호가 올바르지 않습니다.</div>
-      <button class="btn-submit" style="padding:15px;" onclick="tryUnlock()">잠금 해제</button>
+<!-- ═══════ ⓪ 접수 시간 외 안내 ═══════ -->
+<section id="scr-loading" class="screen active" aria-busy="true" aria-label="불러오는 중">
+  <div style="padding:16px;max-width:720px;width:100%;margin:0 auto;">
+    <span class="sk" style="height:28px;width:55%;margin:8px 0 20px;"></span>
+    <div class="section"><span class="sk title"></span><span class="sk input"></span></div>
+    <div class="section"><span class="sk title"></span><span class="sk input"></span><span class="sk input"></span></div>
+    <div class="section"><span class="sk title"></span><span class="sk line" style="width:90%"></span><span class="sk line" style="width:75%"></span><span class="sk line" style="width:82%"></span></div>
+    <span class="sk btn"></span>
+  </div>
+</section>
+
+<section id="scr-closed" class="screen">
+  <div class="topbar">
+    <span class="logo" id="logoPress2">📦 택배 배송 접수</span>
+  </div>
+  <div class="center" style="flex:1;display:flex;flex-direction:column;">
+    <div class="info-icon">⏰</div>
+    <h1>지금은 접수 시간이 아닙니다</h1>
+    <p class="done-hint" id="closedMsg"></p>
+    <p class="done-hint" id="closedHours"></p>
+    <div class="btn-row">
+      <button class="btn-home" onclick="checkOpenAndShow(true)">다시 확인</button>
+      <button class="btn-home" id="closedEditBtn" onclick="openEdit()">📍 배송지 수정</button>
     </div>
   </div>
 </section>
 
 <!-- ═══════ ① 접수 폼 (기본 화면) ═══════ -->
-<section id="scr-form" class="screen active">
+<section id="scr-form" class="screen">
   <div class="topbar">
     <span class="logo" id="logoPress">📦 택배 배송 접수</span>
-    <span class="badge-queue" id="qBadge2"></span>
+    <span class="right">
+      <span class="badge-queue" id="qBadge2"></span>
+      <button class="btn-link" onclick="openEdit()">📍 배송지 수정</button>
+    </span>
   </div>
-  <main>
+  <main class="pad">
+    <div class="notice" id="formNotice"></div>
+
     <div class="section">
       <h3>주문 확인</h3>
       <label class="fld">영수증(주문) 번호 <span class="req">*</span></label>
       <input type="text" id="orderNo" inputmode="numeric" autocomplete="off" placeholder="영수증에 적힌 주문번호">
-      <div class="manual-note" id="orderDup">⚠ 이 영수증 번호로 이미 접수된 건이 있습니다. 스태프에게 확인해주세요.</div>
+      <div class="manual-note" id="orderDup">⚠ 오늘 이 영수증 번호로 이미 접수된 건이 있습니다. 스태프에게 확인해주세요.</div>
       <div class="manual-note" id="orderTypo">⚠ 완성되지 않은 한글(ㅁ, ㅇ 등)이 섞여 있어요. 오타가 아닌지 확인해주세요.</div>
       <div class="order-check" id="orderCheck"></div>
-
     </div>
 
     <div class="section">
@@ -233,13 +263,32 @@
       </div>
     </div>
 
-    <div class="section">
+    <div class="section" id="prodSection" style="display:none;">
+      <h3>구매 상품 <span class="req" style="color:var(--danger);">*</span></h3>
+      <p class="hint-note" style="color:var(--muted);margin:0 0 4px;">구매하신 상품의 수량을 ＋ 버튼으로 선택해주세요.</p>
+      <div id="prodList"></div>
+    </div>
+
+    <div class="section" id="pickSection" style="display:none;">
+      <h3>상품 받는 방법 <span class="req" style="color:var(--danger);">*</span></h3>
+      <div class="chips" id="recvMode">
+        <button type="button" data-m="ship" class="on">📦 전부 택배로 받기</button>
+        <button type="button" data-m="part">일부는 지금 가져가기</button>
+        <button type="button" data-m="all">🛍 전부 지금 가져가기 (택배 없음)</button>
+      </div>
+      <div id="pickWrap" style="display:none;margin-top:10px;">
+        <p class="hint-note" id="pickNote" style="color:var(--muted);margin:0 0 4px;"></p>
+        <div id="pickList"></div>
+      </div>
+    </div>
+
+    <div class="section" id="addrSection">
       <h3>배송지</h3>
       <label class="fld">주소 <span class="req">*</span></label>
       <div class="addr-row">
         <input type="text" id="zipcode" placeholder="우편번호" readonly style="max-width:130px;">
         <input type="text" id="addr1" placeholder="주소 검색을 눌러주세요" readonly>
-        <button type="button" class="btn-zip" onclick="openPostcode()">주소 검색</button>
+        <button type="button" class="btn-zip" onclick="openPostcode('main')">주소 검색</button>
       </div>
       <div class="manual-note" id="manualNote">⚠ 주소 검색을 사용할 수 없어 직접 입력으로 전환되었습니다. 우편번호와 주소를 정확히 입력해주세요.</div>
       <label class="fld">상세주소 <span class="req">*</span></label>
@@ -247,7 +296,7 @@
       <div class="manual-note" id="addr2Typo">⚠ 완성되지 않은 한글(ㅁ, ㅇ 등)이 섞여 있어요. 오타가 아닌지 확인해주세요.</div>
     </div>
 
-    <div class="section">
+    <div class="section" id="memoSection">
       <h3>배송 요청사항 (선택)</h3>
       <div class="chips" id="memoChips">
         <button type="button" data-v="문 앞에 놓아주세요">문 앞</button>
@@ -257,6 +306,9 @@
       </div>
       <input type="text" id="memo" autocomplete="off" placeholder="직접 입력">
     </div>
+
+    <!-- 숨은 함정칸 (봇 차단) -->
+    <div class="hp" aria-hidden="true"><input type="text" id="website" name="website" tabindex="-1" autocomplete="off"></div>
 
     <div class="section">
       <label class="check-line">
@@ -288,52 +340,139 @@
   <div id="zipBox">
     <div class="zip-head">
       <b>주소 검색</b>
-      <button id="zipClose" onclick="closePostcode()">닫기 ✕</button>
+      <button id="zipClose" onclick="closePostcode(true)">닫기 ✕</button>
     </div>
     <div id="zipEmbed"></div>
   </div>
 </div>
 
-<!-- ═══════ ③ 완료 화면 ═══════ -->
-<section id="scr-done" class="screen">
+<!-- ═══════ ② 완료 화면 ═══════ -->
+<section id="scr-done" class="screen center">
   <div class="done-icon">✓</div>
   <h1>접수가 완료되었습니다</h1>
   <div>
     <div class="done-no-label">접수번호</div>
     <div class="done-no" id="doneNo"></div>
   </div>
+  <p class="done-hint" id="donePickup" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px 16px;color:var(--text);"></p>
   <p class="done-hint" id="doneTempNote" style="display:none;color:#b45309;">⚠ 인터넷 연결 대기 중입니다.<br>연결되면 자동으로 정식 접수됩니다.</p>
-  <p class="done-hint">이 화면을 사진으로 찍어두시거나<br>접수번호를 메모해두시면 추후 배송 관리가 수월합니다.<br><br>상품은 <b>영업일 기준 2~3일 내</b> 발송됩니다.</p>
-  <button class="btn-home" onclick="resetToStart()">확인 — 다음 접수 시작</button>
+  <p class="done-hint" id="doneShipNote">이 화면을 사진으로 찍어두시거나<br>접수번호를 메모해두시면 추후 배송 관리가 수월합니다.<br><br>상품은 <b>영업일 기준 2~3일 내</b> 발송됩니다.<br><br>배송지를 바꾸시려면 행사 기간 중 <b>영수증 번호와 휴대폰 번호</b>로<br>아래 "배송지 수정"에서 직접 수정하실 수 있습니다.</p>
+  <div class="btn-row">
+    <button class="btn-home" onclick="resetToStart()">확인</button>
+    <button class="btn-home" onclick="openEdit()">📍 배송지 수정</button>
+  </div>
 </section>
 
-<!-- ═══════ ④ 스태프 화면 ═══════ -->
+<!-- ═══════ ③ 배송지 수정 ═══════ -->
+<section id="scr-edit" class="screen">
+  <div class="topbar">
+    <span class="logo">📍 배송지 수정</span>
+    <button class="btn-cancel" onclick="resetToStart()" style="padding:8px 16px;">닫기</button>
+  </div>
+  <main class="pad">
+    <div id="editStep1">
+      <div class="section">
+        <h3>접수 내역 확인</h3>
+        <p class="done-hint" style="text-align:left;font-size:14px;margin-bottom:12px;">접수하실 때 입력한 <b>영수증 번호</b>와 <b>휴대폰 번호</b>를 입력해주세요.<br>배송지 수정은 행사 기간 중에만 가능합니다.</p>
+        <label class="fld">영수증(주문) 번호</label>
+        <input type="text" id="eOrderNo" inputmode="numeric" autocomplete="off" placeholder="영수증에 적힌 주문번호">
+        <label class="fld">휴대폰 번호</label>
+        <input type="tel" id="ePhone" inputmode="numeric" autocomplete="off" placeholder="010-0000-0000" maxlength="13">
+        <div class="form-err" id="editErr1" style="margin-top:10px;text-align:left;"></div>
+      </div>
+      <button class="btn-submit" id="btnLookup" style="width:100%;" onclick="lookupOrder()">접수 내역 찾기</button>
+    </div>
+
+    <div id="editStep2" style="display:none;">
+      <div class="section">
+        <h3>현재 접수 내역</h3>
+        <div class="edit-summary" id="editSummary"></div>
+      </div>
+      <div class="section">
+        <h3>받는 분</h3>
+        <div class="row2">
+          <div>
+            <label class="fld">받는 분 이름 <span class="req">*</span></label>
+            <input type="text" id="eRName" autocomplete="off">
+          </div>
+          <div>
+            <label class="fld">받는 분 휴대폰 <span class="req">*</span></label>
+            <input type="tel" id="eRPhone" inputmode="numeric" autocomplete="off" placeholder="010-0000-0000" maxlength="13">
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <h3>배송지</h3>
+        <label class="fld">주소 <span class="req">*</span></label>
+        <div class="addr-row">
+          <input type="text" id="eZip" placeholder="우편번호" readonly style="max-width:130px;">
+          <input type="text" id="eAddr1" placeholder="주소 검색을 눌러주세요" readonly>
+          <button type="button" class="btn-zip" onclick="openPostcode('edit')">주소 검색</button>
+        </div>
+        <label class="fld">상세주소 <span class="req">*</span></label>
+        <input type="text" id="eAddr2" autocomplete="off" placeholder="동·호수 등 상세주소">
+        <label class="fld">배송 요청사항</label>
+        <input type="text" id="eMemo" autocomplete="off" placeholder="선택">
+        <div class="form-err" id="editErr2" style="margin-top:10px;text-align:left;"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="editBack()">뒤로</button>
+        <button class="btn-submit" id="btnUpdate" style="flex:1;" onclick="saveEdit()">배송지 저장</button>
+      </div>
+    </div>
+
+    <div id="editStep3" class="center" style="display:none;flex-direction:column;">
+      <div class="done-icon">✓</div>
+      <h1>배송지가 수정되었습니다</h1>
+      <p class="done-hint" id="editDoneMsg"></p>
+      <button class="btn-home" onclick="resetToStart()">확인</button>
+    </div>
+  </main>
+</section>
+
+<!-- ═══════ ④ 스태프 확인 (스태프 화면 진입 시에만) ═══════ -->
+<section id="scr-lock" class="screen">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px;padding:24px;">
+    <div style="font-size:52px;">🔒</div>
+    <h1 style="font-size:24px;">스태프 확인</h1>
+    <p style="color:var(--muted);font-size:15px;text-align:center;">스태프 관리 화면은 스태프 계정으로만 열 수 있습니다.</p>
+    <div style="width:min(360px,90vw);display:grid;gap:10px;">
+      <input type="text" id="lockId" placeholder="아이디" autocomplete="off" autocapitalize="none">
+      <input type="password" id="lockPw" placeholder="비밀번호" autocomplete="off">
+      <div class="form-err" id="lockErr" style="margin:0;">아이디 또는 비밀번호가 올바르지 않습니다.</div>
+      <button class="btn-submit" style="padding:15px;" onclick="tryUnlock()">확인</button>
+      <button class="btn-secondary" onclick="resetToStart()">돌아가기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ ⑤ 스태프 화면 ═══════ -->
 <section id="scr-staff" class="screen">
   <div class="topbar">
     <span class="logo">🔧 스태프 관리</span>
     <button class="btn-cancel" onclick="resetToStart()" style="padding:8px 16px;">닫기</button>
   </div>
-  <main>
+  <main class="pad">
     <div class="stat-grid">
-      <div class="stat"><b id="stToday">0</b><span>오늘 접수</span></div>
+      <div class="stat"><b id="stToday">0</b><span>이 기기 오늘 접수</span></div>
       <div class="stat"><b id="stSent">0</b><span>전송 완료</span></div>
       <div class="stat"><b id="stQueue" class="">0</b><span>미전송</span></div>
     </div>
     <div class="staff-actions">
       <button onclick="flushQueue(true)">🔄 미전송 건 지금 재전송</button>
-      <button onclick="exportCsv()">⬇️ 전체 접수 내역 CSV 백업</button>
+      <button onclick="exportCsv()">⬇️ 이 기기 접수 내역 CSV 백업</button>
       <div class="cfg">
         <label>Apps Script 웹앱 URL</label>
         <input type="text" id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec">
       </div>
       <div class="cfg">
-        <label>단말기 코드 (태블릿마다 다르게: T1, T2…)</label>
-        <input type="text" id="cfgDevice" placeholder="T1" maxlength="6">
+        <label>단말기 코드 (부스 태블릿마다 다르게: T1, T2… / 손님 폰은 비워두면 WEB)</label>
+        <input type="text" id="cfgDevice" placeholder="WEB" maxlength="6">
       </div>
       <button onclick="saveConfig()">💾 설정 저장</button>
-      <button onclick="testSend()">🧪 연결 테스트 (시트에 테스트 행 추가)</button>
-      <button onclick="relock()">🔒 태블릿 잠그기 (잠금 화면으로)</button>
-      <button class="danger" onclick="clearLocal()">🗑 로컬 백업 데이터 전체 삭제 (행사 종료 후)</button>
+      <button onclick="testSend()">🧪 서버 연결 테스트</button>
+      <button onclick="relock()">🔒 스태프 로그아웃</button>
+      <button class="danger" onclick="clearLocal()">🗑 이 기기 백업 데이터 전체 삭제 (행사 종료 후)</button>
     </div>
     <div id="staffMsg"></div>
   </main>
@@ -342,14 +481,18 @@
 <script>
 /* ══════════════ 설정 ══════════════ */
 const CONFIG = {
-  EVENT_NAME: '2026 박람회',
   RETRY_INTERVAL_MS: 30000,       // 미전송 큐 재전송 주기
-  // 기본 내장 웹앱 URL — 어느 기기에서 열어도 설정 없이 바로 전송됨.
-  // 스태프 화면에서 URL을 입력하면 그 값이 우선 적용됨(비상용 덮어쓰기).
   WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbymHbyntYlh4AfC1o4lW3GNQtZ9cm6-WxkKW-ehkjxtlcxxBi3nY3G84f_65XaRzfRIig/exec',
+  // 서버에 연결되지 않을 때만 쓰는 예비 기준 (실제 판단은 서버가 한다)
+  // start 는 세팅일(행사 전날), end 는 마지막 날 자정 — Code.gs 의 EVENTS 와 같게 유지
+  EVENTS: [
+    { name: '마곡 베페',       start: '2026-11-11 10:00', end: '2026-11-15 24:00' },
+    { name: '서울 글로벌베페', start: '2026-11-18 10:00', end: '2026-11-22 24:00' },
+  ],
+  DAILY_OPEN: '10:00', DAILY_CLOSE: '',   // DAILY_CLOSE 빈 값 = 저녁 마감 없음
 };
 
-// 현장 잠금 — 계정은 소스에 평문으로 두지 않고 해시만 보관
+// 스태프 화면 진입용 계정 — 소스에 평문으로 두지 않고 해시만 보관
 const LOCK_HASH = '1ffnkq0';
 
 const LS = {
@@ -364,6 +507,8 @@ const $ = id => document.getElementById(id);
 const getJson = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const setJson = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
+let serverInfo = null;      // ?init=1 응답 (접수 가능 여부)
+
 /* ══════════════ 화면 전환 ══════════════ */
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -372,11 +517,63 @@ function showScreen(name) {
 }
 function resetToStart() {
   resetForm();
-  showScreen(isUnlocked() ? 'form' : 'lock');
-  window.scrollTo(0, 0);
+  checkOpenAndShow(false);
 }
 
-/* ══════════════ 현장 잠금 ══════════════ */
+/* ══════════════ 접수 가능 시간 ══════════════ */
+// 서버가 판단한 결과를 우선 사용, 서버에 못 붙으면 기기 시계로 임시 판단
+function localTs() {
+  const now = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())} ${p(now.getHours())}:${p(now.getMinutes())}`;
+}
+function hoursLabel() {
+  return `매일 ${CONFIG.DAILY_OPEN}` + (CONFIG.DAILY_CLOSE ? ` ~ ${CONFIG.DAILY_CLOSE}` : ' 이후');
+}
+// 진행 중이거나 다음에 열릴 행사 (모두 끝났으면 마지막 행사)
+function currentEvent(ts) {
+  return CONFIG.EVENTS.find(e => ts < e.end) || CONFIG.EVENTS[CONFIG.EVENTS.length - 1];
+}
+function localOpenState() {
+  const ts = localTs();
+  const hm = ts.slice(11);
+  const ev = currentEvent(ts);
+  if (ts < ev.start) return { open: false, message: `${ev.name} 접수는 ${ev.start.slice(5).replace('-', '/')} 부터 가능합니다.` };
+  if (ts >= ev.end) return { open: false, message: '행사 접수가 종료되었습니다. 감사합니다.' };
+  if (hm < CONFIG.DAILY_OPEN || (CONFIG.DAILY_CLOSE && hm >= CONFIG.DAILY_CLOSE)) return { open: false, message: `접수 시간은 ${hoursLabel()} 입니다.` };
+  return { open: true, message: '' };
+}
+async function fetchInit(timeoutMs) {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs || 6000);
+    const r = await fetch(getWebappUrl() + '?init=1', { signal: ctrl.signal });
+    clearTimeout(t);
+    const j = await r.json();
+    return j && j.ok ? j : null;
+  } catch { return null; }
+}
+async function checkOpenAndShow(refetch) {
+  if (refetch || !serverInfo) {
+    const info = await fetchInit();
+    if (info) { serverInfo = info; applyServerInfo(info); }
+  }
+  const st = serverInfo ? { open: serverInfo.open, message: serverInfo.message } : localOpenState();
+  if (st.open) {
+    $('formNotice').classList.toggle('show', !serverInfo);
+    $('formNotice').textContent = serverInfo ? '' : '서버 연결을 확인하는 중입니다. 접수는 가능하며, 연결되면 자동으로 전송됩니다.';
+    showScreen('form');
+  } else {
+    $('closedMsg').textContent = st.message;
+    const ev = (serverInfo && serverInfo.event) || currentEvent(localTs());
+    const md = s => s.slice(5, 10).replace('-', '/');
+    $('closedHours').innerHTML = `${ev.name}: <b>${md(ev.start)} ~ ${md(ev.end)}</b><br>접수 시간: <b>${hoursLabel()}</b>`;
+    $('closedEditBtn').style.display = (serverInfo ? serverInfo.editOpen : true) ? '' : 'none';
+    showScreen('closed');
+  }
+}
+
+/* ══════════════ 스태프 확인 ══════════════ */
 function lockHash(s) {
   let x = 5381;
   for (const c of s) x = ((x * 33) ^ c.charCodeAt(0)) >>> 0;
@@ -390,7 +587,7 @@ function tryUnlock() {
     localStorage.setItem(LS.unlock, LOCK_HASH);
     $('lockId').value = $('lockPw').value = '';
     $('lockErr').classList.remove('show');
-    showScreen('form');
+    openStaff();
   } else {
     $('lockErr').classList.add('show');
     $('lockPw').value = '';
@@ -399,14 +596,13 @@ function tryUnlock() {
 $('lockPw').addEventListener('keydown', e => e.key === 'Enter' && tryUnlock());
 function relock() {
   localStorage.removeItem(LS.unlock);
-  showScreen('lock');
+  resetToStart();
 }
 
 /* ══════════════ 폼 상태 ══════════════ */
 $('diffRecipient').addEventListener('change', e => {
   $('recipientFields').classList.toggle('show', e.target.checked);
 });
-
 $('memoChips').addEventListener('click', e => {
   const btn = e.target.closest('button'); if (!btn) return;
   const on = !btn.classList.contains('on');
@@ -415,37 +611,47 @@ $('memoChips').addEventListener('click', e => {
   $('memo').value = on ? btn.dataset.v : '';
 });
 
-// 이 단말기에서 이미 접수된 영수증 번호인지 (전송완료 + 대기 큐 모두 확인)
-function isDupOrderNo(no) {
-  if (!no) return false;
-  return [...getJson(LS.sent, []), ...getJson(LS.queue, [])]
-    .some(x => String(x.orderNo) === no);
+/* ══════════════ 영수증 번호 중복 검사 (오늘 날짜 기준) ══════════════ */
+function todayIso() {
+  return todayKey().replace(/^(\d{4})(\d{2})(\d{2})$/, '$1-$2-$3');
 }
-// 중복 검사 = 이 기기 기록(즉시) + 서버 시트 전체(입력 멈추면 조회) — 다른 태블릿 접수분도 잡음
+function normOrderNo(v) {
+  const t = String(v == null ? '' : v).trim();
+  return /^\d+$/.test(t) ? String(parseInt(t, 10)) : t;
+}
+function isDupOrderNo(no) {
+  const key = normOrderNo(no);
+  if (!key) return false;
+  const today = todayIso();
+  return [...getJson(LS.sent, []), ...getJson(LS.queue, [])]
+    .some(x => normOrderNo(x.orderNo) === key && String(x.ts || '').slice(0, 10) === today);
+}
 let dupCheckTimer = null, dupServerHit = false, dupCheckSeq = 0, dupCheckedValue = null;
 function renderDupWarn() {
   const no = $('orderNo').value.trim();
   $('orderDup').classList.toggle('show', !!no && (isDupOrderNo(no) || dupServerHit));
 }
-// true=중복 / false=사용 가능 / null=확인 불가(오프라인·구버전 서버)
 async function checkOrderOnServer(no, timeoutMs) {
   try {
+    const today = todayIso();
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs || 4000);
-    const r = await fetch(getWebappUrl() + '?checkOrder=' + encodeURIComponent(no), { signal: ctrl.signal });
+    const r = await fetch(getWebappUrl() + '?checkOrder=' + encodeURIComponent(no) + '&date=' + today, { signal: ctrl.signal });
     clearTimeout(t);
     const j = await r.json();
-    return (j && typeof j.exists === 'boolean') ? j.exists : null;
-  } catch (_) { return null; }   // 확인 불가 → 경고 없이 통과(서버가 저장 시 플래그)
+    if (!j || typeof j.exists !== 'boolean') return null;
+    if (j.date !== today) return null;
+    return j.exists;
+  } catch (_) { return null; }
 }
 function setOrderCheck(state) {
   const el = $('orderCheck');
   el.classList.remove('show', 'checking', 'ok', 'fail');
   el.textContent = '';
   const map = {
-    checking: ['🔍 접수 이력 확인 중…', 'checking'],
-    ok:       ['✓ 접수 가능한 번호입니다', 'ok'],
-    fail:     ['ℹ 접수 이력을 확인하지 못했어요 (접수는 가능합니다)', 'fail'],
+    checking: ['🔍 오늘 접수 이력 확인 중…', 'checking'],
+    ok:       ['✓ 오늘 접수 가능한 번호입니다', 'ok'],
+    fail:     ['ℹ 서버 접수 이력은 확인하지 못했어요 (접수는 가능합니다)', 'fail'],
   };
   if (!state || !map[state]) return;
   el.textContent = map[state][0];
@@ -457,18 +663,18 @@ $('orderNo').addEventListener('input', () => {
   renderDupWarn();
   setOrderCheck(null);
   clearTimeout(dupCheckTimer);
-  const seq = ++dupCheckSeq;   // 입력이 바뀔 때마다 세대 증가 → 진행 중이던 이전 조회는 도착해도 무시됨
+  const seq = ++dupCheckSeq;
   if (!no) return;
   dupCheckTimer = setTimeout(async () => {
     setOrderCheck('checking');
     const hit = await checkOrderOnServer(no);
-    if (seq !== dupCheckSeq) return;   // 그 사이 값이 바뀜 — 낡은 응답 무시
+    if (seq !== dupCheckSeq) return;
     dupCheckedValue = no;
     dupServerHit = hit === true;
     renderDupWarn();
-    if (hit === true) setOrderCheck(null);                              // 중복 경고(orderDup)가 대신 표시됨
+    if (hit === true) setOrderCheck(null);
     else if (hit === false) setOrderCheck(isDupOrderNo(no) ? null : 'ok');
-    else setOrderCheck('fail');
+    else setOrderCheck(isDupOrderNo(no) ? null : 'fail');
   }, 600);
 });
 
@@ -479,11 +685,10 @@ function hyphenize(el) {
              : d.length > 3 ? d.replace(/(\d{3})(\d+)/, '$1-$2') : d;
   });
 }
-hyphenize($('phone'));
-hyphenize($('rPhone'));
+['phone', 'rPhone', 'ePhone', 'eRPhone'].forEach(id => hyphenize($(id)));
 
-/* ══════════════ 오탈자 의심 경고 (입력 중 실시간) ══════════════ */
-const JAMO_RE = /[ㄱ-ㅎㅏ-ㅣ]/;   // 완성되지 않은 한글 자모(ㅁ, ㅇ, ㅏ 등)
+/* ══════════════ 오탈자 의심 경고 ══════════════ */
+const JAMO_RE = /[ㄱ-ㅎㅏ-ㅣ]/;
 function watchTypo(inputId, warnId, testFn) {
   $(inputId).addEventListener('input', () => {
     $(warnId).classList.toggle('show', testFn($(inputId).value));
@@ -503,16 +708,26 @@ $('consent').addEventListener('change', () => {
 $('btnSubmit').disabled = !$('consent').checked;
 
 function resetForm() {
-  ['orderNo','name','phone','rName','rPhone','zipcode','addr1','addr2','memo'].forEach(id => $(id).value = '');
+  ['orderNo','name','phone','rName','rPhone','zipcode','addr1','addr2','memo','website',
+   'eOrderNo','ePhone','eRName','eRPhone','eZip','eAddr1','eAddr2','eMemo'].forEach(id => $(id).value = '');
   ['diffRecipient','consent'].forEach(id => $(id).checked = false);
   document.querySelectorAll('#memoChips button').forEach(b => b.classList.remove('on'));
   $('recipientFields').classList.remove('show');
   document.querySelectorAll('input.err').forEach(i => i.classList.remove('err'));
-  $('formErr').classList.remove('show');
-  $('btnSubmit').disabled = true;   // 동의 체크가 풀렸으므로 다시 비활성
+  document.querySelectorAll('.form-err').forEach(e => { e.classList.remove('show'); if (e.id !== 'lockErr') e.textContent = ''; });
+  $('btnSubmit').disabled = true;
+  $('btnSubmit').textContent = '접수하기'; $('btnSubmit').classList.remove('busy');
   $('zipcode').readOnly = $('addr1').readOnly = true;
+  $('eZip').readOnly = $('eAddr1').readOnly = true;
   document.querySelectorAll('.manual-note').forEach(n => n.classList.remove('show'));
+  Object.keys(qtyMap).forEach(k => delete qtyMap[k]);
+  Object.keys(pickMap).forEach(k => delete pickMap[k]);
+  recvMode = 'ship';
+  $('prodSection').style.borderColor = '';
+  renderProducts();
   setOrderCheck(null);
+  $('editStep1').style.display = ''; $('editStep2').style.display = 'none'; $('editStep3').style.display = 'none';
+  editTarget = null;
 }
 
 /* ══════════════ 우편번호 검색 (다음/카카오) ══════════════ */
@@ -528,35 +743,114 @@ function loadPostcodeScript() {
     setTimeout(() => postcodeReady ? null : rej(new Error('timeout')), 7000);
   });
 }
-function openPostcode() {
+// target: 'main'(접수 폼) | 'edit'(배송지 수정)
+function openPostcode(target) {
+  const ids = target === 'edit' ? { zip: 'eZip', addr1: 'eAddr1', addr2: 'eAddr2' } : { zip: 'zipcode', addr1: 'addr1', addr2: 'addr2' };
+  postcodeIds = ids;
+  $('zipLayer').classList.add('show');
+  $('zipEmbed').innerHTML = '<div class="zip-loading"><span class="spinner"></span>주소 검색을 불러오는 중…</div>';
   loadPostcodeScript().then(() => {
-    $('zipLayer').classList.add('show');
     $('zipEmbed').innerHTML = '';
     new daum.Postcode({
       oncomplete: d => {
-        $('zipcode').value = d.zonecode;
-        $('addr1').value = d.roadAddress || d.jibunAddress;
+        $(ids.zip).value = d.zonecode;
+        $(ids.addr1).value = d.roadAddress || d.jibunAddress;
         closePostcode();
-        $('addr2').focus();
+        $(ids.addr2).focus();
       },
       width: '100%', height: '100%',
     }).embed($('zipEmbed'));
   }).catch(() => {
-    // 오프라인 등으로 스크립트 로드 실패 → 수동 입력 폴백
-    $('zipcode').readOnly = $('addr1').readOnly = false;
-    $('addr1').placeholder = '주소를 직접 입력해주세요';
-    $('manualNote').classList.add('show');
-    $('zipcode').focus();
+    $('zipLayer').classList.remove('show');
+    $(ids.zip).readOnly = $(ids.addr1).readOnly = false;
+    $(ids.addr1).placeholder = '주소를 직접 입력해주세요';
+    if (target !== 'edit') $('manualNote').classList.add('show');
+    $(ids.zip).focus();
   });
 }
-function closePostcode() { $('zipLayer').classList.remove('show'); }
+let postcodeIds = null;
+function closePostcode(byUser) {
+  $('zipLayer').classList.remove('show');
+  // 주소를 고르지 않고 닫았고 인터넷이 끊긴 상태면(검색 결과가 안 뜸) 직접 입력으로 전환
+  if (byUser && postcodeIds && navigator.onLine === false) enableManualAddr(postcodeIds);
+}
+function enableManualAddr(ids) {
+  $(ids.zip).readOnly = $(ids.addr1).readOnly = false;
+  $(ids.addr1).placeholder = '주소를 직접 입력해주세요';
+  if (ids.zip === 'zipcode') $('manualNote').classList.add('show');
+  $(ids.zip).focus();
+}
+
+/* ══════════════ 구매 상품 선택 ══════════════ */
+// 상품 목록·행사 일정은 서버에서 받을 때마다 기기에 저장해 두고, 서버에 못 붙으면 저장본을 쓴다
+let productList = getJson('expo_products', []);
+const qtyMap = {};
+// 받는 방법: ship(전부 택배) / part(일부 현장 수령) / all(전부 현장 수령 — 택배 없음, 배송지 입력 불필요)
+let recvMode = 'ship';
+function applySchedule(sch) {
+  if (!sch || !Array.isArray(sch.events) || !sch.events.length) return;
+  CONFIG.EVENTS = sch.events; CONFIG.DAILY_OPEN = sch.open || CONFIG.DAILY_OPEN; CONFIG.DAILY_CLOSE = sch.close || '';
+}
+applySchedule(getJson('expo_schedule', null));
+function applyServerInfo(info) {
+  if (info.schedule) { applySchedule(info.schedule); setJson('expo_schedule', info.schedule); }
+  if (Array.isArray(info.products)) {
+    const changed = JSON.stringify(info.products) !== JSON.stringify(productList);
+    productList = info.products; setJson('expo_products', productList);
+    if (changed) renderProducts();
+  }
+}
+// 구매 목록: 사은품 제외 / 현장 수령 목록: 낱개 상품 + 사은품 (묶음·세트는 낱개로 고른다)
+const pickMap = {};
+const buyList = () => productList.filter(p => !p.gift);
+const pickList = () => productList.filter(p => !p.bundle && (recvMode !== 'all' || p.gift));
+function qtyRows(list, map, prefix) {
+  return list.map((p, i) => {
+    const q = map[p.name] || 0;
+    const sub = p.gift ? '사은품' : p.price ? Number(p.price).toLocaleString('ko-KR') + '원' : '';
+    return `<div class="prod-row"><div class="pn">${esc(p.name)}${sub && (prefix === 'pq' || p.gift) ? `<span>${sub}</span>` : ''}</div>` +
+      `<div class="qty"><button type="button" data-i="${i}" data-d="-1" aria-label="수량 줄이기">−</button><b id="${prefix}${i}" class="${q ? 'on' : ''}">${q}</b><button type="button" data-i="${i}" data-d="1" aria-label="수량 늘리기">＋</button></div></div>`;
+  }).join('');
+}
+function renderProducts() {
+  $('prodSection').style.display = buyList().length ? '' : 'none';
+  $('prodList').innerHTML = qtyRows(buyList(), qtyMap, 'pq');
+  $('pickSection').style.display = buyList().length ? '' : 'none';
+  setRecvMode(buyList().length ? recvMode : 'ship');
+}
+function bindQty(boxId, listFn, map, prefix) {
+  $(boxId).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    const i = Number(b.dataset.i), name = listFn()[i].name;
+    const v = Math.max(0, Math.min(99, (map[name] || 0) + Number(b.dataset.d)));
+    map[name] = v;
+    $(prefix + i).textContent = v; $(prefix + i).classList.toggle('on', v > 0);
+    if (v > 0 && prefix === 'pq') $('prodSection').style.borderColor = '';
+  });
+}
+bindQty('prodList', buyList, qtyMap, 'pq');
+bindQty('pickList', pickList, pickMap, 'kq');
+function setRecvMode(m) {
+  recvMode = m;
+  document.querySelectorAll('#recvMode button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  const all = m === 'all';
+  $('addrSection').style.display = $('memoSection').style.display = all ? 'none' : '';
+  // 전부 현장 수령이면 구매 상품 전체가 현장 수령이므로, 추가로 고를 것은 사은품뿐
+  $('pickList').innerHTML = qtyRows(pickList(), pickMap, 'kq');
+  $('pickWrap').style.display = m === 'ship' || !pickList().length ? 'none' : '';
+  $('pickNote').textContent = all ? '구매하신 상품은 모두 지금 받아 가시는 것으로 접수됩니다. 사은품이 있으면 아래에서 선택해주세요.'
+                                  : '지금 부스에서 받아 가시는 상품과 수량만 선택해주세요 (사은품, 세트 중 일부 포함). 나머지는 택배로 보내드립니다.';
+}
+$('recvMode').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setRecvMode(b.dataset.m); });
+const pickedFrom = (list, map) => list.map(p => ({ name: p.name, qty: map[p.name] || 0 })).filter(x => x.qty > 0);
+function selectedItems() { return pickedFrom(buyList(), qtyMap); }
+function selectedPickup() { return recvMode === 'ship' ? [] : pickedFrom(pickList(), pickMap); }
 
 /* ══════════════ 검증 + 제출 ══════════════ */
+const phoneOk = v => /^(010-\d{4}|01[16789]-\d{3,4})-\d{4}$/.test(v);
 function markErr(id, on) { $(id).classList.toggle('err', on); return on; }
 function validate() {
   let bad = false;
-  // 010은 11자리(010-0000-0000) 고정, 구형 01X는 10~11자리 허용
-  const phoneOk = v => /^(010-\d{4}|01[16789]-\d{3,4})-\d{4}$/.test(v);
   bad |= markErr('orderNo', !$('orderNo').value.trim());
   bad |= markErr('name', $('name').value.trim().length < 2);
   let phoneBad = markErr('phone', !phoneOk($('phone').value));
@@ -566,13 +860,20 @@ function validate() {
     const rPhoneBad = markErr('rPhone', !phoneOk($('rPhone').value));
     bad |= rPhoneBad; phoneBad |= rPhoneBad;
   }
-  bad |= markErr('zipcode', !$('zipcode').value.trim());
-  bad |= markErr('addr1', !$('addr1').value.trim());
-  bad |= markErr('addr2', !$('addr2').value.trim());
+  const onsite = recvMode === 'all';
+  bad |= markErr('zipcode', !onsite && !/^\d{5}$/.test($('zipcode').value.trim()));
+  bad |= markErr('addr1', !onsite && $('addr1').value.trim().length < 5);
+  bad |= markErr('addr2', !onsite && !$('addr2').value.trim());
+  const noPick = recvMode === 'part' && selectedPickup().length === 0;
+  // 상품이 등록돼 있으면 1개 이상 선택해야 한다 (상품 목록을 못 받은 기기는 건너뜀)
+  const noItems = buyList().length > 0 && selectedItems().length === 0;
+  $('prodSection').style.borderColor = noItems ? 'var(--danger)' : '';
 
   let msg = '';
   if (phoneBad) msg = '휴대폰 번호 자릿수가 맞지 않습니다. 010-0000-0000 형식(11자리)으로 입력해주세요.';
   else if (bad) msg = '빨간색으로 표시된 항목을 확인해주세요.';
+  else if (noItems) msg = '구매하신 상품을 1개 이상 선택해주세요.';
+  else if (noPick) msg = '지금 가져가시는 상품을 선택하거나, 받는 방법을 "전부 택배로 받기"로 바꿔주세요.';
   else if (!$('consent').checked) msg = '개인정보 수집·이용 동의가 필요합니다.';
 
   $('formErr').textContent = msg;
@@ -584,7 +885,6 @@ function todayKey() {
   const n = new Date();
   return n.getFullYear() + String(n.getMonth() + 1).padStart(2, '0') + String(n.getDate()).padStart(2, '0');
 }
-// 접수번호는 서버(구글시트)가 발급 — 오프라인일 때만 쓰는 임시 표시용 번호
 function tempReceiptNo(uuid) {
   return '임시-' + uuid.replace(/-/g, '').slice(-4).toUpperCase();
 }
@@ -595,20 +895,26 @@ function makeUuid() {
       return (c === 'x' ? r : (r & 3 | 8)).toString(16);
     }) + '-' + Date.now();
 }
+function deviceCode() { return localStorage.getItem(LS.device) || 'WEB'; }
 
+let submitting = false;
 async function submitOrder() {
-  if (!validate()) return;
+  if (submitting || !validate()) return;
+  submitting = true;
+  $('btnSubmit').disabled = true;   // 중복 확인을 기다리는 동안 두 번 눌리지 않게 먼저 잠근다
+  try { await submitOrderInner(); } finally { submitting = false; }
+}
+async function submitOrderInner() {
   const no = $('orderNo').value.trim();
   let dup = isDupOrderNo(no) || dupServerHit;
-  if (!dup && no !== dupCheckedValue) dup = await checkOrderOnServer(no, 3000);   // 입력 직후 바로 제출한 경우 최종 확인
+  if (!dup && no !== dupCheckedValue && navigator.onLine !== false) dup = await checkOrderOnServer(no, 3000);
   if (dup &&
-      !confirm('⚠ 이미 같은 영수증 번호로 접수된 건이 있습니다.\n\n그래도 접수하시겠습니까?\n(스태프 확인 후 진행해주세요)')) {
+      !confirm('⚠ 오늘 이미 같은 영수증 번호로 접수된 건이 있습니다.\n\n그래도 접수하시겠습니까?\n(스태프 확인 후 진행해주세요)')) {
+    $('btnSubmit').disabled = false;
     return;
   }
-  $('btnSubmit').disabled = true;   // 이중 제출 방지
-  $('btnSubmit').textContent = '전송 중…';
+  $('btnSubmit').textContent = '전송 중…'; $('btnSubmit').classList.add('busy');
 
-  // 전송 진행 상태 표시 — 오래 걸려도 멈춘 것처럼 보이지 않게 단계별 안내
   const stages = [
     [0,    '📡 데이터 전송 중…'],
     [3000, '🌐 온라인 연결 확인 중…'],
@@ -627,72 +933,159 @@ async function submitOrder() {
   const diff = $('diffRecipient').checked;
   const p = {
     uuid: makeUuid(),
-    ts: new Date().toLocaleString('sv-SE'),   // YYYY-MM-DD HH:mm:ss
+    ts: new Date().toLocaleString('sv-SE'),
     orderNo: $('orderNo').value.trim(),
     name: $('name').value.trim(),
     phone: $('phone').value,
     rName: diff ? $('rName').value.trim() : $('name').value.trim(),
     rPhone: diff ? $('rPhone').value : $('phone').value,
-    zipcode: $('zipcode').value.trim(),
-    addr1: $('addr1').value.trim(),
-    addr2: $('addr2').value.trim(),
-    memo: $('memo').value.trim(),
+    allPickup: recvMode === 'all',   // 전부 현장 수령 (택배 없음)
+    zipcode: recvMode === 'all' ? '' : $('zipcode').value.trim(),
+    addr1: recvMode === 'all' ? '' : $('addr1').value.trim(),
+    addr2: recvMode === 'all' ? '' : $('addr2').value.trim(),
+    memo: recvMode === 'all' ? '' : $('memo').value.trim(),
+    items: selectedItems(),
+    pickup: selectedPickup(),   // 현장에서 바로 가져간 상품 — 이것만 현장 재고에서 빠진다
+    website: $('website').value,   // 숨은 함정칸 — 사람은 비어 있음
     consent: 'Y',
-    device: localStorage.getItem(LS.device) || 'T1',
+    device: deviceCode(),
   };
 
-  // 접수번호는 서버가 발급 → 즉시 전송을 먼저 시도 (10초 제한 — Apps Script 콜드스타트 감안)
-  const resp = await sendOne(getWebappUrl(), p, 10000);
+  // 전송 전에 먼저 기기에 저장 — 전송 도중 화면이 닫히거나 새로고침돼도 접수가 남아 자동 재전송된다
+  const q0 = getJson(LS.queue, []);
+  q0.push(p);
+  setJson(LS.queue, q0);
+  const dequeue = () => setJson(LS.queue, getJson(LS.queue, []).filter(x => x.uuid !== p.uuid));
+
+  // 기기가 오프라인이면 기다리지 않고 바로 임시번호로 안내
+  inFlightUuid = p.uuid;
+  let resp = null;
+  try { resp = navigator.onLine === false ? null : await sendOne(getWebappUrl(), p, 10000); }
+  finally { inFlightUuid = null; }
   clearInterval(stageTimer);
   $('sendStatus').classList.remove('show');
-  $('btnSubmit').textContent = '접수하기';
-  if (resp) {
+  $('btnSubmit').textContent = '접수하기'; $('btnSubmit').classList.remove('busy');
+  if (resp && resp.ok) {
+    dequeue();
     const sent = getJson(LS.sent, []);
     sent.push({ ...p, receiptNo: resp.receiptNo || '' });
     setJson(LS.sent, sent);
-    showDone(resp.receiptNo || '접수완료', false);
+    showDone(resp.receiptNo || '접수완료', false, p);
+  } else if (resp && resp.ok === false) {
+    // 서버가 거부 (접수 시간 외, 입력 오류 등) — 큐에서 빼고 바로 안내
+    dequeue();
+    $('btnSubmit').disabled = false;
+    $('formErr').textContent = resp.error || '접수할 수 없습니다.';
+    $('formErr').classList.add('show');
+    if (resp.code === 'closed') { serverInfo = null; checkOpenAndShow(true); }
   } else {
-    // 오프라인/실패 → 큐에 보관, 임시번호 표시 (연결되면 자동 전송 + 정식번호 발급)
-    const q = getJson(LS.queue, []);
-    q.push(p);
-    setJson(LS.queue, q);
+    // 오프라인/실패 → 큐에 그대로 두고 임시번호 표시 (연결되면 자동 전송 + 정식번호 발급)
     updateBadges();
-    showDone(tempReceiptNo(p.uuid), true);
+    showDone(tempReceiptNo(p.uuid), true, p);
   }
 }
 
-function showDone(no, isTemp) {
+function showDone(no, isTemp, p) {
   $('doneNo').textContent = no;
+  // 전부 현장 수령이면 구매 상품 전체 + 사은품, 일부 수령이면 고른 상품만 보여준다
+  const list = p ? (p.allPickup ? [...(p.items || []), ...(p.pickup || [])] : (p.pickup || [])) : [];
+  const pk = list.map(i => `${esc(i.name)} × ${i.qty}`).join('<br>');
+  $('doneShipNote').style.display = p && p.allPickup ? 'none' : '';
+  $('donePickup').innerHTML = pk ? `<b>🛍 ${p.allPickup ? '전부 현장 수령 (택배 없음)' : '현장 수령 상품'}</b><br>${pk}<br><span style="font-size:13px;">직원에게 이 화면을 보여주고 받아 가세요.</span>` : '';
+  $('donePickup').style.display = pk ? 'block' : 'none';
   $('doneTempNote').style.display = isTemp ? 'block' : 'none';
   showScreen('done');
 }
 
+/* ══════════════ 배송지 수정 ══════════════ */
+let editTarget = null;   // {orderNo, phone, order}
+function openEdit() {
+  resetForm();
+  showScreen('edit');
+  $('eOrderNo').focus();
+}
+function editBack() { $('editStep2').style.display = 'none'; $('editStep1').style.display = ''; }
+function showErr(id, msg) { $(id).textContent = msg || ''; $(id).classList.toggle('show', !!msg); }
+async function lookupOrder() {
+  const orderNo = $('eOrderNo').value.trim(), phone = $('ePhone').value;
+  if (!orderNo) return showErr('editErr1', '영수증 번호를 입력해주세요.');
+  if (!phoneOk(phone)) return showErr('editErr1', '휴대폰 번호를 010-0000-0000 형식으로 입력해주세요.');
+  showErr('editErr1', '');
+  $('btnLookup').disabled = true; $('btnLookup').textContent = '찾는 중…'; $('btnLookup').classList.add('busy');
+  const resp = await sendOne(getWebappUrl(), { action: 'lookup', orderNo, phone }, 15000);
+  $('btnLookup').disabled = false; $('btnLookup').textContent = '접수 내역 찾기'; $('btnLookup').classList.remove('busy');
+  if (!resp) return showErr('editErr1', '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+  if (!resp.ok) return showErr('editErr1', resp.error || '조회할 수 없습니다.');
+  if (!resp.found) return showErr('editErr1', '일치하는 접수 내역이 없습니다. 영수증 번호와 휴대폰 번호를 확인해주세요.');
+  if (!resp.editable) return showErr('editErr1', resp.reason || '지금은 수정할 수 없습니다.');
+  const o = resp.order;
+  editTarget = { orderNo, phone, order: o };
+  $('editSummary').innerHTML =
+    `접수번호 <b>${esc(o.receiptNo)}</b> · ${esc(o.ts.slice(0, 16))}<br>주문자 ${esc(o.name)}` +
+    `<br>현재 배송지: [${esc(o.zipcode)}] ${esc(o.addr1)} ${esc(o.addr2)}` +
+    (o.edited ? `<br><span style="color:var(--muted)">마지막 수정 ${esc(o.edited.slice(0, 16))}</span>` : '');
+  $('eRName').value = o.rName; $('eRPhone').value = o.rPhone;
+  $('eZip').value = o.zipcode; $('eAddr1').value = o.addr1; $('eAddr2').value = o.addr2; $('eMemo').value = o.memo;
+  $('editStep1').style.display = 'none'; $('editStep2').style.display = '';
+  window.scrollTo(0, 0);
+}
+async function saveEdit() {
+  if (!editTarget) return editBack();
+  const d = { action: 'update', orderNo: editTarget.orderNo, phone: editTarget.phone,
+    rName: $('eRName').value.trim(), rPhone: $('eRPhone').value, zipcode: $('eZip').value.trim(),
+    addr1: $('eAddr1').value.trim(), addr2: $('eAddr2').value.trim(), memo: $('eMemo').value.trim() };
+  let bad = false;
+  bad |= markErr('eRName', d.rName.length < 2);
+  bad |= markErr('eRPhone', !phoneOk(d.rPhone));
+  bad |= markErr('eZip', !/^\d{5}$/.test(d.zipcode));
+  bad |= markErr('eAddr1', d.addr1.length < 5);
+  bad |= markErr('eAddr2', !d.addr2);
+  if (bad) return showErr('editErr2', '빨간색으로 표시된 항목을 확인해주세요.');
+  showErr('editErr2', '');
+  $('btnUpdate').disabled = true; $('btnUpdate').textContent = '저장 중…'; $('btnUpdate').classList.add('busy');
+  const resp = await sendOne(getWebappUrl(), d, 15000);
+  $('btnUpdate').disabled = false; $('btnUpdate').textContent = '배송지 저장'; $('btnUpdate').classList.remove('busy');
+  if (!resp) return showErr('editErr2', '서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+  if (!resp.ok) return showErr('editErr2', resp.error || '저장할 수 없습니다.');
+  // 이 기기 백업 기록도 함께 갱신
+  const sent = getJson(LS.sent, []);
+  sent.forEach(x => { if (x.receiptNo === resp.receiptNo) Object.assign(x, { rName: d.rName, rPhone: d.rPhone, zipcode: d.zipcode, addr1: d.addr1, addr2: d.addr2, memo: d.memo }); });
+  setJson(LS.sent, sent);
+  $('editDoneMsg').innerHTML = `접수번호 <b>${esc(resp.receiptNo)}</b><br>새 배송지: [${esc(d.zipcode)}] ${esc(d.addr1)} ${esc(d.addr2)}<br><br>수정 내용은 스태프에게 자동으로 전달됩니다.`;
+  $('editStep2').style.display = 'none'; $('editStep3').style.display = 'flex';
+  window.scrollTo(0, 0);
+}
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
 /* ══════════════ 전송 큐 ══════════════ */
-// 스태프 화면에 입력한 URL이 있으면 우선, 없으면 내장 기본 URL 사용
 function getWebappUrl() {
   return localStorage.getItem(LS.url) || CONFIG.WEBAPP_URL;
 }
-let flushing = false;
+let flushing = false, inFlightUuid = null;
+const PERMANENT_REJECT = ['closed', 'invalid', 'spam', 'limit'];
 async function flushQueue(manual) {
   const url = getWebappUrl();
   if (flushing) return;
   const q = getJson(LS.queue, []);
   updateBadges();
   if (!q.length) { if (manual) staffMsg('미전송 건이 없습니다.'); return; }
-  if (!url) { if (manual) staffMsg('웹앱 URL을 먼저 설정해주세요.', true); return; }
 
   flushing = true;
   try {
     while (true) {
       const cur = getJson(LS.queue, []);
       if (!cur.length) break;
-      const item = cur[0];
+      const item = cur.find(x => x.uuid !== inFlightUuid);   // 지금 직접 전송 중인 건은 건너뜀
+      if (!item) break;
       const resp = await sendOne(url, item);
-      if (!resp) break;   // 실패 → 다음 주기에 재시도
+      if (!resp) break;   // 네트워크 실패 → 다음 주기에 재시도
+      // 서버 일시 오류(시트 지연 등)는 버리지 않고 다음 주기에 재시도. 확정 거부만 큐에서 뺀다
+      if (!resp.ok && !PERMANENT_REJECT.includes(resp.code)) break;
       const after = getJson(LS.queue, []).filter(x => x.uuid !== item.uuid);
       setJson(LS.queue, after);
       const sent = getJson(LS.sent, []);
-      sent.push({ ...item, receiptNo: resp.receiptNo || '' });   // 서버 발급 번호 기록
+      // 서버가 거부한 건(접수 시간 외 등)은 재시도해도 같으므로 큐에서 빼고 사유를 기록
+      sent.push({ ...item, receiptNo: resp.ok ? (resp.receiptNo || '') : '거부: ' + (resp.error || '') });
       setJson(LS.sent, sent);
       updateBadges();
     }
@@ -705,22 +1098,21 @@ async function flushQueue(manual) {
     }
   }
 }
-// 성공 시 서버 응답 객체({ok:true, receiptNo:...}) 반환, 실패 시 null
+// 서버 응답 객체 반환 ({ok:true,...} 또는 {ok:false,error}), 네트워크 실패 시 null
 async function sendOne(url, payload, timeoutMs) {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs || 15000);
     const r = await fetch(url, {
       method: 'POST',
-      // Apps Script는 preflight(OPTIONS)를 처리하지 못하므로 text/plain 사용
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // Apps Script는 preflight 미지원
       body: JSON.stringify(payload),
       signal: ctrl.signal,
     });
     clearTimeout(t);
     if (!r.ok) return null;
     const j = await r.json();
-    return j && j.ok === true ? j : null;
+    return j && typeof j.ok === 'boolean' ? j : null;
   } catch { return null; }
 }
 setInterval(flushQueue, CONFIG.RETRY_INTERVAL_MS);
@@ -733,20 +1125,21 @@ function updateBadges() {
   el.classList.toggle('show', n > 0);
 }
 
-/* ══════════════ 스태프 화면 ══════════════ */
+/* ══════════════ 스태프 화면 (로고 5초 롱프레스) ══════════════ */
 let pressTimer = null;
-$('logoPress').addEventListener('touchstart', startPress);
-$('logoPress').addEventListener('mousedown', startPress);
-['touchend', 'touchmove', 'mouseup', 'mouseleave'].forEach(ev =>
-  $('logoPress').addEventListener(ev, () => clearTimeout(pressTimer)));
+['logoPress', 'logoPress2'].forEach(id => {
+  $(id).addEventListener('touchstart', startPress);
+  $(id).addEventListener('mousedown', startPress);
+  ['touchend', 'touchmove', 'mouseup', 'mouseleave'].forEach(ev => $(id).addEventListener(ev, () => clearTimeout(pressTimer)));
+});
 function startPress() {
   clearTimeout(pressTimer);
-  pressTimer = setTimeout(openStaff, 5000);   // 로고 5초 롱프레스
+  pressTimer = setTimeout(() => isUnlocked() ? openStaff() : showScreen('lock'), 5000);
 }
 function openStaff() {
   $('cfgUrl').value = localStorage.getItem(LS.url) || '';
   $('cfgUrl').placeholder = '기본 내장 URL 사용 중 — 바꿀 때만 입력';
-  $('cfgDevice').value = localStorage.getItem(LS.device) || 'T1';
+  $('cfgDevice').value = localStorage.getItem(LS.device) || '';
   refreshStats();
   showScreen('staff');
 }
@@ -761,27 +1154,22 @@ function refreshStats() {
 }
 function saveConfig() {
   localStorage.setItem(LS.url, $('cfgUrl').value.trim());
-  localStorage.setItem(LS.device, ($('cfgDevice').value.trim() || 'T1').toUpperCase());
+  const dev = $('cfgDevice').value.trim().toUpperCase();
+  if (dev) localStorage.setItem(LS.device, dev); else localStorage.removeItem(LS.device);
   staffMsg('설정이 저장되었습니다 ✓');
 }
 async function testSend() {
   const typed = $('cfgUrl').value.trim();
   if (typed) localStorage.setItem(LS.url, typed);
-  const url = typed || CONFIG.WEBAPP_URL;
-  staffMsg('테스트 전송 중…');
-  const ok = await sendOne(url, {
-    uuid: makeUuid(), test: true, ts: new Date().toLocaleString('sv-SE'),
-    orderNo: '(연결테스트)', name: '테스트', phone: '-',
-    rName: '-', rPhone: '-', zipcode: '-', addr1: '-', addr2: '-', memo: '연결 테스트 행 — 삭제하세요',
-    consent: '-', device: localStorage.getItem(LS.device) || 'T1',
-  });
-  staffMsg(ok ? '연결 성공 — 시트에 테스트 행이 추가되었습니다 ✓' : '연결 실패 — URL/배포 설정을 확인해주세요.', !ok);
+  staffMsg('연결 확인 중…');
+  const ok = await sendOne(getWebappUrl(), { test: true, uuid: makeUuid() });
+  staffMsg(ok && ok.ok ? '서버 연결 정상 ✓' : '연결 실패 — URL/배포 설정을 확인해주세요.', !(ok && ok.ok));
 }
 function exportCsv() {
-  const rows = [...getJson(LS.sent, []), ...getJson(LS.queue, [])];
+  const rows = [...getJson(LS.sent, []), ...getJson(LS.queue, [])].map(r => ({ ...r, itemsText: (r.items || []).map(i => i.name + '×' + i.qty).join('; '), pickupText: (r.allPickup ? '[전부 현장 수령] ' : '') + (r.pickup || []).map(i => i.name + '×' + i.qty).join('; ') }));
   if (!rows.length) return staffMsg('내보낼 데이터가 없습니다.', true);
-  const cols = ['receiptNo','ts','orderNo','name','phone','rName','rPhone','zipcode','addr1','addr2','memo','consent','uuid','device'];
-  const head = ['접수번호','접수시각','영수증번호','주문자명','주문자연락처','수령인명','수령인연락처','우편번호','기본주소','상세주소','배송요청사항','개인정보동의','UUID','단말기'];
+  const cols = ['receiptNo','ts','orderNo','name','phone','rName','rPhone','zipcode','addr1','addr2','memo','itemsText','pickupText','consent','uuid','device'];
+  const head = ['접수번호','접수시각','영수증번호','주문자명','주문자연락처','수령인명','수령인연락처','우편번호','기본주소','상세주소','배송요청사항','구매상품','현장수령','개인정보동의','UUID','단말기'];
   const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const csv = '\uFEFF' + [head.join(','), ...rows.map(r => cols.map(c => esc(r[c])).join(','))].join('\n');
   const a = document.createElement('a');
@@ -793,7 +1181,7 @@ function exportCsv() {
 function clearLocal() {
   const q = getJson(LS.queue, []).length;
   if (q > 0 && !confirm(`미전송 ${q}건이 있습니다! 정말 삭제할까요?`)) return;
-  if (!confirm('로컬에 저장된 접수 백업을 모두 삭제합니다. 계속할까요?')) return;
+  if (!confirm('이 기기에 저장된 접수 백업을 모두 삭제합니다. 계속할까요?')) return;
   localStorage.removeItem(LS.queue);
   localStorage.removeItem(LS.sent);
   refreshStats(); updateBadges();
@@ -806,7 +1194,8 @@ function staffMsg(msg, isErr) {
 }
 
 /* ══════════════ 초기화 ══════════════ */
-if (!isUnlocked()) showScreen('lock');
+resetForm();
+checkOpenAndShow(true);
 updateBadges();
 flushQueue();
 </script>

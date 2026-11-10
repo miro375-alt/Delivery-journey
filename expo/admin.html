@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>택배 접수 관리자</title>
+<style>
+  :root { --primary:#2563eb; --danger:#dc2626; --green:#16a34a; --warn:#b45309; --bg:#f4f6fa; --card:#fff; --text:#1e293b; --muted:#64748b; --border:#d7dde6; --radius:14px; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; background:var(--bg); color:var(--text); -webkit-text-size-adjust:100%; }
+  a { color:var(--primary); }
+  .hide { display:none !important; }
+
+  /* 로그인 */
+  #login { min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .login-box { width:min(380px,100%); background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:28px; display:grid; gap:12px; }
+  .login-box h1 { font-size:20px; }
+  input, select { width:100%; font-size:16px; padding:12px; border:1.5px solid var(--border); border-radius:10px; background:#fff; color:var(--text); outline:none; }
+  input:focus, select:focus { border-color:var(--primary); }
+  .btn { font-size:15px; font-weight:600; padding:12px 18px; border-radius:10px; border:1.5px solid var(--border); background:#fff; color:var(--text); cursor:pointer; }
+  .btn.primary { background:var(--primary); border-color:var(--primary); color:#fff; }
+  .btn.danger { color:var(--danger); border-color:#fecaca; }
+  .btn.sm { font-size:13px; padding:7px 12px; border-radius:8px; }
+  .btn:disabled { opacity:.5; cursor:default; }
+  .err { color:var(--danger); font-size:14px; min-height:18px; }
+
+  /* 앱 */
+  .topbar { position:sticky; top:0; z-index:10; background:var(--card); border-bottom:1px solid var(--border); padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .topbar .logo { font-weight:800; font-size:17px; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; }
+  .tabs button { font-size:14px; font-weight:600; padding:8px 14px; border-radius:999px; border:1.5px solid var(--border); background:#fff; color:var(--muted); cursor:pointer; }
+  .tabs button.on { border-color:var(--primary); background:#eff6ff; color:var(--primary); }
+  .meta { font-size:12.5px; color:var(--muted); display:flex; gap:10px; align-items:center; }
+  main { max-width:1100px; margin:0 auto; padding:20px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px; margin-bottom:14px; }
+  .card h3 { font-size:15px; color:var(--muted); font-weight:600; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .grid { display:grid; gap:14px; }
+  .g2 { grid-template-columns:1fr 1fr; } .g3 { grid-template-columns:repeat(3,1fr); }
+  @media (max-width:800px) { .g2, .g3 { grid-template-columns:1fr; } }
+
+  /* 상태 배너 */
+  .banner { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:14px 18px; border-radius:var(--radius); margin-bottom:14px; border:1px solid; }
+  .banner.open { background:#f0fdf4; border-color:#bbf7d0; color:#166534; }
+  .banner.closed { background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+  .banner b { font-size:16px; }
+  .banner .sub { font-size:13px; opacity:.85; margin-top:2px; }
+
+  /* 스탯 타일 */
+  .stats { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:14px; }
+  @media (max-width:900px) { .stats { grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:520px) { .stats { grid-template-columns:repeat(2,1fr); } }
+  .stat { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; }
+  .stat b { display:block; font-size:28px; font-weight:800; letter-spacing:-.5px; }
+  .stat span { font-size:12.5px; color:var(--muted); }
+  .stat b.warn { color:var(--warn); }
+
+  /* 막대 차트 (단일 계열) */
+  .bars { display:flex; align-items:flex-end; gap:6px; height:160px; padding-top:18px; border-bottom:1px solid var(--border); }
+  .bar { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; position:relative; min-width:0; }
+  .bar i { display:block; width:100%; max-width:46px; background:#93c5fd; border-radius:4px 4px 0 0; min-height:2px; transition:background .15s; }
+  .bar:hover i { background:var(--primary); }
+  .bar em { position:absolute; top:0; font-style:normal; font-size:12px; color:var(--text); font-weight:600; }
+  .bar.zero em { color:var(--muted); font-weight:400; }
+  .bar .tip { display:none; position:absolute; bottom:calc(100% + 4px); left:50%; transform:translateX(-50%); background:#1e293b; color:#fff; font-size:12px; padding:5px 8px; border-radius:6px; white-space:nowrap; z-index:2; }
+  .bar:hover .tip { display:block; }
+  .xlabels { display:flex; gap:6px; margin-top:6px; }
+  .xlabels span { flex:1; text-align:center; font-size:11.5px; color:var(--muted); min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .bar.today i { background:#3b82f6; }
+
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th, td { text-align:left; padding:8px 8px; border-bottom:1px solid #eef2f7; vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:12.5px; white-space:nowrap; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  tr.low td { background:#fff7ed; }
+  .tag { display:inline-block; font-size:11.5px; padding:2px 8px; border-radius:999px; border:1px solid; white-space:nowrap; }
+  .tag.ship { color:#166534; border-color:#bbf7d0; background:#f0fdf4; }
+  .tag.dup { color:#9a3412; border-color:#fed7aa; background:#fff7ed; }
+  .tag.edit { color:#1e40af; border-color:#bfdbfe; background:#eff6ff; }
+  .tag.off { color:var(--muted); border-color:var(--border); }
+  .tablewrap { overflow-x:auto; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .filters input, .filters select { width:auto; font-size:14px; padding:9px 12px; }
+  .filters input[type=search] { flex:1; min-width:180px; }
+  .muted { color:var(--muted); font-size:13px; }
+  .row-actions { display:flex; gap:6px; white-space:nowrap; }
+  .prod-table input { font-size:14px; padding:8px; }
+  .prod-table input[type=number] { width:100px; text-align:right; }
+  .prod-table input[type=checkbox] { width:20px; height:20px; }
+  #toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#1e293b; color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; display:none; z-index:50; }
+  #toast.show { display:block; }
+  /* 로딩: 스켈레톤(화면·표 단위)과 스피너(버튼) */
+  @keyframes sk-shine { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .sk { display:block; height:14px; border-radius:6px; background:linear-gradient(90deg,#e9eef5 25%,#f6f8fb 37%,#e9eef5 63%); background-size:400% 100%; animation:sk-shine 1.4s ease infinite; }
+  .bars .sk { flex:1; align-self:flex-end; border-radius:4px 4px 0 0; }
+  .btn.busy::before { content:''; display:inline-block; width:.9em; height:.9em; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:spin .7s linear infinite; vertical-align:-0.12em; margin-right:6px; }
+  @media (prefers-reduced-motion: reduce) { .sk, .btn.busy::before { animation-duration:3s; } }
+  #modal { display:none; position:fixed; inset:0; z-index:40; background:rgba(15,23,42,.5); align-items:flex-start; justify-content:center; padding:24px 12px; overflow:auto; }
+  #modal.show { display:flex; }
+  #modal .box { background:#fff; border-radius:var(--radius); padding:20px; width:100%; max-width:860px; }
+  #modal h2 { font-size:18px; margin-bottom:4px; }
+  .alertbox { padding:12px 14px; border-radius:10px; margin:12px 0; border:1px solid; font-size:14.5px; line-height:1.6; }
+  .alertbox.warn { background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+  .alertbox.good { background:#f0fdf4; border-color:#bbf7d0; color:#166534; }
+  .sch-table input { font-size:14px; padding:7px 8px; }
+  .sch-table input.t { width:76px; text-align:center; }
+  .sch-table input.n { min-width:150px; }
+  .kv { font-size:14px; line-height:1.9; }
+  .kv b { display:inline-block; min-width:110px; color:var(--muted); font-weight:600; }
+  .seg { display:inline-flex; border:1.5px solid var(--border); border-radius:10px; overflow:hidden; }
+  .seg button { font-size:13.5px; padding:8px 14px; border:none; background:#fff; cursor:pointer; color:var(--muted); }
+  .seg button.on { background:var(--primary); color:#fff; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="login-box" onsubmit="event.preventDefault(); doLogin();">
+    <h1>🔧 택배 접수 관리자</h1>
+    <p class="muted">관리자 비밀번호를 입력하세요.</p>
+    <input type="password" id="pw" placeholder="비밀번호" autocomplete="current-password">
+    <div class="err" id="loginErr"></div>
+    <button class="btn primary" id="loginBtn" type="submit">로그인</button>
+  </form>
+</div>
+
+<div id="app" class="hide">
+  <div class="topbar">
+    <span class="logo">🔧 택배 접수 관리자</span>
+    <div class="tabs">
+      <button data-tab="dash" class="on">대시보드</button>
+      <button data-tab="list">접수 목록</button>
+      <button data-tab="prod">상품·재고</button>
+      <button data-tab="set">설정</button>
+    </div>
+    <div class="meta">
+      <select id="evSel" title="조회할 행사" style="padding:6px 8px;border-radius:8px;border:1.5px solid var(--border);font-size:14px;max-width:230px;"></select>
+      <span id="updatedAt"></span>
+      <button class="btn sm" id="refBtn" onclick="refresh()">↻ 새로고침</button>
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="autoRef" style="width:16px;height:16px;" checked> 1분마다</label>
+    </div>
+  </div>
+
+  <main>
+    <!-- 대시보드 -->
+    <section id="tab-dash">
+      <div class="banner closed" id="banner">
+        <div><b id="bannerTitle">상태 확인 중…</b><div class="sub" id="bannerSub"></div></div>
+        <button class="btn primary" onclick="openClosing()">📋 오늘 마감</button>
+        <div class="seg" id="openSeg">
+          <button data-mode="" onclick="setOpen('')">자동(행사 시간)</button>
+          <button data-mode="open" onclick="setOpen('open')">강제 열기</button>
+          <button data-mode="closed" onclick="setOpen('closed')">강제 닫기</button>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b id="sToday">–</b><span id="sTodayLabel">오늘 접수</span></div>
+        <div class="stat"><b id="sTotal">–</b><span>행사 누적</span></div>
+        <div class="stat"><b id="sUnshipped">–</b><span>미발송 (택배)</span></div>
+        <div class="stat"><b id="sShipped">–</b><span>발송완료</span></div>
+        <div class="stat"><b id="sDup" class="warn">–</b><span>중복의심</span></div>
+        <div class="stat"><b id="sEdited">–</b><span>배송지 수정</span></div>
+      </div>
+
+      <div class="grid g2">
+        <div class="card">
+          <h3>일별 접수 건수 <span class="muted" id="byDayTotal"></span></h3>
+          <div class="bars" id="byDayBars"></div>
+          <div class="xlabels" id="byDayLabels"></div>
+        </div>
+        <div class="card">
+          <h3><span id="byHourTitle">오늘 시간대별 접수</span> <span class="muted" id="byHourRange"></span></h3>
+          <div class="bars" id="byHourBars"></div>
+          <div class="xlabels" id="byHourLabels"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>상품 판매 · 현장 재고 <span class="muted" id="salesSummary"></span></h3>
+        <div class="tablewrap"><table id="salesTable"><thead><tr><th>상품</th><th class="num">단가</th><th class="num">오늘 판매</th><th class="num">누적 판매</th><th class="num">매출(추정)</th><th class="num" title="구매 수량을 낱개로 환산한 뒤 현장 수령분을 뺀 수량">택배 출고 예정</th><th class="num">현장 재고</th><th class="num" title="손님이 현장에서 바로 가져간 수량">현장 출고</th><th class="num">현장 잔여</th><th>상태</th></tr></thead><tbody></tbody></table></div>
+        <p class="muted" id="salesNote" style="margin-top:8px;"></p>
+      </div>
+
+      <div class="grid g3">
+        <div class="card"><h3>단말기별</h3><table id="devTable"><tbody></tbody></table></div>
+        <div class="card"><h3>지역별 배송지 <span class="muted">상위 10</span></h3><table id="regionTable"><tbody></tbody></table></div>
+        <div class="card"><h3>날짜별 <span class="muted">표</span></h3><table id="dayTable"><tbody></tbody></table></div>
+      </div>
+
+      <div class="card">
+        <h3>최근 접수 10건</h3>
+        <div class="tablewrap"><table id="recentTable"><thead><tr><th>접수번호</th><th>시각</th><th>영수증</th><th>주문자</th><th>배송지</th><th>상품</th><th>단말기</th><th>표시</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- 접수 목록 -->
+    <section id="tab-list" class="hide">
+      <div class="card">
+        <div class="filters">
+          <select id="fDate"><option value="">전체 날짜</option></select>
+          <select id="fShip"><option value="">발송 전체</option><option value="unshipped">미발송 (택배)</option><option value="shipped">발송완료</option><option value="onsite">전부 현장 수령 (택배 없음)</option></select>
+          <select id="fFlag"><option value="">표시 전체</option><option value="dup">중복의심만</option><option value="edited">배송지 수정된 건만</option><option value="items">상품 선택한 건만</option><option value="noitems">상품 미선택 건만</option><option value="pickup">현장 수령 있는 건만</option></select>
+          <select id="fDevice"><option value="">단말기 전체</option></select>
+          <input type="search" id="fQ" placeholder="이름·전화·영수증·접수번호·주소 검색">
+          <button class="btn" onclick="loadList()">검색</button>
+          <button class="btn" onclick="exportCsv()">⬇ CSV (선택한 행사)</button>
+        </div>
+        <p class="muted" id="listInfo"></p>
+        <div class="tablewrap"><table id="listTable"><thead><tr><th>접수번호</th><th>시각</th><th>영수증</th><th>주문자</th><th>받는 분</th><th>배송지</th><th>요청사항</th><th>상품</th><th>표시</th><th>발송</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- 상품·재고 -->
+    <section id="tab-prod" class="hide">
+      <div class="card">
+        <h3>상품 목록 <span class="muted">저장하면 손님 접수 폼에 "구매 상품(선택)" 항목으로 나타납니다</span></h3>
+        <div class="tablewrap"><table class="prod-table" id="prodTable"><thead><tr><th>상품명</th><th class="num">단가(원)</th><th class="num">초기 재고</th><th>구성 <span class="muted">(묶음·세트만)</span></th><th>사은품</th><th>판매 중</th><th class="num">판매</th><th class="num">현장 잔여</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          <button class="btn" onclick="addProdRow()">+ 상품 추가</button>
+          <button class="btn primary" onclick="saveProducts()">💾 저장</button>
+        </div>
+        <p class="muted" style="margin-top:10px;line-height:1.7;"><b>초기 재고</b>는 부스에 가져온 현장 재고입니다. 접수된 구매 상품은 택배로 나가므로 현장 재고에서 빠지지 않고, 손님이 접수할 때 <b>"현장에서 바로 가져가는 상품"</b>으로 고른 수량만 빠집니다.<br>
+        <b>사은품</b>에 체크한 상품은 구매 목록에는 없고 현장 수령 목록에만 나옵니다 (단가 0원으로 등록).<br>
+        <b>묶음·세트</b>는 "구성"에 <b>상품명×수량</b>을 <b>;</b> 로 이어 적습니다 (예: <b>1. 엉덩이 클렌저×2; 3. 탑투토워시×1</b>). 택배 출고 예정 수량을 낱개로 환산하는 데 쓰이며, 상품명을 바꾸면 구성에 적힌 이름도 같이 바꿔야 합니다.</p>
+      </div>
+    </section>
+
+    <!-- 설정 -->
+    <section id="tab-set" class="hide">
+      <div class="card">
+        <h3>지금 조회 중인 행사</h3>
+        <div class="kv" id="eventInfo"></div>
+      </div>
+      <div class="card" id="schCard">
+        <h3>행사 일정 <span class="muted">저장하면 손님 페이지에 바로 반영됩니다 (재배포 불필요)</span></h3>
+        <div class="tablewrap"><table class="sch-table" id="schTable"><thead><tr><th>행사 이름</th><th>접수 시작일 <span class="muted">(세팅일)</span></th><th>시작 시각</th><th>마지막 날</th><th>종료 시각</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:14px;">
+          <label>하루 접수 시작 <input type="text" class="t" id="schOpen" placeholder="10:00" style="width:80px;font-size:14px;padding:7px 8px;text-align:center;"></label>
+          <label>하루 마감 <input type="text" class="t" id="schClose" placeholder="없음" style="width:80px;font-size:14px;padding:7px 8px;text-align:center;"> <span class="muted">비우면 자정까지</span></label>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          <button class="btn" onclick="addSchRow(); schDirty = true;">+ 행사 추가</button>
+          <button class="btn primary" onclick="saveSchedule()">💾 일정 저장</button>
+          <button class="btn" onclick="schDirty = false; refresh();">되돌리기</button>
+        </div>
+        <p class="muted" style="margin-top:10px;">시각은 24시간제 <b>HH:MM</b> 으로 입력합니다. 마지막 날 자정까지 받으려면 종료 시각을 <b>24:00</b> 으로 둡니다. 지난 행사를 지워도 접수 데이터는 시트에 남지만, 행사별 조회 목록에서는 빠집니다.</p>
+      </div>
+      <div class="card">
+        <h3>접수 상태</h3>
+        <p class="muted" style="margin-bottom:10px;">"자동"은 행사 기간과 하루 접수 시간을 따릅니다. 긴급하게 열거나 닫아야 할 때만 강제 모드를 쓰고, 끝나면 자동으로 되돌려 주세요. 강제 열기 중에는 배송지 수정도 가능합니다.</p>
+        <div class="seg" id="openSeg2">
+          <button data-mode="" onclick="setOpen('')">자동(행사 시간)</button>
+          <button data-mode="open" onclick="setOpen('open')">강제 열기</button>
+          <button data-mode="closed" onclick="setOpen('closed')">강제 닫기</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>계정</h3>
+        <p class="muted" style="margin-bottom:10px;">비밀번호는 Code.gs 의 ADMIN_PASS 값입니다. 바꾼 뒤에는 새 버전으로 배포해야 적용됩니다.</p>
+        <button class="btn" onclick="logout()">로그아웃</button>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="modal"><div class="box">
+  <h2 id="clTitle">오늘 마감</h2>
+  <p class="muted" id="clSub"></p>
+  <div id="clAlert"></div>
+  <div class="tablewrap"><table id="clTable"><thead><tr><th>낱개 상품·사은품</th><th class="num">오늘 현장 출고</th><th class="num">누적 현장 출고</th><th class="num">일평균</th><th class="num">현장 잔여</th><th class="num">남은 기간 예상</th><th class="num">추가 필요</th><th class="num" title="오늘 접수분 / 누적 (낱개 환산, 현장 수령분 제외)">택배 출고 예정</th><th>판정</th></tr></thead><tbody></tbody></table></div>
+  <p class="muted" style="margin-top:10px;">현장 재고는 손님이 현장에서 바로 가져간 수량만 차감합니다. 남은 기간 예상 = (오늘 현장 출고와 일평균 중 큰 값) × 남은 행사일. 추가 필요 = 예상 − 현장 잔여. 택배 출고 예정은 구매 수량을 낱개로 환산한 값(오늘 / 누적)으로, 현장 재고와는 무관합니다.</p>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+    <button class="btn" id="clMail" onclick="openClosing(true)">✉ 메일로 보내기</button>
+    <button class="btn" onclick="copyClosing()">📋 텍스트 복사</button>
+    <button class="btn primary" onclick="$('modal').classList.remove('show')">닫기</button>
+  </div>
+</div></div>
+<div id="toast"></div>
+
+<script>
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbymHbyntYlh4AfC1o4lW3GNQtZ9cm6-WxkKW-ehkjxtlcxxBi3nY3G84f_65XaRzfRIig/exec';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const fmt = n => Number(n || 0).toLocaleString('ko-KR');
+let key = sessionStorage.getItem('expo_admin_key') || '';
+let stats = null, productsCache = [];
+let evKey = '';   // 조회할 행사 ('' = 현재 행사, 'all' = 전체)
+
+async function api(op, params) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 30000);
+  try {
+    const r = await fetch(WEBAPP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ action: 'admin', key, op }, params || {})), signal: ctrl.signal });
+    clearTimeout(t);
+    const j = await r.json();
+    if (j && j.code === 'auth') { logout(); throw new Error(j.error); }
+    if (!j || !j.ok) throw new Error((j && j.error) || '서버 오류');
+    return j;
+  } catch (e) { clearTimeout(t); throw e; }
+}
+// 표 본문을 스켈레톤 줄로 채운다 (불러오는 동안)
+function skRows(tableId, rows) {
+  const t = $(tableId), cols = t.tHead ? t.tHead.rows[0].cells.length : 3;
+  t.tBodies[0].innerHTML = Array.from({ length: rows || 4 }, () => '<tr>' + Array.from({ length: cols }, (_, i) => `<td><span class="sk" style="width:${[70, 50, 85, 60][i % 4]}%"></span></td>`).join('') + '</tr>').join('');
+}
+function skBars(id, n) { $(id).innerHTML = Array.from({ length: n }, (_, i) => `<span class="sk" style="height:${[35, 60, 80, 50, 70, 40, 65, 30][i % 8]}%"></span>`).join(''); }
+// 첫 화면: 데이터가 오기 전까지 대시보드 전체를 스켈레톤으로
+function dashSkeleton() {
+  document.querySelectorAll('.stat b').forEach(b => { b.innerHTML = '<span class="sk" style="height:28px;width:55%;margin-bottom:6px;"></span>'; });
+  skBars('byDayBars', 5); skBars('byHourBars', 12);
+  ['salesTable', 'devTable', 'regionTable', 'dayTable', 'recentTable'].forEach(id => skRows(id, id === 'salesTable' ? 6 : 4));
+  $('bannerTitle').innerHTML = '<span class="sk" style="width:180px;height:18px;"></span>'; $('bannerSub').textContent = '';
+}
+async function withBusy(btn, fn) {
+  if (btn) { btn.classList.add('busy'); btn.disabled = true; }
+  try { return await fn(); } finally { if (btn) { btn.classList.remove('busy'); btn.disabled = false; } }
+}
+function toast(msg, ms) { const el = $('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), ms || 2200); }
+
+/* 로그인 */
+async function doLogin() {
+  const pw = $('pw').value;
+  if (!pw) return;
+  $('loginBtn').disabled = true; $('loginBtn').classList.add('busy'); $('loginErr').textContent = '';
+  key = pw;
+  try {
+    await api('login');
+    sessionStorage.setItem('expo_admin_key', key);
+    $('login').classList.add('hide'); $('app').classList.remove('hide');
+    refresh();
+  } catch (e) { key = ''; $('loginErr').textContent = e.message || '로그인 실패'; }
+  $('loginBtn').disabled = false; $('loginBtn').classList.remove('busy');
+}
+function logout() { key = ''; sessionStorage.removeItem('expo_admin_key'); $('app').classList.add('hide'); $('login').classList.remove('hide'); $('pw').value = ''; }
+
+/* 탭 */
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+function showTab(name) {
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
+  ['dash', 'list', 'prod', 'set'].forEach(t => $('tab-' + t).classList.toggle('hide', t !== name));
+  if (name === 'list' && !$('listTable').tBodies[0].children.length) loadList();
+  if (name === 'prod') loadProducts();
+}
+
+/* 새로고침 */
+let loadedKey = null;   // 마지막으로 화면에 그린 행사
+async function refresh() {
+  if (!stats || loadedKey !== evKey) dashSkeleton();   // 처음이거나 다른 행사로 바꿀 때만 스켈레톤 (자동 새로고침은 그대로 둔 채 교체)
+  await withBusy($('refBtn'), async () => {
+    try {
+      stats = await api('stats', { event: evKey });
+      loadedKey = evKey;
+      renderDash(stats);
+      $('updatedAt').textContent = '갱신 ' + stats.generatedAt.slice(11, 16);
+    } catch (e) { toast('불러오기 실패: ' + e.message, 4000); if (stats) renderDash(stats); }
+  });
+}
+setInterval(() => { if (key && $('autoRef').checked && !$('app').classList.contains('hide')) refresh(); }, 60000);
+
+/* 대시보드 */
+function renderDash(s) {
+  const st = s.state;
+  const modeName = { open: '접수 중 (행사 시간)', forced_open: '접수 중 (강제 열기)', forced_closed: '접수 중지 (강제 닫기)', before: '행사 시작 전', after: '행사 종료', hours: '접수 시간 외' }[st.mode] || st.mode;
+  $('banner').className = 'banner ' + (st.open ? 'open' : 'closed');
+  $('bannerTitle').textContent = (st.open ? '🟢 ' : '🟠 ') + modeName;
+  $('bannerSub').textContent = (/^forced/.test(st.mode) ? '⚠ 강제 모드 — 행사 일정이 무시됩니다. 끝나면 "자동"으로 되돌려 주세요 · ' : '') + (st.message ? st.message + ' · ' : '') + `서버 시각 ${s.generatedAt.slice(5, 16)} · 배송지 수정 ${s.editOpen ? '가능' : '불가'}`;
+  const forced = st.mode === 'forced_open' ? 'open' : st.mode === 'forced_closed' ? 'closed' : '';
+  document.querySelectorAll('#openSeg button, #openSeg2 button').forEach(b => b.classList.toggle('on', b.dataset.mode === forced));
+
+  const t = s.totals;
+  $('sToday').textContent = fmt(t.today); $('sTotal').textContent = fmt(t.total);
+  $('sUnshipped').textContent = fmt(t.unshipped); $('sShipped').textContent = fmt(t.shipped);
+  $('sDup').textContent = fmt(t.dup); $('sEdited').textContent = fmt(t.edited);
+
+  // 행사 선택 목록
+  const isAll = s.selected === 'all';
+  if (s.events) {
+    $('evSel').innerHTML = s.events.map(e => `<option value="${esc(e.name)}">${esc(e.name)} · ${e.start.slice(5, 10).replace('-', '/')}~${e.end.slice(5, 10).replace('-', '/')} (${fmt(e.count)})${e.current ? ' ◀ 현재' : ''}</option>`).join('')
+      + `<option value="all">전체 (${fmt(s.allCount)}${s.otherCount ? ', 행사 외 ' + fmt(s.otherCount) : ''})</option>`;
+    $('evSel').value = s.selected;
+  } else $('evSel').style.display = 'none';   // 서버가 구버전일 때
+
+  // 일별: 선택한 행사 기간 전체 날짜를 축으로 (전체 보기는 접수가 있는 날짜만)
+  const today = s.generatedAt.slice(0, 10);
+  let days = isAll ? Object.keys(s.byDay).sort() : eventDays(s.event.start, s.event.end);
+  if (!s.events) Object.keys(s.byDay).sort().forEach(d => { if (!days.includes(d)) days.unshift(d); });
+  const live = days.includes(today);   // 오늘이 조회 중인 행사 기간 안인지
+  renderBars('byDayBars', 'byDayLabels', days.map(d => ({ label: d.slice(5).replace('-', '/') + weekday(d), value: s.byDay[d] || 0, tip: `${d} · ${s.byDay[d] || 0}건`, today: d === today })));
+  $('byDayTotal').textContent = `합계 ${fmt(t.total)}건`;
+
+  const hours = [];
+  const closeH = parseInt(s.event.close, 10) || 24;   // 마감 없음이면 자정까지
+  $('byHourRange').textContent = `${parseInt(s.event.open, 10)}시 ~ ${closeH}시`;
+  for (let h = parseInt(s.event.open, 10); h < closeH; h++) hours.push(String(h).padStart(2, '0'));
+  // 진행 중인 행사는 오늘 기준, 지난 행사·전체 보기는 기간 전체 합계
+  const byH = live || !s.byHour ? s.byHourToday : s.byHour;
+  $('byHourTitle').textContent = live || !s.byHour ? '오늘 시간대별 접수' : '시간대별 접수 (기간 전체)';
+  $('sTodayLabel').textContent = live ? '오늘 접수' : '오늘 접수 (기간 외)';
+  Object.keys(byH).sort().forEach(h => { if (!hours.includes(h)) hours.push(h); });
+  hours.sort();
+  renderBars('byHourBars', 'byHourLabels', hours.map(h => ({ label: h + '시', value: byH[h] || 0, tip: `${h}:00~${h}:59 · ${byH[h] || 0}건` })));
+
+  // 상품
+  const sb = $('salesTable').tBodies[0]; sb.innerHTML = '';
+  let qty = 0, rev = 0;
+  s.products.forEach(p => {
+    qty += p.sold; rev += p.revenue;
+    // 현장 재고는 현장 수령분만 차감된다. 묶음·세트(p.bundle)는 자체 재고가 없어 '–' 로 표시
+    const low = p.active && !p.bundle && p.stock > 0 && p.remaining > 0 && p.remaining <= Math.max(3, Math.round(p.stock * 0.1));
+    const out = !p.bundle && p.stock > 0 && p.remaining <= 0;
+    const tr = document.createElement('tr'); if (low || (out && p.active)) tr.className = 'low';
+    const dash = v => p.bundle ? '–' : v;
+    tr.innerHTML = `<td>${esc(p.name)}${p.gift ? ' <span class="tag edit">사은품</span>' : ''}${p.bundle ? `<br><span class="muted" style="font-size:12px;">구성: ${esc(p.comp)}</span>` : ''}</td><td class="num">${p.gift ? '–' : fmt(p.price)}</td><td class="num">${fmt(p.soldToday)}</td><td class="num"><b>${fmt(p.sold)}</b></td><td class="num">${fmt(p.revenue)}</td><td class="num">${dash(fmt(p.ship))}</td><td class="num">${dash(fmt(p.stock))}</td><td class="num">${dash(fmt(p.used))}</td><td class="num"><b>${dash(fmt(p.remaining))}</b></td><td>${!p.active ? '<span class="tag off">판매 중지</span>' : p.bundle ? '<span class="tag off">묶음·세트</span>' : out ? '<span class="tag dup">현장 품절</span>' : low ? '<span class="tag dup">현장 재고 부족</span>' : !p.stock ? '<span class="tag off">재고 미입력</span>' : '<span class="tag ship">정상</span>'}</td>`;
+    sb.appendChild(tr);
+  });
+  $('salesSummary').textContent = s.products.length ? `판매 ${fmt(qty)}개 · 매출 ${fmt(rev)}원` : '';
+  $('salesNote').textContent = s.products.length ? '접수된 구매 상품은 택배로 나가므로 현장 재고에서 빠지지 않고, 손님이 "현장 수령"으로 가져간 수량만 현장 재고에서 빠집니다. 택배 출고 예정은 묶음·세트를 낱개로 환산한 수량입니다.' : '등록된 상품이 없습니다. "상품·재고" 탭에서 상품을 등록하면 손님 폼에 선택 항목이 나타나고 여기서 판매·재고를 볼 수 있습니다.';
+
+  renderKv('devTable', s.byDevice, t.total);
+  renderKv('regionTable', s.byRegion, t.total, 10);
+  const dayObj = {}; days.forEach(d => dayObj[d] = s.byDay[d] || 0);
+  renderKv('dayTable', dayObj, t.total, 99, true);
+
+  const rb = $('recentTable').tBodies[0]; rb.innerHTML = '';
+  s.recent.forEach(o => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><b>${esc(o.receiptNo)}</b></td><td>${esc(o.ts.slice(5, 16))}</td><td>${esc(o.orderNo)}</td><td>${esc(o.name)}</td><td>${esc(o.addr1)} ${esc(o.addr2)}</td><td>${itemsCell(o)}</td><td>${esc(o.device)}</td><td>${tags(o)}</td>`;
+    rb.appendChild(tr);
+  });
+
+  $('eventInfo').innerHTML = `<div><b>행사명</b> ${esc(s.event.name)}</div><div><b>행사 기간</b> ${esc(s.event.start)} ~ ${esc(s.event.end)}</div><div><b>하루 접수 시간</b> ${esc(s.event.open)} ~ ${s.event.close ? esc(s.event.close) : '마감 없음'}</div><div><b>배송지 수정 기한</b> ${esc(s.event.end)} 까지</div>`;
+
+  // 목록 단말기 필터 옵션
+  const dsel = $('fDevice'), dcur = dsel.value, devs = Object.keys(s.byDevice).sort();
+  dsel.innerHTML = '<option value="">단말기 전체</option>' + devs.map(d => `<option value="${esc(d)}">${esc(d)} (${fmt(s.byDevice[d])})</option>`).join('');
+  dsel.value = devs.includes(dcur) ? dcur : '';
+  if (s.schedule && !schDirty) renderSchedule(s.schedule);
+
+  // 목록 날짜 필터 옵션
+  const sel = $('fDate'); const cur = sel.value;
+  sel.innerHTML = '<option value="">전체 날짜</option>' + days.map(d => `<option value="${d}">${d}${weekday(d)} (${s.byDay[d] || 0})</option>`).join('');
+  sel.value = days.includes(cur) ? cur : (days.includes(today) ? today : '');
+}
+function renderBars(barsId, labelsId, data) {
+  const max = Math.max(1, ...data.map(d => d.value));
+  $(barsId).innerHTML = data.map(d => `<div class="bar${d.value ? '' : ' zero'}${d.today ? ' today' : ''}"><span class="tip">${esc(d.tip)}</span><em>${d.value ? fmt(d.value) : ''}</em><i style="height:${Math.round(d.value / max * 100)}%"></i></div>`).join('');
+  $(labelsId).innerHTML = data.map(d => `<span>${esc(d.label)}</span>`).join('');
+}
+function renderKv(tableId, obj, total, limit, keepOrder) {
+  const tb = $(tableId).tBodies[0]; tb.innerHTML = '';
+  let entries = Object.entries(obj);
+  if (!keepOrder) entries.sort((a, b) => b[1] - a[1]);
+  entries.slice(0, limit || 99).forEach(([k, v]) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${esc(k)}${keepOrder ? weekday(k) : ''}</td><td class="num"><b>${fmt(v)}</b></td><td class="num muted">${total ? Math.round(v / total * 100) : 0}%</td>`;
+    tb.appendChild(tr);
+  });
+  if (!entries.length) tb.innerHTML = '<tr><td class="muted">데이터 없음</td></tr>';
+}
+function eventDays(start, end) {
+  const out = []; const d = new Date(start.slice(0, 10) + 'T00:00:00'); const last = end.slice(0, 10);
+  for (let i = 0; i < 31; i++) { const s = localIso(d); out.push(s); if (s >= last) break; d.setDate(d.getDate() + 1); }
+  return out;
+}
+function localIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function weekday(iso) { const d = new Date(iso + 'T00:00:00'); return isNaN(d) ? '' : '(' + '일월화수목금토'[d.getDay()] + ')'; }
+function itemsCell(o) {
+  return esc(o.items) + (o.pickup ? `${o.items ? '<br>' : ''}<span class="tag edit">${o.ship === '현장수령' ? '현장 출고' : '현장수령'}</span> ${esc(o.pickup)}` : '');
+}
+function tags(o) {
+  return (o.ship === '발송완료' ? '<span class="tag ship">발송완료</span> ' : o.ship === '현장수령' ? '<span class="tag edit">전부 현장수령</span> ' : '') + (o.dup ? '<span class="tag dup">중복의심</span> ' : '') + (o.edited ? `<span class="tag edit" title="${esc(o.edited)}">수정됨</span>` : '');
+}
+
+/* 접수 목록 */
+async function loadList() {
+  $('listInfo').textContent = '불러오는 중…'; skRows('listTable', 6);
+  try {
+    const r = await api('list', { event: evKey, flag: $('fFlag').value, device: $('fDevice').value, date: $('fDate').value, ship: $('fShip').value, q: $('fQ').value });
+    const tb = $('listTable').tBodies[0]; tb.innerHTML = '';
+    r.rows.forEach(o => {
+      const tr = document.createElement('tr');
+      const shipped = o.ship === '발송완료';
+      tr.innerHTML = `<td><b>${esc(o.receiptNo)}</b></td><td>${esc(o.ts.slice(5, 16))}</td><td>${esc(o.orderNo)}</td>
+        <td>${esc(o.name)}<br><span class="muted">${esc(o.phone)}</span></td>
+        <td>${esc(o.rName)}<br><span class="muted">${esc(o.rPhone)}</span></td>
+        <td>${o.ship === '현장수령' ? '<span class="muted">택배 없음</span>' : `[${esc(o.zipcode)}] ${esc(o.addr1)} ${esc(o.addr2)}`}</td><td>${esc(o.memo)}</td><td>${itemsCell(o)}</td><td>${tags(o)}</td>
+        <td><div class="row-actions">${o.ship === '현장수령' ? '' : `<button class="btn sm ${shipped ? '' : 'primary'}" data-act="ship">${shipped ? '발송 취소' : '발송완료'}</button>`}<button class="btn sm danger" data-act="del">삭제</button></div></td>`;
+      if (o.ship !== '현장수령') tr.querySelector('[data-act=ship]').addEventListener('click', async () => {
+        try { await api('setShip', { row: o.row, receiptNo: o.receiptNo, status: shipped ? '' : '발송완료' }); toast(shipped ? '발송 취소됨' : '발송완료 처리됨'); loadList(); refresh(); }
+        catch (e) { toast(e.message, 4000); }
+      });
+      tr.querySelector('[data-act=del]').addEventListener('click', async () => {
+        if (!confirm(`접수번호 ${o.receiptNo} (${o.name}) 을 시트에서 삭제합니다. 되돌릴 수 없습니다. 계속할까요?`)) return;
+        try { await api('deleteRow', { row: o.row, receiptNo: o.receiptNo }); toast('삭제됨'); loadList(); refresh(); }
+        catch (e) { toast(e.message, 4000); }
+      });
+      tb.appendChild(tr);
+    });
+    $('listInfo').textContent = `${r.rows.length}건${r.rows.length >= 500 ? ' (최신 500건까지 표시 — 검색어로 좁혀주세요)' : ''}`;
+  } catch (e) { $('listInfo').textContent = '불러오기 실패: ' + e.message; $('listTable').tBodies[0].innerHTML = ''; }
+}
+$('fQ').addEventListener('keydown', e => e.key === 'Enter' && loadList());
+$('fDate').addEventListener('change', loadList);
+$('evSel').addEventListener('change', async () => {
+  evKey = $('evSel').value; $('fDate').value = '';
+  await refresh();
+  if (!$('tab-list').classList.contains('hide')) loadList(); else $('listTable').tBodies[0].innerHTML = '';
+});
+$('fShip').addEventListener('change', loadList);
+$('fFlag').addEventListener('change', loadList);
+$('fDevice').addEventListener('change', loadList);
+async function exportCsv() {
+  toast('CSV 준비 중…');
+  try {
+    const r = await api('export', { event: evKey });
+    const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv = '\uFEFF' + [r.headers.map(q).join(','), ...r.rows.map(row => row.map(q).join(','))].join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = `택배접수_${(stats && stats.event ? stats.event.name : '전체').replace(/[^\w가-힣]+/g, '')}_${localIso(new Date())}.csv`;
+    a.click();
+    toast(`${r.rows.length}건 내보냄`);
+  } catch (e) { toast('실패: ' + e.message, 4000); }
+}
+
+/* 상품·재고 */
+async function loadProducts() {
+  skRows('prodTable', 6);
+  try {
+    const r = await api('products');
+    productsCache = r.products;
+    const statMap = {}; (stats ? stats.products : []).forEach(p => statMap[p.name] = p);
+    const tb = $('prodTable').tBodies[0]; tb.innerHTML = '';
+    productsCache.forEach(p => addProdRow(p, statMap[p.name]));
+    if (!productsCache.length) addProdRow();
+  } catch (e) { $('prodTable').tBodies[0].innerHTML = ''; toast('상품 불러오기 실패: ' + e.message, 4000); }
+}
+function addProdRow(p, st) {
+  p = p || { name: '', price: 0, stock: 0, active: true, comp: [], gift: false };
+  const tr = document.createElement('tr');
+  const compText = (p.comp || []).map(c => c.name + '×' + c.qty).join('; ');
+  const sold = st ? st.sold : 0;
+  tr.innerHTML = `<td><input type="text" class="pName" value="${esc(p.name)}" placeholder="상품명" maxlength="40"></td>
+    <td class="num"><input type="number" class="pPrice" value="${p.price || 0}" min="0" step="100"></td>
+    <td class="num"><input type="number" class="pStock" value="${p.stock || 0}" min="0" step="1" ${compText ? 'disabled title="묶음·세트는 구성 낱개 상품의 재고를 씁니다"' : ''}></td>
+    <td><input type="text" class="pComp" value="${esc(compText)}" placeholder="낱개 상품은 비움" style="min-width:220px;"></td>
+    <td><input type="checkbox" class="pGift" ${p.gift ? 'checked' : ''} title="사은품: 구매 목록에는 없고 현장 수령 목록에만 나옵니다"></td>
+    <td><input type="checkbox" class="pActive" ${p.active === false ? '' : 'checked'}></td>
+    <td class="num">${fmt(sold || 0)}</td><td class="num">${st && !st.bundle ? fmt(st.remaining) : '–'}</td>
+    <td><button class="btn sm danger" type="button">삭제</button></td>`;
+  tr.querySelector('button').addEventListener('click', () => tr.remove());
+  tr.querySelector('.pComp').addEventListener('input', e => { tr.querySelector('.pStock').disabled = !!e.target.value.trim(); });
+  $('prodTable').tBodies[0].appendChild(tr);
+}
+async function saveProducts() {
+  const list = [...$('prodTable').tBodies[0].rows].map(tr => ({
+    name: tr.querySelector('.pName').value.trim(), price: Number(tr.querySelector('.pPrice').value) || 0,
+    stock: parseInt(tr.querySelector('.pStock').value, 10) || 0, active: tr.querySelector('.pActive').checked,
+    comp: tr.querySelector('.pComp').value.trim(), gift: tr.querySelector('.pGift').checked,
+  })).filter(p => p.name);
+  try { await api('saveProducts', { products: list }); toast('상품이 저장되었습니다'); await refresh(); loadProducts(); }
+  catch (e) { toast('저장 실패: ' + e.message, 4000); }
+}
+
+/* 오늘 마감 리포트 */
+let closingText = '';
+async function openClosing(mail) {
+  if (mail && !confirm('마감 리포트를 알림 메일 주소로 보냅니다. 계속할까요?')) return;
+  if (mail) toast('메일 보내는 중…');
+  else {   // 창을 먼저 열고 계산되는 동안 스켈레톤
+    $('clTitle').textContent = '📋 오늘 마감'; $('clSub').innerHTML = '<span class="sk" style="width:60%;"></span>';
+    $('clAlert').innerHTML = '<div class="alertbox" style="border-color:var(--border);"><span class="sk" style="width:45%;margin-bottom:8px;"></span><span class="sk" style="width:70%;"></span></div>';
+    skRows('clTable', 6); $('modal').classList.add('show');
+  }
+  try {
+    const r = await api('closing', { mail: !!mail });
+    const stName = { soldout: '품절', short: '추가 필요', nostock: '재고 미입력', ok: '충분' };
+    $('clTitle').textContent = `📋 ${r.event} · ${r.date}${weekday(r.date)} 마감`;
+    $('clSub').textContent = `오늘 접수 ${fmt(r.ordersToday)}건 (현장 수령 포함 ${fmt(r.pickupOrdersToday)}건) · 판매 ${fmt(r.qtyToday)}개 · 매출(추정) ${fmt(r.revenueToday)}원 · 남은 행사일 ${r.daysLeft}일 (마지막 날 ${r.lastDay.slice(5).replace('-', '/')})`;
+    const need = r.items.filter(x => x.status === 'soldout' || x.status === 'short');
+    const noStock = r.items.filter(x => x.status === 'nostock');
+    $('clAlert').innerHTML = !r.items.length
+      ? '<div class="alertbox warn">등록된 상품이 없습니다. "상품·재고" 탭에서 상품과 초기 재고를 먼저 등록해주세요.</div>'
+      : (need.length
+        ? `<div class="alertbox warn"><b>⚠ 현장 추가 재고가 필요한 상품 ${need.length}개</b><br>${need.map(x => `${esc(x.name)} — ${x.status === 'soldout' ? '품절' : '잔여 ' + fmt(x.remaining) + '개'}${x.shortage ? ', <b>' + fmt(x.shortage) + '개 추가 필요</b>' : ''}`).join('<br>')}</div>`
+        : `<div class="alertbox good"><b>✓ 현장 추가 재고가 필요한 상품이 없습니다.</b>${r.daysLeft === 0 ? ' (오늘이 마지막 날입니다)' : ''}</div>`)
+      + (noStock.length ? `<div class="alertbox warn">초기 재고가 입력되지 않아 판정할 수 없는 상품: ${noStock.map(x => esc(x.name)).join(', ')}</div>` : '');
+    const tb = $('clTable').tBodies[0]; tb.innerHTML = '';
+    r.items.forEach(x => {
+      const tr = document.createElement('tr'); if (x.status === 'soldout' || x.status === 'short') tr.className = 'low';
+      tr.innerHTML = `<td>${esc(x.name)}${x.gift ? ' <span class="tag edit">사은품</span>' : ''}${x.active ? '' : ' <span class="tag off">판매 중지</span>'}</td><td class="num"><b>${fmt(x.soldToday)}</b></td><td class="num">${fmt(x.sold)}</td><td class="num">${x.avg}</td><td class="num"><b>${x.stock ? fmt(x.remaining) : '–'}</b></td><td class="num">${fmt(x.need)}</td><td class="num"><b>${x.shortage ? fmt(x.shortage) : '–'}</b></td><td class="num muted">${fmt(x.shipToday)} / ${fmt(x.ship)}</td><td><span class="tag ${x.status === 'ok' ? 'ship' : x.status === 'nostock' ? 'off' : 'dup'}">${stName[x.status]}</span></td>`;
+      tb.appendChild(tr);
+    });
+    closingText = `[${r.event}] ${r.date} 마감\n오늘 접수 ${r.ordersToday}건 · 판매 ${r.qtyToday}개 · 매출(추정) ${fmt(r.revenueToday)}원 · 남은 행사일 ${r.daysLeft}일\n` +
+      r.items.map(x => `- ${x.name}: 현장 출고 오늘 ${x.soldToday} / 누적 ${x.sold} / 현장 잔여 ${x.stock ? x.remaining : '-'} / 택배 예정 ${x.ship} → ${stName[x.status]}${x.shortage ? ' ' + x.shortage + '개' : ''}`).join('\n');
+    $('modal').classList.add('show');
+    if (mail) toast(r.mailed ? '마감 리포트를 메일로 보냈습니다' : '메일 발송 실패' + (r.mailError ? ': ' + r.mailError : ''), 4000);
+  } catch (e) { if (!mail) $('modal').classList.remove('show'); toast('마감 리포트 실패: ' + e.message, 4000); }
+}
+async function copyClosing() {
+  try { await navigator.clipboard.writeText(closingText); toast('복사했습니다'); } catch (e) { toast('복사할 수 없습니다', 3000); }
+}
+
+/* 행사 일정 편집 */
+let schDirty = false;   // 편집 중에는 자동 새로고침이 입력값을 덮어쓰지 않게 한다
+function renderSchedule(sch) {
+  $('schTable').tBodies[0].innerHTML = '';
+  sch.events.forEach(addSchRow);
+  $('schOpen').value = sch.open || ''; $('schClose').value = sch.close || '';
+}
+function addSchRow(e) {
+  e = e && e.name !== undefined ? e : { name: '', start: '           10:00', end: '           24:00' };   // 새 행: 날짜 비움, 시각 기본값
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="text" class="n sName" maxlength="30" value="${esc(e.name)}" placeholder="행사 이름"></td>
+    <td><input type="date" class="sD1" value="${esc(e.start.slice(0, 10).trim())}"></td><td><input type="text" class="t sT1" value="${esc(e.start.slice(11))}" placeholder="10:00"></td>
+    <td><input type="date" class="sD2" value="${esc(e.end.slice(0, 10).trim())}"></td><td><input type="text" class="t sT2" value="${esc(e.end.slice(11))}" placeholder="24:00"></td>
+    <td><button class="btn sm danger" type="button">삭제</button></td>`;
+  tr.querySelector('button').addEventListener('click', () => { tr.remove(); schDirty = true; });
+  $('schTable').tBodies[0].appendChild(tr);
+}
+$('schCard').addEventListener('input', () => { schDirty = true; });
+async function saveSchedule() {
+  const events = [...$('schTable').tBodies[0].rows].map(tr => ({
+    name: tr.querySelector('.sName').value.trim(),
+    start: tr.querySelector('.sD1').value + ' ' + tr.querySelector('.sT1').value.trim(),
+    end: tr.querySelector('.sD2').value + ' ' + tr.querySelector('.sT2').value.trim(),
+  }));
+  if (!confirm('행사 일정을 저장합니다. 손님 페이지의 접수 가능 시간에 바로 반영됩니다. 계속할까요?')) return;
+  try {
+    await api('saveSchedule', { events, open: $('schOpen').value.trim(), close: $('schClose').value.trim() });
+    schDirty = false; evKey = '';
+    toast('행사 일정이 저장되었습니다'); refresh();
+  } catch (e) { toast('저장 실패: ' + e.message, 5000); }
+}
+
+/* 접수 상태 */
+async function setOpen(mode) {
+  const label = { '': '자동(행사 시간)', open: '강제 열기', closed: '강제 닫기' }[mode];
+  if (mode && !confirm(`접수 상태를 "${label}"로 바꿉니다. 손님 페이지에 바로 반영됩니다. 계속할까요?`)) return;
+  try { await api('setOpen', { mode }); toast(`접수 상태: ${label}`); refresh(); }
+  catch (e) { toast('실패: ' + e.message, 4000); }
+}
+
+/* 시작 */
+if (key) { $('login').classList.add('hide'); $('app').classList.remove('hide'); refresh(); }
+</script>
+</body>
+</html>
