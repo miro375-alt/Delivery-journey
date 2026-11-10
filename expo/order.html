@@ -21,6 +21,9 @@
   }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
+  /* 두 번 탭 확대 끄기: iOS 사파리는 viewport 의 user-scalable=no 를 무시하므로 touch-action 으로 막는다.
+     (＋ 버튼을 빠르게 두 번 눌러도 화면이 커지지 않고 두 번 담긴다. 두 손가락 확대는 그대로 된다) */
+  html, body, button, a, input, select, textarea, label { touch-action: manipulation; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
     background: var(--bg); color: var(--text);
@@ -35,7 +38,9 @@
     padding: 14px 20px; background: var(--card); border-bottom: 1px solid var(--border);
     position: sticky; top: 0; z-index: 10;
   }
-  .topbar .logo { font-weight: 800; font-size: 17px; letter-spacing: -0.3px; user-select: none; -webkit-user-select: none; }
+  .topbar .logo { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; letter-spacing: -0.3px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  /* 베이비스탠다드 구름 로고. 길게 누르기(스태프 메뉴)가 이미지 저장 메뉴에 막히지 않게 이미지는 터치를 받지 않는다 */
+  .topbar .logo img { height: 30px; width: auto; display: block; pointer-events: none; }
   .topbar .right { display: flex; align-items: center; gap: 8px; }
   .badge-queue {
     font-size: 12px; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d;
@@ -126,6 +131,11 @@
   #giftSheet .body { padding: 4px 16px 8px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .gift-opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 68px; padding: 14px 16px; margin-bottom: 10px; border: 2px solid var(--border); border-radius: 14px; background: #fff; font-size: 17px; font-weight: 600; text-align: left; cursor: pointer; color: var(--text); }
   .gift-opt.on { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+  .gift-opt .gthumb { flex: 0 0 60px; width: 60px; height: 60px; border-radius: 10px; background: #fff; border: 1px solid #eef2f7; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 30px; }
+  .gift-opt .gthumb img { width: 100%; height: 100%; object-fit: contain; }
+  .gift-opt .gname { flex: 1; min-width: 0; word-break: keep-all; }
+  .gift-sum .names .gline { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+  .gift-sum .names .gline img { width: 36px; height: 36px; object-fit: contain; border-radius: 6px; border: 1px solid #eef2f7; background: #fff; }
   .gift-opt .mark { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #fff; }
   .gift-opt.on .mark { border-color: var(--primary); background: var(--primary); }
   .gift-opt .qty { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
@@ -257,7 +267,7 @@
   }
   .staff-actions .danger { color: var(--danger); border-color: #fecaca; }
   .cfg label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-  .cfg input { width: 100%; font-size: 15px; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; }
+  .cfg input { width: 100%; font-size: 16px; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; }
   #staffMsg { font-size: 14px; color: var(--green); min-height: 20px; margin-top: 10px; text-align: center; }
 </style>
 </head>
@@ -276,7 +286,7 @@
 
 <section id="scr-closed" class="screen">
   <div class="topbar">
-    <span class="logo" id="logoPress2">📦 택배 배송 접수</span>
+    <span class="logo" id="logoPress2"><img src="img/babystandard-cloud.png" alt="베이비스탠다드" width="30" height="30" draggable="false">택배 배송 접수</span>
   </div>
   <div class="center" style="flex:1;display:flex;flex-direction:column;">
     <div class="info-icon">⏰</div>
@@ -293,7 +303,7 @@
 <!-- ═══════ ① 접수 폼 (기본 화면) ═══════ -->
 <section id="scr-form" class="screen">
   <div class="topbar">
-    <span class="logo" id="logoPress">📦 택배 배송 접수</span>
+    <span class="logo" id="logoPress"><img src="img/babystandard-cloud.png" alt="베이비스탠다드" width="30" height="30" draggable="false">택배 배송 접수</span>
     <span class="right">
       <span class="badge-queue" id="qBadge2"></span>
       <button class="btn-link" onclick="openEdit()">📍 배송지 수정</button>
@@ -1149,7 +1159,7 @@ function renderGifts() {
   if (!tier || !opts.length) return;
   const sel = giftSelCount();
   $('giftCount').textContent = `${won(tier.min)}원 이상 · ${tier.count}개`;
-  $('giftNames').innerHTML = sel ? Object.keys(giftMap).map(n => `${esc(giftLabel(n))} <b>× ${giftMap[n]}</b>`).join('<br>')
+  $('giftNames').innerHTML = sel ? Object.keys(giftMap).map(n => `<div class="gline">${giftImg(n) ? `<img src="${esc(giftImg(n))}" alt="">` : ''}<span>${esc(giftLabel(n))} <b>× ${giftMap[n]}</b></span></div>`).join('')
     : `<span style="color:var(--muted);">${opts.map(giftLabel).join(' · ')} 중 ${tier.count}개</span>`;
   $('giftChange').textContent = !sel ? '지금 고르기' : tier.choice ? '다시 고르기' : '바꾸기';
   $('giftChange').style.display = opts.length > 1 ? '' : 'none';
@@ -1177,13 +1187,17 @@ function closeGiftSheet() {
   $('giftSheet').classList.remove('open'); $('giftSheet').setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
 }
+// 사은품 사진: 판매 상품과 같은 것은 그 상품 사진을, 주방세제는 주문서의 DISH DETERGENT 병 사진을 쓴다
+const GIFT_IMAGES = { '사은품 주방세제': 'img/11.jpg' };
+function giftImg(n) { return GIFT_IMAGES[n] || PRODUCT_IMAGES[prodNo(n)] || ''; }
+function giftThumb(n) { const src = giftImg(n); return `<span class="gthumb">${src ? `<img src="${esc(src)}" alt="">` : '🎁'}</span>`; }
 function renderGiftSheet() {
   const single = sheetCount === 1;
   $('giftSheetList').innerHTML = giftOptions().map(n => {
     const q = sheetSel[n] || 0;
     return single
-      ? `<button type="button" class="gift-opt${q ? ' on' : ''}" data-n="${esc(n)}" aria-pressed="${q ? 'true' : 'false'}"><span>${esc(giftLabel(n))}</span><span class="mark">${q ? '✓' : ''}</span></button>`
-      : `<div class="gift-opt${q ? ' on' : ''}"><span>${esc(giftLabel(n))}</span><span class="qty"><button type="button" data-n="${esc(n)}" data-d="-1" aria-label="${esc(giftLabel(n))} 빼기">−</button><b>${q}</b><button type="button" data-n="${esc(n)}" data-d="1" aria-label="${esc(giftLabel(n))} 담기">＋</button></span></div>`;
+      ? `<button type="button" class="gift-opt${q ? ' on' : ''}" data-n="${esc(n)}" aria-pressed="${q ? 'true' : 'false'}">${giftThumb(n)}<span class="gname">${esc(giftLabel(n))}</span><span class="mark">${q ? '✓' : ''}</span></button>`
+      : `<div class="gift-opt${q ? ' on' : ''}">${giftThumb(n)}<span class="gname">${esc(giftLabel(n))}</span><span class="qty"><button type="button" data-n="${esc(n)}" data-d="-1" aria-label="${esc(giftLabel(n))} 빼기">−</button><b>${q}</b><button type="button" data-n="${esc(n)}" data-d="1" aria-label="${esc(giftLabel(n))} 담기">＋</button></span></div>`;
   }).join('');
   const t = sheetTotal();
   $('giftSheetOk').disabled = t !== sheetCount;
