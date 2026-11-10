@@ -81,6 +81,29 @@
   .manual-note { display: none; font-size: 13px; color: #b45309; margin-top: 6px; }
   .manual-note.show { display: block; }
   .hint-note { font-size: 13px; margin-top: 6px; }
+  /* 사은품 선택 바텀시트 (모바일 기준) */
+  #giftSheet { position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; justify-content: center; background: rgba(15,23,42,0); visibility: hidden; transition: background .25s ease, visibility 0s linear .25s; }
+  #giftSheet.open { background: rgba(15,23,42,.5); visibility: visible; transition: background .25s ease; }
+  #giftSheet .panel { width: 100%; max-width: 560px; max-height: 88dvh; display: flex; flex-direction: column; background: #fff; border-radius: 20px 20px 0 0; box-shadow: 0 -8px 30px rgba(15,23,42,.18); transform: translateY(100%); transition: transform .28s cubic-bezier(.2,.8,.2,1); padding-bottom: env(safe-area-inset-bottom); }
+  #giftSheet.open .panel { transform: translateY(0); }
+  #giftSheet .grab { width: 44px; height: 5px; border-radius: 3px; background: #cbd5e1; margin: 10px auto 2px; flex-shrink: 0; }
+  #giftSheet .head { padding: 10px 20px 12px; flex-shrink: 0; }
+  #giftSheet .head h2 { font-size: 20px; margin-bottom: 4px; }
+  #giftSheet .head p { font-size: 14.5px; color: var(--muted); line-height: 1.5; }
+  #giftSheet .body { padding: 4px 16px 8px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .gift-opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 68px; padding: 14px 16px; margin-bottom: 10px; border: 2px solid var(--border); border-radius: 14px; background: #fff; font-size: 17px; font-weight: 600; text-align: left; cursor: pointer; color: var(--text); }
+  .gift-opt.on { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+  .gift-opt .mark { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; color: #fff; }
+  .gift-opt.on .mark { border-color: var(--primary); background: var(--primary); }
+  .gift-opt .qty { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .gift-opt .qty button { width: 46px; height: 46px; font-size: 22px; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; cursor: pointer; color: var(--text); }
+  .gift-opt .qty b { min-width: 30px; text-align: center; font-size: 19px; }
+  #giftSheet .foot { padding: 10px 16px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+  #giftSheet .foot .btn-submit { width: 100%; }
+  .gift-sum { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .gift-sum .names { font-size: 16px; line-height: 1.5; }
+  .gift-change { flex-shrink: 0; font-size: 14.5px; font-weight: 600; padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--primary); background: #fff; color: var(--primary); cursor: pointer; }
+  @media (prefers-reduced-motion: reduce) { #giftSheet, #giftSheet .panel { transition: none; } }
   /* 로딩: 스켈레톤(화면 단위)과 스피너(버튼·진행 표시) */
   @keyframes sk-shine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -267,6 +290,27 @@
       <h3>구매 상품 <span class="req" style="color:var(--danger);">*</span></h3>
       <p class="hint-note" style="color:var(--muted);margin:0 0 4px;">구매하신 상품의 수량을 ＋ 버튼으로 선택해주세요.</p>
       <div id="prodList"></div>
+      <div id="orderSum" style="display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:#f1f5f9;font-size:16px;"></div>
+    </div>
+
+    <div class="section" id="giftSection" style="display:none;">
+      <h3>🎁 사은품 <span id="giftCount" style="font-size:14px;font-weight:600;color:var(--primary);margin-left:6px;"></span></h3>
+      <div class="gift-sum">
+        <div class="names" id="giftNames"></div>
+        <button type="button" class="gift-change" id="giftChange">바꾸기</button>
+      </div>
+      <p class="hint-note" id="giftNote" style="color:var(--muted);"></p>
+      <label class="toggle-line" id="giftPickLine" style="display:none;">
+        <input type="checkbox" id="giftPickup">
+        <span>사은품도 지금 가져갈게요</span>
+      </label>
+    </div>
+
+    <div class="section" id="snsSection" style="display:none;">
+      <label class="toggle-line" style="margin-top:0;">
+        <input type="checkbox" id="snsJoin">
+        <span><b>SNS 이벤트 참여 — 타포린백 증정</b><br><span style="font-size:13px;color:var(--muted);">인스타그램 팔로우 + 네이버 알림받기를 하신 뒤 체크하고, 직원에게 화면을 보여주세요. (하루 <span id="snsLimit">100</span>개 한정, 현장 지급)</span></span>
+      </label>
     </div>
 
     <div class="section" id="pickSection" style="display:none;">
@@ -336,6 +380,19 @@
 </section>
 
 <!-- 우편번호 검색 레이어 -->
+<!-- 사은품 선택 바텀시트 -->
+<div id="giftSheet" role="dialog" aria-modal="true" aria-labelledby="giftSheetTitle" aria-hidden="true">
+  <div class="panel">
+    <div class="grab"></div>
+    <div class="head">
+      <h2 id="giftSheetTitle">🎁 사은품을 골라주세요</h2>
+      <p id="giftSheetSub"></p>
+    </div>
+    <div class="body" id="giftSheetList"></div>
+    <div class="foot"><button type="button" class="btn-submit" id="giftSheetOk">선택 완료</button></div>
+  </div>
+</div>
+
 <div id="zipLayer">
   <div id="zipBox">
     <div class="zip-head">
@@ -354,6 +411,7 @@
     <div class="done-no-label">접수번호</div>
     <div class="done-no" id="doneNo"></div>
   </div>
+  <p class="done-hint" id="doneGifts" style="display:none;background:#fefce8;border:1px solid #fde68a;border-radius:12px;padding:12px 16px;color:var(--text);"></p>
   <p class="done-hint" id="donePickup" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px 16px;color:var(--text);"></p>
   <p class="done-hint" id="doneTempNote" style="display:none;color:#b45309;">⚠ 인터넷 연결 대기 중입니다.<br>연결되면 자동으로 정식 접수됩니다.</p>
   <p class="done-hint" id="doneShipNote">이 화면을 사진으로 찍어두시거나<br>접수번호를 메모해두시면 추후 배송 관리가 수월합니다.<br><br>상품은 <b>영업일 기준 2~3일 내</b> 발송됩니다.<br><br>배송지를 바꾸시려면 행사 기간 중 <b>영수증 번호와 휴대폰 번호</b>로<br>아래 "배송지 수정"에서 직접 수정하실 수 있습니다.</p>
@@ -538,8 +596,7 @@ function localOpenState() {
   const ts = localTs();
   const hm = ts.slice(11);
   const ev = currentEvent(ts);
-  if (ts < ev.start) return { open: false, message: `${ev.name} 접수는 ${ev.start.slice(5).replace('-', '/')} 부터 가능합니다.` };
-  if (ts >= ev.end) return { open: false, message: '행사 접수가 종료되었습니다. 감사합니다.' };
+  if (ts < ev.start || ts >= ev.end) return { open: true, message: '' };   // 행사 기간 밖은 테스트용으로 열어 둔다 (서버와 같은 규칙)
   if (hm < CONFIG.DAILY_OPEN || (CONFIG.DAILY_CLOSE && hm >= CONFIG.DAILY_CLOSE)) return { open: false, message: `접수 시간은 ${hoursLabel()} 입니다.` };
   return { open: true, message: '' };
 }
@@ -722,6 +779,9 @@ function resetForm() {
   document.querySelectorAll('.manual-note').forEach(n => n.classList.remove('show'));
   Object.keys(qtyMap).forEach(k => delete qtyMap[k]);
   Object.keys(pickMap).forEach(k => delete pickMap[k]);
+  Object.keys(giftMap).forEach(k => delete giftMap[k]);
+  giftTierKey = null; closeGiftSheet();
+  $('giftPickup').checked = false; $('snsJoin').checked = false;
   recvMode = 'ship';
   $('prodSection').style.borderColor = '';
   renderProducts();
@@ -784,6 +844,7 @@ function enableManualAddr(ids) {
 /* ══════════════ 구매 상품 선택 ══════════════ */
 // 상품 목록·행사 일정은 서버에서 받을 때마다 기기에 저장해 두고, 서버에 못 붙으면 저장본을 쓴다
 let productList = getJson('expo_products', []);
+let giftCfg = getJson('expo_gift', null);   // 무료배송 기준·금액대별 사은품·SNS 증정품 (서버에서 받음)
 const qtyMap = {};
 // 받는 방법: ship(전부 택배) / part(일부 현장 수령) / all(전부 현장 수령 — 택배 없음, 배송지 입력 불필요)
 let recvMode = 'ship';
@@ -794,16 +855,20 @@ function applySchedule(sch) {
 applySchedule(getJson('expo_schedule', null));
 function applyServerInfo(info) {
   if (info.schedule) { applySchedule(info.schedule); setJson('expo_schedule', info.schedule); }
+  if (info.gift) { giftCfg = info.gift; setJson('expo_gift', giftCfg); }
   if (Array.isArray(info.products)) {
     const changed = JSON.stringify(info.products) !== JSON.stringify(productList);
     productList = info.products; setJson('expo_products', productList);
     if (changed) renderProducts();
   }
+  updateSummary();
 }
 // 구매 목록: 사은품 제외 / 현장 수령 목록: 낱개 상품 + 사은품 (묶음·세트는 낱개로 고른다)
 const pickMap = {};
 const buyList = () => productList.filter(p => !p.gift);
-const pickList = () => productList.filter(p => !p.bundle && (recvMode !== 'all' || p.gift));
+// 금액대별·SNS 사은품은 사은품 칸에서 다루므로 현장 수령 목록에서는 뺀다
+const isRuleGift = p => !!giftCfg && (p.name === giftCfg.sns || (p.gift && giftCfg.pool.includes(p.name)));
+const pickList = () => productList.filter(p => !p.bundle && (recvMode !== 'all' || p.gift) && !isRuleGift(p));
 function qtyRows(list, map, prefix) {
   return list.map((p, i) => {
     const q = map[p.name] || 0;
@@ -817,6 +882,7 @@ function renderProducts() {
   $('prodList').innerHTML = qtyRows(buyList(), qtyMap, 'pq');
   $('pickSection').style.display = buyList().length ? '' : 'none';
   setRecvMode(buyList().length ? recvMode : 'ship');
+  updateSummary();
 }
 function bindQty(boxId, listFn, map, prefix) {
   $(boxId).addEventListener('click', e => {
@@ -826,6 +892,7 @@ function bindQty(boxId, listFn, map, prefix) {
     map[name] = v;
     $(prefix + i).textContent = v; $(prefix + i).classList.toggle('on', v > 0);
     if (v > 0 && prefix === 'pq') $('prodSection').style.borderColor = '';
+    if (prefix === 'pq') updateSummary();
   });
 }
 bindQty('prodList', buyList, qtyMap, 'pq');
@@ -838,10 +905,108 @@ function setRecvMode(m) {
   // 전부 현장 수령이면 구매 상품 전체가 현장 수령이므로, 추가로 고를 것은 사은품뿐
   $('pickList').innerHTML = qtyRows(pickList(), pickMap, 'kq');
   $('pickWrap').style.display = m === 'ship' || !pickList().length ? 'none' : '';
+  renderGifts();
   $('pickNote').textContent = all ? '구매하신 상품은 모두 지금 받아 가시는 것으로 접수됩니다. 사은품이 있으면 아래에서 선택해주세요.'
                                   : '지금 부스에서 받아 가시는 상품과 수량만 선택해주세요 (사은품, 세트 중 일부 포함). 나머지는 택배로 보내드립니다.';
 }
 $('recvMode').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setRecvMode(b.dataset.m); });
+/* ── 합계 금액 · 무료배송 · 금액대별 사은품 ── */
+const won = n => Number(n || 0).toLocaleString('ko-KR');
+const giftMap = {};                 // 고른 사은품 {상품명: 수량}
+let giftTierKey = null;             // 지금 적용 중인 금액대 (바뀌면 기본 사은품으로 다시 채운다)
+const hasProduct = n => productList.some(p => p.name === n);
+function orderTotal() { return buyList().reduce((a, p) => a + (p.price || 0) * (qtyMap[p.name] || 0), 0); }
+function curTier() { if (!giftCfg) return null; const t = orderTotal(); return giftCfg.tiers.find(x => t >= x.min) || null; }
+function giftSelCount() { return Object.values(giftMap).reduce((a, b) => a + b, 0); }
+const giftOptions = () => giftCfg ? giftCfg.pool.filter(hasProduct) : [];
+const giftLabel = n => n.replace(/^\d+\.\s*/, '').replace(/^사은품\s*/, '');
+function updateSummary() {
+  const total = orderTotal(), tier = curTier();
+  const min = giftCfg ? giftCfg.freeShipMin : 0;
+  $('orderSum').style.display = buyList().length ? '' : 'none';
+  $('orderSum').innerHTML = `합계 <b>${won(total)}원</b>` + (!min ? '' : total >= min ? ' · <b style="color:var(--green);">무료배송</b>'
+    : total > 0 ? ` · <span style="color:var(--muted);">${won(min - total)}원 더 담으면 무료배송</span>` : ` · <span style="color:var(--muted);">${won(min)}원 이상 무료배송</span>`);
+  const key = tier ? tier.min : 0;
+  if (key !== giftTierKey) {   // 금액대가 바뀌면 고른 사은품을 비운다. 고를 것이 없는 금액대(5만원)만 기본 사은품을 담아 둔다
+    giftTierKey = key;
+    Object.keys(giftMap).forEach(k => delete giftMap[k]);
+    if (tier && !tier.choice) tier.defaults.filter(hasProduct).forEach(n => { giftMap[n] = (giftMap[n] || 0) + 1; });
+  }
+  $('snsSection').style.display = giftCfg && hasProduct(giftCfg.sns) ? '' : 'none';
+  if (giftCfg) $('snsLimit').textContent = giftCfg.snsLimit;
+  renderGifts();
+}
+function renderGifts() {
+  const tier = curTier(), opts = giftOptions();
+  $('giftSection').style.display = tier && opts.length ? '' : 'none';
+  if (!tier || !opts.length) return;
+  const sel = giftSelCount();
+  $('giftCount').textContent = `${won(tier.min)}원 이상 · ${tier.count}개`;
+  $('giftNames').innerHTML = sel ? Object.keys(giftMap).map(n => `${esc(giftLabel(n))} <b>× ${giftMap[n]}</b>`).join('<br>')
+    : `<span style="color:var(--muted);">${opts.map(giftLabel).join(' · ')} 중 ${tier.count}개</span>`;
+  $('giftChange').textContent = !sel ? '지금 고르기' : tier.choice ? '다시 고르기' : '바꾸기';
+  $('giftChange').style.display = opts.length > 1 ? '' : 'none';
+  $('giftNote').textContent = sel ? (tier.choice ? '' : '기본 사은품입니다. 다른 사은품으로 바꿀 수 있습니다.') : '접수하기를 누르면 사은품을 고르는 창이 나옵니다.';
+  $('giftNote').style.display = $('giftNote').textContent ? '' : 'none';
+  $('giftPickLine').style.display = recvMode === 'part' ? '' : 'none';
+}
+
+/* 사은품 선택 바텀시트 */
+let sheetSel = {}, sheetCount = 0, sheetLastFocus = null, sheetThenSubmit = false;
+const sheetTotal = () => Object.values(sheetSel).reduce((a, b) => a + b, 0);
+function openGiftSheet(thenSubmit) {
+  const tier = curTier(); if (!tier) return;
+  sheetThenSubmit = thenSubmit === true;   // 접수하기에서 열렸으면 고른 뒤 바로 접수로 이어진다
+  sheetCount = tier.count; sheetSel = { ...giftMap };
+  $('giftSheetSub').textContent = `${won(tier.min)}원 이상 구매 감사 사은품입니다. 아래에서 ${tier.count}개를 골라주세요.` + (tier.count > 1 ? ' 같은 상품을 여러 개 고르셔도 됩니다.' : '');
+  renderGiftSheet();
+  sheetLastFocus = document.activeElement;
+  if (sheetLastFocus && sheetLastFocus.blur) sheetLastFocus.blur();   // 모바일 키보드 내리기
+  $('giftSheet').classList.add('open'); $('giftSheet').setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+function closeGiftSheet() {
+  sheetThenSubmit = false;
+  $('giftSheet').classList.remove('open'); $('giftSheet').setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+function renderGiftSheet() {
+  const single = sheetCount === 1;
+  $('giftSheetList').innerHTML = giftOptions().map(n => {
+    const q = sheetSel[n] || 0;
+    return single
+      ? `<button type="button" class="gift-opt${q ? ' on' : ''}" data-n="${esc(n)}" aria-pressed="${q ? 'true' : 'false'}"><span>${esc(giftLabel(n))}</span><span class="mark">${q ? '✓' : ''}</span></button>`
+      : `<div class="gift-opt${q ? ' on' : ''}"><span>${esc(giftLabel(n))}</span><span class="qty"><button type="button" data-n="${esc(n)}" data-d="-1" aria-label="${esc(giftLabel(n))} 빼기">−</button><b>${q}</b><button type="button" data-n="${esc(n)}" data-d="1" aria-label="${esc(giftLabel(n))} 담기">＋</button></span></div>`;
+  }).join('');
+  const t = sheetTotal();
+  $('giftSheetOk').disabled = t !== sheetCount;
+  $('giftSheetOk').textContent = t !== sheetCount ? `${sheetCount}개 중 ${t}개 선택됨` : sheetThenSubmit ? '선택하고 접수하기' : '선택 완료';
+}
+$('giftSheetList').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const n = b.dataset.n;
+  if (sheetCount === 1) sheetSel = { [n]: 1 };                         // 하나만 고르는 금액대: 누르면 바로 교체
+  else {
+    const d = Number(b.dataset.d);
+    if (d > 0 && sheetTotal() >= sheetCount) return;                   // 개수를 다 채웠으면 먼저 − 로 빼야 한다
+    sheetSel[n] = Math.max(0, (sheetSel[n] || 0) + d);
+    if (!sheetSel[n]) delete sheetSel[n];
+  }
+  renderGiftSheet();
+});
+$('giftSheetOk').addEventListener('click', () => {
+  Object.keys(giftMap).forEach(k => delete giftMap[k]);
+  Object.assign(giftMap, sheetSel);
+  const go = sheetThenSubmit;
+  closeGiftSheet(); renderGifts();
+  if (go) submitOrder();
+});
+// 바깥(어두운 영역)을 누르거나 Esc 를 누르면 닫는다 — 고른 내용은 버리고 기존 선택(기본 사은품) 유지
+$('giftSheet').addEventListener('click', e => { if (e.target === $('giftSheet')) closeGiftSheet(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('giftSheet').classList.contains('open')) closeGiftSheet(); });
+$('giftChange').addEventListener('click', () => openGiftSheet(false));
+function selectedGifts() { return curTier() ? Object.keys(giftMap).map(n => ({ name: n, qty: giftMap[n] })) : []; }
+
 const pickedFrom = (list, map) => list.map(p => ({ name: p.name, qty: map[p.name] || 0 })).filter(x => x.qty > 0);
 function selectedItems() { return pickedFrom(buyList(), qtyMap); }
 function selectedPickup() { return recvMode === 'ship' ? [] : pickedFrom(pickList(), pickMap); }
@@ -864,7 +1029,7 @@ function validate() {
   bad |= markErr('zipcode', !onsite && !/^\d{5}$/.test($('zipcode').value.trim()));
   bad |= markErr('addr1', !onsite && $('addr1').value.trim().length < 5);
   bad |= markErr('addr2', !onsite && !$('addr2').value.trim());
-  const noPick = recvMode === 'part' && selectedPickup().length === 0;
+  const noPick = recvMode === 'part' && selectedPickup().length === 0 && !$('giftPickup').checked && !$('snsJoin').checked;
   // 상품이 등록돼 있으면 1개 이상 선택해야 한다 (상품 목록을 못 받은 기기는 건너뜀)
   const noItems = buyList().length > 0 && selectedItems().length === 0;
   $('prodSection').style.borderColor = noItems ? 'var(--danger)' : '';
@@ -900,6 +1065,9 @@ function deviceCode() { return localStorage.getItem(LS.device) || 'WEB'; }
 let submitting = false;
 async function submitOrder() {
   if (submitting || !validate()) return;
+  // 입력이 모두 맞으면, 사은품을 아직 고르지 않은 경우 여기서 선택 창을 띄운다 (고르면 접수가 이어진다)
+  const gt = curTier();
+  if (gt && giftOptions().length && giftSelCount() !== gt.count) { openGiftSheet(true); return; }
   submitting = true;
   $('btnSubmit').disabled = true;   // 중복 확인을 기다리는 동안 두 번 눌리지 않게 먼저 잠근다
   try { await submitOrderInner(); } finally { submitting = false; }
@@ -946,6 +1114,9 @@ async function submitOrderInner() {
     memo: recvMode === 'all' ? '' : $('memo').value.trim(),
     items: selectedItems(),
     pickup: selectedPickup(),   // 현장에서 바로 가져간 상품 — 이것만 현장 재고에서 빠진다
+    gifts: selectedGifts(),     // 금액대별 사은품 (개수는 서버가 구매금액으로 다시 확인)
+    giftPickup: recvMode === 'part' && $('giftPickup').checked,
+    sns: $('snsJoin').checked,  // SNS 이벤트 참여 → 타포린백
     website: $('website').value,   // 숨은 함정칸 — 사람은 비어 있음
     consent: 'Y',
     device: deviceCode(),
@@ -970,7 +1141,7 @@ async function submitOrderInner() {
     const sent = getJson(LS.sent, []);
     sent.push({ ...p, receiptNo: resp.receiptNo || '' });
     setJson(LS.sent, sent);
-    showDone(resp.receiptNo || '접수완료', false, p);
+    showDone(resp.receiptNo || '접수완료', false, p, resp);
   } else if (resp && resp.ok === false) {
     // 서버가 거부 (접수 시간 외, 입력 오류 등) — 큐에서 빼고 바로 안내
     dequeue();
@@ -985,8 +1156,15 @@ async function submitOrderInner() {
   }
 }
 
-function showDone(no, isTemp, p) {
+function showDone(no, isTemp, p, resp) {
   $('doneNo').textContent = no;
+  // 사은품: 서버가 확정한 내용을 우선 보여주고, 오프라인이면 기기에서 고른 내용을 보여준다
+  const gl = resp && typeof resp.gifts === 'string'
+    ? resp.gifts.split(';').map(x => x.trim()).filter(Boolean).map(x => esc(x.replace(/^\d+\.\s*/, '').replace('×', ' × ')))
+    : p ? [...(p.gifts || []).map(i => `${esc(i.name.replace(/^\d+\.\s*/, ''))} × ${i.qty}`), ...(p.sns && giftCfg ? [esc(giftCfg.sns) + ' × 1'] : [])] : [];
+  const notice = resp && resp.notice ? `<br><span style="color:var(--danger);font-size:14px;">${esc(resp.notice)}</span>` : '';
+  $('doneGifts').innerHTML = gl.length || notice ? `<b>🎁 사은품</b>${gl.length ? '<br>' + gl.join('<br>') : ''}${notice}` : '';
+  $('doneGifts').style.display = gl.length || notice ? 'block' : 'none';
   // 전부 현장 수령이면 구매 상품 전체 + 사은품, 일부 수령이면 고른 상품만 보여준다
   const list = p ? (p.allPickup ? [...(p.items || []), ...(p.pickup || [])] : (p.pickup || [])) : [];
   const pk = list.map(i => `${esc(i.name)} × ${i.qty}`).join('<br>');
@@ -1166,10 +1344,10 @@ async function testSend() {
   staffMsg(ok && ok.ok ? '서버 연결 정상 ✓' : '연결 실패 — URL/배포 설정을 확인해주세요.', !(ok && ok.ok));
 }
 function exportCsv() {
-  const rows = [...getJson(LS.sent, []), ...getJson(LS.queue, [])].map(r => ({ ...r, itemsText: (r.items || []).map(i => i.name + '×' + i.qty).join('; '), pickupText: (r.allPickup ? '[전부 현장 수령] ' : '') + (r.pickup || []).map(i => i.name + '×' + i.qty).join('; ') }));
+  const rows = [...getJson(LS.sent, []), ...getJson(LS.queue, [])].map(r => ({ ...r, itemsText: (r.items || []).map(i => i.name + '×' + i.qty).join('; '), giftsText: [...(r.gifts || []).map(i => i.name + '×' + i.qty), ...(r.sns ? ['SNS 타포린백'] : [])].join('; '), pickupText: (r.allPickup ? '[전부 현장 수령] ' : '') + (r.pickup || []).map(i => i.name + '×' + i.qty).join('; ') }));
   if (!rows.length) return staffMsg('내보낼 데이터가 없습니다.', true);
-  const cols = ['receiptNo','ts','orderNo','name','phone','rName','rPhone','zipcode','addr1','addr2','memo','itemsText','pickupText','consent','uuid','device'];
-  const head = ['접수번호','접수시각','영수증번호','주문자명','주문자연락처','수령인명','수령인연락처','우편번호','기본주소','상세주소','배송요청사항','구매상품','현장수령','개인정보동의','UUID','단말기'];
+  const cols = ['receiptNo','ts','orderNo','name','phone','rName','rPhone','zipcode','addr1','addr2','memo','itemsText','giftsText','pickupText','consent','uuid','device'];
+  const head = ['접수번호','접수시각','영수증번호','주문자명','주문자연락처','수령인명','수령인연락처','우편번호','기본주소','상세주소','배송요청사항','구매상품','사은품','현장수령','개인정보동의','UUID','단말기'];
   const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const csv = '\uFEFF' + [head.join(','), ...rows.map(r => cols.map(c => esc(r[c])).join(','))].join('\n');
   const a = document.createElement('a');

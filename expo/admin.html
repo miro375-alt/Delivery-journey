@@ -179,7 +179,7 @@
 
       <div class="card">
         <h3>상품 판매 · 현장 재고 <span class="muted" id="salesSummary"></span></h3>
-        <div class="tablewrap"><table id="salesTable"><thead><tr><th>상품</th><th class="num">단가</th><th class="num">오늘 판매</th><th class="num">누적 판매</th><th class="num">매출(추정)</th><th class="num" title="구매 수량을 낱개로 환산한 뒤 현장 수령분을 뺀 수량">택배 출고 예정</th><th class="num">현장 재고</th><th class="num" title="손님이 현장에서 바로 가져간 수량">현장 출고</th><th class="num">현장 잔여</th><th>상태</th></tr></thead><tbody></tbody></table></div>
+        <div class="tablewrap"><table id="salesTable"><thead><tr><th>상품</th><th class="num">단가</th><th class="num">오늘 판매</th><th class="num">누적 판매</th><th class="num">매출(추정)</th><th class="num" title="사은품으로 나간 수량">사은품 증정</th><th class="num" title="구매(낱개 환산)와 사은품을 합친 뒤 현장 수령분을 뺀 수량">택배 출고 예정</th><th class="num">현장 재고</th><th class="num" title="손님이 현장에서 바로 가져간 수량">현장 출고</th><th class="num">현장 잔여</th><th>상태</th></tr></thead><tbody></tbody></table></div>
         <p class="muted" id="salesNote" style="margin-top:8px;"></p>
       </div>
 
@@ -201,7 +201,7 @@
         <div class="filters">
           <select id="fDate"><option value="">전체 날짜</option></select>
           <select id="fShip"><option value="">발송 전체</option><option value="unshipped">미발송 (택배)</option><option value="shipped">발송완료</option><option value="onsite">전부 현장 수령 (택배 없음)</option></select>
-          <select id="fFlag"><option value="">표시 전체</option><option value="dup">중복의심만</option><option value="edited">배송지 수정된 건만</option><option value="items">상품 선택한 건만</option><option value="noitems">상품 미선택 건만</option><option value="pickup">현장 수령 있는 건만</option></select>
+          <select id="fFlag"><option value="">표시 전체</option><option value="dup">중복의심만</option><option value="edited">배송지 수정된 건만</option><option value="items">상품 선택한 건만</option><option value="noitems">상품 미선택 건만</option><option value="pickup">현장 수령 있는 건만</option><option value="gifts">사은품 있는 건만</option><option value="fee">배송비 대상만 (5만원 미만 택배)</option></select>
           <select id="fDevice"><option value="">단말기 전체</option></select>
           <input type="search" id="fQ" placeholder="이름·전화·영수증·접수번호·주소 검색">
           <button class="btn" onclick="loadList()">검색</button>
@@ -362,7 +362,7 @@ setInterval(() => { if (key && $('autoRef').checked && !$('app').classList.conta
 /* 대시보드 */
 function renderDash(s) {
   const st = s.state;
-  const modeName = { open: '접수 중 (행사 시간)', forced_open: '접수 중 (강제 열기)', forced_closed: '접수 중지 (강제 닫기)', before: '행사 시작 전', after: '행사 종료', hours: '접수 시간 외' }[st.mode] || st.mode;
+  const modeName = { open: '접수 중 (행사 시간)', forced_open: '접수 중 (강제 열기)', forced_closed: '접수 중지 (강제 닫기)', before: '행사 시작 전', after: '행사 종료', test: '접수 중 (행사 기간 외 · 테스트)', hours: '접수 시간 외' }[st.mode] || st.mode;
   $('banner').className = 'banner ' + (st.open ? 'open' : 'closed');
   $('bannerTitle').textContent = (st.open ? '🟢 ' : '🟠 ') + modeName;
   $('bannerSub').textContent = (/^forced/.test(st.mode) ? '⚠ 강제 모드 — 행사 일정이 무시됩니다. 끝나면 "자동"으로 되돌려 주세요 · ' : '') + (st.message ? st.message + ' · ' : '') + `서버 시각 ${s.generatedAt.slice(5, 16)} · 배송지 수정 ${s.editOpen ? '가능' : '불가'}`;
@@ -412,10 +412,10 @@ function renderDash(s) {
     const out = !p.bundle && p.stock > 0 && p.remaining <= 0;
     const tr = document.createElement('tr'); if (low || (out && p.active)) tr.className = 'low';
     const dash = v => p.bundle ? '–' : v;
-    tr.innerHTML = `<td>${esc(p.name)}${p.gift ? ' <span class="tag edit">사은품</span>' : ''}${p.bundle ? `<br><span class="muted" style="font-size:12px;">구성: ${esc(p.comp)}</span>` : ''}</td><td class="num">${p.gift ? '–' : fmt(p.price)}</td><td class="num">${fmt(p.soldToday)}</td><td class="num"><b>${fmt(p.sold)}</b></td><td class="num">${fmt(p.revenue)}</td><td class="num">${dash(fmt(p.ship))}</td><td class="num">${dash(fmt(p.stock))}</td><td class="num">${dash(fmt(p.used))}</td><td class="num"><b>${dash(fmt(p.remaining))}</b></td><td>${!p.active ? '<span class="tag off">판매 중지</span>' : p.bundle ? '<span class="tag off">묶음·세트</span>' : out ? '<span class="tag dup">현장 품절</span>' : low ? '<span class="tag dup">현장 재고 부족</span>' : !p.stock ? '<span class="tag off">재고 미입력</span>' : '<span class="tag ship">정상</span>'}</td>`;
+    tr.innerHTML = `<td>${esc(p.name)}${p.gift ? ' <span class="tag edit">사은품</span>' : ''}${p.bundle ? `<br><span class="muted" style="font-size:12px;">구성: ${esc(p.comp)}</span>` : ''}</td><td class="num">${p.gift ? '–' : fmt(p.price)}</td><td class="num">${fmt(p.soldToday)}</td><td class="num"><b>${fmt(p.sold)}</b></td><td class="num">${fmt(p.revenue)}</td><td class="num">${p.gifted ? fmt(p.gifted) : '–'}</td><td class="num">${dash(fmt(p.ship))}</td><td class="num">${dash(fmt(p.stock))}</td><td class="num">${dash(fmt(p.used))}</td><td class="num"><b>${dash(fmt(p.remaining))}</b></td><td>${!p.active ? '<span class="tag off">판매 중지</span>' : p.bundle ? '<span class="tag off">묶음·세트</span>' : out ? '<span class="tag dup">현장 품절</span>' : low ? '<span class="tag dup">현장 재고 부족</span>' : !p.stock ? '<span class="tag off">재고 미입력</span>' : '<span class="tag ship">정상</span>'}</td>`;
     sb.appendChild(tr);
   });
-  $('salesSummary').textContent = s.products.length ? `판매 ${fmt(qty)}개 · 매출 ${fmt(rev)}원` : '';
+  $('salesSummary').textContent = s.products.length ? `판매 ${fmt(qty)}개 · 매출 ${fmt(rev)}원` + (s.sns ? ` · 오늘 타포린백 ${fmt(s.sns.today)}/${fmt(s.sns.limit)}개` : '') + (t.feeDue ? ` · 배송비 대상 ${fmt(t.feeDue)}건` : '') : '';
   $('salesNote').textContent = s.products.length ? '접수된 구매 상품은 택배로 나가므로 현장 재고에서 빠지지 않고, 손님이 "현장 수령"으로 가져간 수량만 현장 재고에서 빠집니다. 택배 출고 예정은 묶음·세트를 낱개로 환산한 수량입니다.' : '등록된 상품이 없습니다. "상품·재고" 탭에서 상품을 등록하면 손님 폼에 선택 항목이 나타나고 여기서 판매·재고를 볼 수 있습니다.';
 
   renderKv('devTable', s.byDevice, t.total);
@@ -467,10 +467,10 @@ function eventDays(start, end) {
 function localIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function weekday(iso) { const d = new Date(iso + 'T00:00:00'); return isNaN(d) ? '' : '(' + '일월화수목금토'[d.getDay()] + ')'; }
 function itemsCell(o) {
-  return esc(o.items) + (o.pickup ? `${o.items ? '<br>' : ''}<span class="tag edit">${o.ship === '현장수령' ? '현장 출고' : '현장수령'}</span> ${esc(o.pickup)}` : '');
+  return esc(o.items) + (o.total ? ` <span class="muted">(${fmt(o.total)}원)</span>` : '') + (o.gifts ? `<br><span class="tag ship">사은품</span> ${esc(o.gifts)}` : '') + (o.pickup ? `${o.items || o.gifts ? '<br>' : ''}<span class="tag edit">${o.ship === '현장수령' ? '현장 출고' : '현장수령'}</span> ${esc(o.pickup)}` : '');
 }
 function tags(o) {
-  return (o.ship === '발송완료' ? '<span class="tag ship">발송완료</span> ' : o.ship === '현장수령' ? '<span class="tag edit">전부 현장수령</span> ' : '') + (o.dup ? '<span class="tag dup">중복의심</span> ' : '') + (o.edited ? `<span class="tag edit" title="${esc(o.edited)}">수정됨</span>` : '');
+  return (o.ship === '발송완료' ? '<span class="tag ship">발송완료</span> ' : o.ship === '현장수령' ? '<span class="tag edit">전부 현장수령</span> ' : '') + (o.feeDue ? '<span class="tag dup" title="5만원 미만 택배 건">배송비 대상</span> ' : '') + (o.dup ? '<span class="tag dup">중복의심</span> ' : '') + (o.edited ? `<span class="tag edit" title="${esc(o.edited)}">수정됨</span>` : '');
 }
 
 /* 접수 목록 */
@@ -578,7 +578,7 @@ async function openClosing(mail) {
     const r = await api('closing', { mail: !!mail });
     const stName = { soldout: '품절', short: '추가 필요', nostock: '재고 미입력', ok: '충분' };
     $('clTitle').textContent = `📋 ${r.event} · ${r.date}${weekday(r.date)} 마감`;
-    $('clSub').textContent = `오늘 접수 ${fmt(r.ordersToday)}건 (현장 수령 포함 ${fmt(r.pickupOrdersToday)}건) · 판매 ${fmt(r.qtyToday)}개 · 매출(추정) ${fmt(r.revenueToday)}원 · 남은 행사일 ${r.daysLeft}일 (마지막 날 ${r.lastDay.slice(5).replace('-', '/')})`;
+    $('clSub').textContent = `오늘 접수 ${fmt(r.ordersToday)}건 (현장 수령 포함 ${fmt(r.pickupOrdersToday)}건) · 타포린백 ${fmt(r.snsToday || 0)}/${fmt(r.snsLimit || 100)}개 · 판매 ${fmt(r.qtyToday)}개 · 매출(추정) ${fmt(r.revenueToday)}원 · 남은 행사일 ${r.daysLeft}일 (마지막 날 ${r.lastDay.slice(5).replace('-', '/')})`;
     const need = r.items.filter(x => x.status === 'soldout' || x.status === 'short');
     const noStock = r.items.filter(x => x.status === 'nostock');
     $('clAlert').innerHTML = !r.items.length
