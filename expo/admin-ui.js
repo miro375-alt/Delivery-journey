@@ -249,6 +249,37 @@
   const closeBtn = document.querySelector('#banner .btn.primary');
   if (closeBtn) { closeBtn.textContent = '일일 마감'; closeBtn.onclick = () => { location.href = 'closing.html'; }; closeBtn.removeAttribute('onclick'); closeBtn.onclick = () => { location.href = 'closing.html'; }; }
 
+  /* ── 정산 파일: 토스에서 내보낸 엑셀은 비밀번호가 걸려 있다. 화면에서 비밀번호를 풀어 일반 엑셀로 바꾼 뒤 올린다 ──
+     (서버의 정산 읽기는 비밀번호가 걸린 파일을 읽지 못한다. 비밀번호와 원본 파일은 서버로 보내지 않는다) */
+  function loadXlsxTool() {
+    if (window.XlsxPopulate) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx-populate@1.21.0/browser/xlsx-populate.min.js';
+      s.onload = resolve; s.onerror = () => reject(new Error('엑셀 비밀번호 풀기 도구를 불러오지 못했습니다. 인터넷 연결을 확인해주세요.'));
+      document.head.appendChild(s);
+    });
+  }
+  if (has('readSettlementFile')) {
+    const readOld = window.readSettlementFile;
+    window.readSettlementFile = async function (file) {
+      const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+      const locked = head[0] === 0xD0 && head[1] === 0xCF && head[2] === 0x11 && head[3] === 0xE0;   // 비밀번호가 걸린 엑셀의 파일 머리
+      if (!locked) return readOld.apply(this, arguments);
+      const pw = prompt('비밀번호가 걸린 파일입니다.\n토스에서 엑셀을 내보낼 때 정한 파일 비밀번호를 입력해주세요.');
+      if (!pw) throw new Error('비밀번호가 걸린 파일입니다. 파일 비밀번호를 입력해야 가져올 수 있습니다.');
+      await loadXlsxTool();
+      const Ctor = (await XlsxPopulate.fromBlankAsync()).constructor;
+      const wb = new Ctor();
+      try { await wb._initAsync(await file.arrayBuffer(), { password: pw }); } catch (e) { /* 내용 해석은 서버가 한다. 여기서는 비밀번호만 푼다 */ }
+      if (!wb._zip || !wb._zip.file('xl/workbook.xml')) throw new Error('파일을 열 수 없습니다. 파일 비밀번호를 확인해주세요.');
+      const bytes = await wb._zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
+      let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      return btoa(bin);
+    };
+  }
+
   /* ── 시작: 로그인 유지 중이면 저장해 둔 화면을 바로 띄우고 뒤에서 새로 받는다 ── */
   if (!key) {
     let kept = '';
