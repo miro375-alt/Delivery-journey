@@ -493,6 +493,7 @@
     <div class="head"><h2 id="cartSheetTitle">담은 상품</h2><span id="cartSheetCount"></span></div>
     <div class="body" id="cartSheetList"></div>
     <div class="more-hint" id="cartSheetMore" style="display:none;">↓ 아래로 밀어서 더 보기</div>
+    <div id="cartSheetNotice" role="note" style="display:none;margin:10px 16px;padding:11px 13px;border-radius:12px;background:#fff7ed;border:1px solid #fdba74;color:#9a3412;font-size:13.5px;line-height:1.55;word-break:keep-all;"></div>
     <div class="foot">
       <div class="total"><span>최종 금액</span><b id="cartSheetTotal">0원</b></div>
       <div class="ship" id="cartSheetShip"></div>
@@ -1078,6 +1079,9 @@ function closeCartSheet() {
   $('cartSheet').classList.remove('open'); $('cartSheet').setAttribute('aria-hidden', 'true');
   if (cartLastFocus && cartLastFocus.focus && document.contains(cartLastFocus)) cartLastFocus.focus({ preventScroll: true });
 }
+// 섬유유연제가 들어간 상품(단품·묶음·세트)을 담으면 재입고·분할 배송 안내를 보여준다
+const SOFTENER_NOTICE = '섬유유연제 제품은 현재 준비된 수량이 모두 완판되어 2주내로 재입고 예정이며 다른 제품들과 분할 배송될 예정입니다. 최대한 빠른 입고를 위해 노력하겠습니다. 감사합니다.';
+const hasSoftener = p => /유연제/.test(p.name) || (p.comp || []).some(c => /유연제/.test(c.name));
 function renderCartSheet() {
   const items = buyList().filter(p => qtyMap[p.name] > 0);
   if (!items.length) { closeCartSheet(); return; }
@@ -1090,6 +1094,9 @@ function renderCartSheet() {
       `<div class="qty"><button type="button" data-n="${esc(p.name)}" data-d="-1" aria-label="${esc(prodLabel(p.name))} 빼기">−</button><b>${q}</b>` +
       `<button type="button" data-n="${esc(p.name)}" data-d="1" aria-label="${esc(prodLabel(p.name))} 더 담기">＋</button></div></div>`;
   }).join('');
+  const soft = items.some(hasSoftener);
+  $('cartSheetNotice').textContent = soft ? SOFTENER_NOTICE : '';
+  $('cartSheetNotice').style.display = soft ? '' : 'none';
   $('cartSheetTotal').textContent = won(total) + '원';
   const min = giftCfg ? giftCfg.freeShipMin : 0;
   $('cartSheetShip').innerHTML = !min ? '' : total >= min ? '<b style="color:var(--green);">무료배송</b>' : `${won(min - total)}원 더 담으면 무료배송`;
@@ -1399,36 +1406,52 @@ async function submitOrderInner() {
   setJson(LS.queue, q0);
   const dequeue = () => setJson(LS.queue, getJson(LS.queue, []).filter(x => x.uuid !== p.uuid));
 
-  // 기기가 오프라인이면 기다리지 않고 바로 임시번호로 안내
-  inFlightUuid = p.uuid;
-  let resp = null;
-  try { resp = navigator.onLine === false ? null : await sendOne(getWebappUrl(), p, 10000); }
-  finally { inFlightUuid = null; }
+  // 기기에 저장했으므로 손님은 서버 응답(2~5초)을 기다리지 않는다: 완료 화면을 바로 띄우고 전송은 뒤에서 한다
   clearInterval(stageTimer);
   $('sendStatus').classList.remove('show');
   $('btnSubmit').textContent = '접수하기'; $('btnSubmit').classList.remove('busy');
+  updateBadges();
+  if (navigator.onLine === false) { showDone(tempReceiptNo(p.uuid), true, p); return; }   // 오프라인: 임시번호로 안내, 연결되면 자동 전송
+  doneUuid = p.uuid;
+  showDone('', false, p, null, true);
+  sendInBackground(p);
+}
+let doneUuid = null;   // 지금 완료 화면에 떠 있는 접수
+async function sendInBackground(p) {
+  inFlight.add(p.uuid);
+  let resp = null;
+  try { resp = await sendOne(getWebappUrl(), p, 15000); } catch { resp = null; } finally { inFlight.delete(p.uuid); }
+  const onDone = () => doneUuid === p.uuid && $('scr-done').classList.contains('active');
+  const dequeue = () => setJson(LS.queue, getJson(LS.queue, []).filter(x => x.uuid !== p.uuid));
+  const record = no => { const sent = getJson(LS.sent, []); if (!sent.some(x => x.uuid === p.uuid)) { sent.push({ ...p, receiptNo: no }); setJson(LS.sent, sent); } };
   if (resp && resp.ok) {
+    dequeue(); record(resp.receiptNo || '');
+    if (onDone()) showDone(resp.receiptNo || '접수완료', false, p, resp);
+  } else if (resp && resp.ok === false && PERMANENT_REJECT.includes(resp.code)) {
+    // 서버가 확정 거부 (접수 시간 외, 입력 오류 등) — 큐에서 빼고 바로 알린다
     dequeue();
-    const sent = getJson(LS.sent, []);
-    sent.push({ ...p, receiptNo: resp.receiptNo || '' });
-    setJson(LS.sent, sent);
-    showDone(resp.receiptNo || '접수완료', false, p, resp);
-  } else if (resp && resp.ok === false) {
-    // 서버가 거부 (접수 시간 외, 입력 오류 등) — 큐에서 빼고 바로 안내
-    dequeue();
-    $('btnSubmit').disabled = false;
-    $('formErr').textContent = resp.error || '접수할 수 없습니다.';
-    $('formErr').classList.add('show');
-    if (resp.code === 'closed') { serverInfo = null; checkOpenAndShow(true); }
-  } else {
-    // 오프라인/실패 → 큐에 그대로 두고 임시번호 표시 (연결되면 자동 전송 + 정식번호 발급)
-    updateBadges();
+    if (onDone()) {
+      doneUuid = null;
+      showScreen('form');
+      $('btnSubmit').disabled = false;
+      $('formErr').textContent = resp.error || '접수할 수 없습니다.';
+      $('formErr').classList.add('show');
+      if (resp.code === 'closed') { serverInfo = null; checkOpenAndShow(true); }
+    } else {
+      record('거부: ' + (resp.error || ''));   // 이미 다른 화면으로 넘어간 경우에만 기록을 남긴다 (바로 고쳐 다시 접수하는 경우 중복 경고가 뜨지 않게)
+      alert('직전 접수(영수증 ' + p.orderNo + ')가 접수되지 않았습니다.\n사유: ' + (resp.error || '접수할 수 없습니다.') + '\n스태프에게 알려주세요.');
+    }
+  } else if (onDone()) {
+    // 연결 실패·서버 일시 오류 → 큐에 그대로 두고 임시번호 표시 (연결되면 자동 전송 + 정식번호 발급)
     showDone(tempReceiptNo(p.uuid), true, p);
   }
+  updateBadges();
 }
 
-function showDone(no, isTemp, p, resp) {
-  $('doneNo').textContent = no;
+function showDone(no, isTemp, p, resp, pending) {
+  // pending: 전송 중 — 접수번호 자리에 '받는 중' 표시를 띄우고, 서버 응답이 오면 같은 화면에서 번호로 바뀐다
+  if (pending) $('doneNo').innerHTML = '<span style="display:inline-flex;align-items:center;gap:8px;font-size:17px;font-weight:600;color:var(--muted);"><span class="spinner"></span>접수번호 받는 중…</span>';
+  else $('doneNo').textContent = no;
   // 사은품: 서버가 확정한 내용을 우선 보여주고, 오프라인이면 기기에서 고른 내용을 보여준다
   const gl = resp && typeof resp.gifts === 'string'
     ? resp.gifts.split(';').map(x => x.trim()).filter(Boolean).map(x => esc(x.replace(/^\d+\.\s*/, '').replace('×', ' × ')))
@@ -1443,7 +1466,7 @@ function showDone(no, isTemp, p, resp) {
   $('donePickup').innerHTML = pk ? `<b>${p.allPickup ? '전부 현장 수령 (택배 없음)' : '현장 수령 상품'}</b><br>${pk}<br><span style="font-size:13px;">직원에게 이 화면을 보여주고 받아 가세요.</span>` : '';
   $('donePickup').style.display = pk ? 'block' : 'none';
   $('doneTempNote').style.display = isTemp ? 'block' : 'none';
-  showScreen('done');
+  if (!$('scr-done').classList.contains('active')) showScreen('done');
 }
 
 /* ══════════════ 배송지 수정 ══════════════ */
@@ -1510,7 +1533,8 @@ function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;
 function getWebappUrl() {
   return localStorage.getItem(LS.url) || CONFIG.WEBAPP_URL;
 }
-let flushing = false, inFlightUuid = null;
+let flushing = false;
+const inFlight = new Set();   // 지금 직접 전송 중인 접수들
 const PERMANENT_REJECT = ['closed', 'invalid', 'spam', 'limit'];
 async function flushQueue(manual) {
   const url = getWebappUrl();
@@ -1524,7 +1548,7 @@ async function flushQueue(manual) {
     while (true) {
       const cur = getJson(LS.queue, []);
       if (!cur.length) break;
-      const item = cur.find(x => x.uuid !== inFlightUuid);   // 지금 직접 전송 중인 건은 건너뜀
+      const item = cur.find(x => !inFlight.has(x.uuid));   // 지금 직접 전송 중인 건은 건너뜀
       if (!item) break;
       const resp = await sendOne(url, item);
       if (!resp) break;   // 네트워크 실패 → 다음 주기에 재시도
