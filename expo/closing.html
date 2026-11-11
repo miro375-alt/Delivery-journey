@@ -313,7 +313,7 @@ function render(r) {
   $('soProd').innerHTML = '<option value="">상품 고르기</option>' + r.products.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
   $('soProd').value = soCur;
   if (!$('soReason').options.length) $('soReason').innerHTML = Object.entries(r.stockOutReasons || {}).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join('');
-  $('soList').innerHTML = (r.stockOuts || []).map(s => `<div class="maprow"><div>${s.day.slice(5)} · <b>${esc(s.product)}</b> ${fmt(s.qty)}개 <span class="tag off">${esc(s.reasonLabel)}</span> <span class="muted">${esc(s.memo)}${s.author ? ' · ' + esc(s.author) : ''}</span></div><div>${admin ? `<button class="btn sm danger" onclick="voidStockOut(${s.id})">취소</button>` : ''}</div></div>`).join('')
+  $('soList').innerHTML = (r.stockOuts || []).map(s => `<div class="maprow"><div>${s.day.slice(5)} · <b>${esc(s.product)}</b> ${fmt(s.qty)}개 <span class="tag off">${esc(s.reasonLabel)}</span> <span class="muted">${esc(s.memo)}${s.author ? ' · ' + esc(s.author) : ''}</span></div><div>${s.noteId ? '<span class="muted">관리자 메모에서 기록 · 취소는 메모의 "기록 제외"로</span>' : admin ? `<button class="btn sm danger" onclick="voidStockOut(${s.id})">취소</button>` : ''}</div></div>`).join('')
     || '<p class="muted">기록된 메모 출고가 없습니다.</p>';
 
   if (admin) {

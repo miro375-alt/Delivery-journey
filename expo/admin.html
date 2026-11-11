@@ -112,8 +112,105 @@
   .seg { display:inline-flex; border:1.5px solid var(--border); border-radius:10px; overflow:hidden; }
   .seg button { font-size:13.5px; padding:8px 14px; border:none; background:#fff; cursor:pointer; color:var(--muted); }
   .seg button.on { background:var(--primary); color:#fff; }
+  /* 영수증 메모: 입력은 빠르게, 정산 보조 정보는 필요할 때 펼친다. */
+  .note-intro { line-height:1.7; margin-bottom:14px; }
+  .note-fields { border:0; min-width:0; }
+  .note-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .note-field { display:flex; flex-direction:column; gap:6px; font-size:14px; min-width:0; }
+  .note-field.full { grid-column:1/-1; }
+  .note-field textarea { width:100%; resize:vertical; min-height:114px; font-size:16px; padding:12px; border:1.5px solid var(--border); border-radius:10px; color:var(--text); background:#fff; }
+  .note-field textarea:focus { outline:none; border-color:var(--primary); }
+  .note-field small { font-size:12px; color:var(--muted); line-height:1.5; }
+  .note-details { margin-top:12px; border-top:1px solid #eef2f7; padding-top:12px; }
+  .note-details summary { font-size:14px; color:var(--primary); cursor:pointer; margin-bottom:12px; }
+  .note-actions { display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-top:12px; }
+  .note-success { color:#166534; font-size:14px; line-height:1.6; }
+  .note-filters { display:grid; grid-template-columns:minmax(200px,1fr) 160px 150px auto; gap:10px; align-items:end; margin-bottom:12px; }
+  .note-filters input, .note-filters select { font-size:14px; padding:10px; }
+  .note-pager { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  .note-pager div { display:flex; align-items:center; gap:10px; }
+  .receipt-table { min-width:900px; table-layout:fixed; }
+  .receipt-table td { overflow-wrap:anywhere; line-height:1.6; }
+  .receipt-table .note-memo { white-space:pre-wrap; }
+  .receipt-table th:nth-child(5) { width:27%; }
+  .receipt-table th:nth-child(9) { width:98px; }
+  .note-jumps { display:flex; gap:8px; margin-bottom:12px; }
+  .note-jumps a { text-align:center; text-decoration:none; }
+  #rnEntryCard, #rnListCard { scroll-margin-top:140px; }
+  .refresh-meta { display:contents; }
+  .refresh-meta label { order:2; }
+  #rnMetaToggle { display:none; }
+  .note-record-date .note-time { display:block; }
+  @media (max-width:800px) { .note-filters { grid-template-columns:1fr 1fr; } .note-filters .note-search { grid-column:1/-1; } .note-filters button { justify-self:start; } }
+  @media (max-width:560px) {
+    main { padding:12px; } .topbar { padding:12px; } .meta { flex-wrap:wrap; width:100%; }
+  }
+  @media (max-width:720px) {
+    /* 휴대폰 최적화는 영수증 메모 탭에만 적용한다. */
+    #app.notes-active main { padding:12px 12px calc(20px + env(safe-area-inset-bottom)); }
+    #app.notes-active .topbar { display:grid; grid-template-columns:minmax(0,1fr) 44px 44px; gap:8px; padding:8px 12px; }
+    #app.notes-active .topbar .logo { display:none; }
+    #app.notes-active .tabs { position:static; display:flex; left:auto; right:auto; bottom:auto; z-index:auto; background:transparent; border:0; padding:0; grid-auto-flow:initial; grid-auto-columns:auto; gap:6px; grid-column:1; grid-row:1; min-width:0; flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none; scroll-padding:4px; }
+    #app.notes-active .tabs::-webkit-scrollbar { display:none; }
+    #app.notes-active .tabs button { flex:0 0 auto; min-height:44px; padding:9px 14px; font-size:14px; border:1.5px solid var(--border); border-radius:999px; letter-spacing:normal; }
+    #app.notes-active .tabs button.on { border-color:var(--primary); }
+    #app.notes-active .meta { display:contents; }
+    #app.notes-active #evSel { grid-column:1/-1; grid-row:2; width:100%; max-width:none !important; min-width:0; min-height:44px; font-size:16px !important; padding:10px 12px !important; }
+    #app.notes-active #refBtn { grid-column:2; grid-row:1; width:44px; height:44px; padding:0; font-size:0; }
+    #app.notes-active #refBtn::after { content:'↻'; font-size:23px; }
+    #app.notes-active #refBtn.busy::before { width:18px; height:18px; margin:0; font-size:18px; }
+    #app.notes-active #refBtn.busy::after { display:none; }
+    #app.notes-active #rnMetaToggle { display:block; grid-column:3; grid-row:1; width:44px; height:44px; padding:0; font-size:22px; }
+    #app.notes-active .refresh-meta { display:none; position:absolute; top:calc(100% + 4px); right:12px; background:#fff; border:1px solid var(--border); box-shadow:0 8px 24px #1e293b24; border-radius:12px; padding:12px 16px; min-width:235px; }
+    #app.notes-active.notes-meta-open .refresh-meta { display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+    #app.notes-active .refresh-meta label { display:flex !important; min-height:44px; font-size:15px; gap:10px !important; }
+    #app.notes-active .refresh-meta input { width:22px !important; height:22px !important; }
+    #tab-notes .card { padding:16px; }
+    #tab-notes .card h3 { align-items:flex-start; flex-direction:column; font-size:16px; gap:5px; }
+    #tab-notes .note-intro { font-size:14px; line-height:1.6; }
+    #tab-notes input, #tab-notes select, #tab-notes textarea { min-width:0; min-height:48px; font-size:16px; }
+    #tab-notes textarea { min-height:144px; line-height:1.6; }
+    #tab-notes .note-field { font-size:15px; }
+    #tab-notes .note-field small { font-size:13px; }
+    #tab-notes .btn { min-height:44px; font-size:15px; }
+    #tab-notes .note-jumps a { flex:1; min-height:44px; padding:11px 8px; font-size:15px; }
+    #tab-notes .note-details summary { min-height:44px; margin-bottom:4px; padding:11px 0; font-size:15px; }
+    #tab-notes .note-actions { gap:10px; }
+    #rnSave { width:100%; min-height:52px !important; font-size:17px !important; }
+    #rnDraftInfo { font-size:12px; line-height:1.5; }
+    #tab-notes .note-filters { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
+    #tab-notes .note-search { grid-column:1/-1; }
+    #rnSearch { grid-column:1/-1; width:100%; }
+    #tab-notes .note-pager { gap:12px; }
+    #tab-notes .note-pager > div { width:100%; display:grid; grid-template-columns:1fr auto 1fr; }
+    #tab-notes .note-pager button { min-height:46px; }
+    #rnSaveError, #rnListError { font-size:14px; line-height:1.6; overflow-wrap:anywhere; }
+    #rnEntryCard, #rnListCard { scroll-margin-top:120px; }
+    #tab-notes .note-grid { grid-template-columns:1fr; } #tab-notes .note-field.full { grid-column:auto; }
+    #tab-notes .receipt-table { min-width:0; table-layout:auto; } #tab-notes .receipt-table thead { display:none; }
+    #tab-notes .receipt-table tbody, #tab-notes .receipt-table tr, #tab-notes .receipt-table td { display:block; width:100%; }
+    #tab-notes .receipt-table tr { border:1px solid var(--border); border-radius:12px; margin:12px 0; padding:14px; }
+    #tab-notes .receipt-table tr.receipt-record { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px 14px; }
+    #tab-notes .receipt-table td { border:0; padding:0; min-width:0; font-size:14px; line-height:1.6; }
+    #tab-notes .receipt-table td:not([colspan])::before { display:block; content:attr(data-label); font-size:12px; font-weight:600; color:var(--muted); margin-bottom:3px; white-space:normal; }
+    #tab-notes .receipt-table .note-record-number { order:1; } #tab-notes .receipt-table .note-record-number b { font-size:20px; line-height:1.4; }
+    #tab-notes .receipt-table .note-record-date { order:2; text-align:right; }
+    #tab-notes .receipt-table .note-record-event { order:3; grid-column:1/-1; color:var(--muted); font-size:13px; font-weight:400; }
+    #tab-notes .receipt-table .note-record-event::before { display:inline; content:'행사 · '; }
+    #tab-notes .receipt-table .note-record-category { order:4; grid-column:1/-1; }
+    #tab-notes .receipt-table .note-record-category::before { display:inline; content:'유형 · '; }
+    #tab-notes .receipt-table .note-memo { order:5; grid-column:1/-1; padding:12px 0; border-top:1px solid #eef2f7; border-bottom:1px solid #eef2f7; white-space:normal; font-size:16px; line-height:1.75; }
+    #tab-notes .receipt-table .note-memo span { white-space:pre-wrap; }
+    #tab-notes .receipt-table .note-record-pos { order:6; } #tab-notes .receipt-table .note-record-author { order:7; }
+    #tab-notes .receipt-table .note-record-created { order:8; grid-column:1/-1; color:var(--muted); font-size:13px; }
+    #tab-notes .receipt-table .note-record-created::before { display:inline; content:'기록 시각 · '; }
+    #tab-notes .receipt-table .note-record-action { order:9; grid-column:1/-1; }
+    #tab-notes .receipt-table .note-record-action::before { display:none !important; }
+    #tab-notes .receipt-table .note-record-action button { width:100%; min-height:44px; }
+  }
 </style>
 <link rel="stylesheet" href="admin-ui.css?v=2">
+<link rel="stylesheet" href="receipt-notes-tools.css?v=1">
 </head>
 <body>
 
@@ -133,14 +230,15 @@
     <div class="tabs">
       <button data-tab="dash" class="on">대시보드</button>
       <button data-tab="list">접수 목록</button>
+      <button data-tab="notes">영수증 메모</button>
       <button data-tab="prod">상품·재고</button>
       <button data-tab="set">설정</button>
     </div>
     <div class="meta">
       <select id="evSel" title="조회할 행사" style="padding:6px 8px;border-radius:8px;border:1.5px solid var(--border);font-size:14px;max-width:230px;"></select>
-      <span id="updatedAt"></span>
-      <button class="btn sm" id="refBtn" onclick="refresh()">↻ 새로고침</button>
-      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="autoRef" style="width:16px;height:16px;" checked> 1분마다</label>
+      <div class="refresh-meta" id="refreshMeta"><span id="updatedAt"></span><label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="autoRef" style="width:16px;height:16px;" checked> 1분마다</label></div>
+      <button class="btn sm" id="refBtn" onclick="refresh()" aria-label="새로고침">↻ 새로고침</button>
+      <button class="btn sm" id="rnMetaToggle" type="button" aria-label="갱신 설정" aria-controls="refreshMeta" aria-expanded="false">⋯</button>
     </div>
   </div>
 
@@ -215,6 +313,88 @@
       </div>
     </section>
 
+    <!-- 영수증 메모 -->
+    <section id="tab-notes" class="hide" aria-label="영수증 메모">
+      <nav class="note-jumps" aria-label="영수증 메모 바로가기"><a class="btn" href="#rnEntryCard">메모 입력 ↓</a><a class="btn" href="#rnListCard">기록 조회 ↓</a><a class="btn" href="#rnSettlementCard">정산 대조 ↓</a></nav>
+      <div class="card" id="rnEntryCard">
+        <h3 id="rnFormTitle">영수증 메모 등록</h3>
+        <div id="rnAppendInfo" class="rn-append-info hide" role="status"></div>
+        <p class="muted note-intro">정산 파일 없이 메모와 제품 출고를 바로 기록할 수 있습니다. 유형을 골라 빠르게 기록하거나 직접 입력하세요.<br>갑작스러운 제품 출고는 영수증 없이 현장 재고를 차감합니다. 행사 후 정산 파일을 올려 기록한 메모와 대조할 수 있습니다.</p>
+        <form id="receiptNoteForm">
+          <fieldset class="note-fields" id="rnFields">
+            <div class="note-grid">
+              <div class="note-field full hide" id="rnEventWrap"><label for="rnEvent">등록할 행사 <b aria-hidden="true">*</b></label><select id="rnEvent" aria-describedby="rnEventHelp"><option value="">행사를 선택하세요</option></select><small id="rnEventHelp">전체 조회 중입니다. 이 메모가 속한 행사를 먼저 선택하세요.</small></div>
+              <div class="note-field full"><span class="muted" id="rnContext">등록할 행사를 확인하고 있습니다…</span></div>
+              <div class="note-field" id="rnOrderWrap"><label for="rnOrderNo">영수증 번호 <b aria-hidden="true">*</b></label><input type="text" id="rnOrderNo" required maxlength="80" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="예: 001234" aria-required="true"></div>
+              <div class="note-field"><label for="rnSaleDate">거래일</label><input id="rnSaleDate" type="date" required aria-describedby="rnDateHelp"><small id="rnDateHelp">오늘이 기본값입니다. 지난 거래는 날짜를 바꿔 주세요.</small></div>
+              <div class="note-field full"><fieldset class="rn-template-field"><legend>빠른 메모 유형</legend><div class="rn-templates" id="rnTemplates">
+                <label><input type="radio" name="rnTemplate" value="general" checked><span>직접 입력</span></label>
+                <label><input type="radio" name="rnTemplate" value="dp_discount"><span>DP 10% 할인</span></label>
+                <label><input type="radio" name="rnTemplate" value="custom_discount"><span>예외 할인</span></label>
+                <label><input type="radio" name="rnTemplate" value="gift"><span>추가 사은품</span></label>
+                <label><input type="radio" name="rnTemplate" value="zero_stock"><span>재고 부족 · 0원</span></label>
+                <label><input type="radio" name="rnTemplate" value="voucher"><span>상품권</span></label>
+                <label class="rn-stock-template"><input type="radio" name="rnTemplate" value="stock_issue"><span>갑작스러운 제품 출고<small>거래처 선물 등 · 현장 재고 차감</small></span></label>
+              </div></fieldset></div>
+              <div class="note-field full hide" id="rnQuickPanel"><div class="note-grid">
+                <div class="note-field" id="rnQuickProductWrap"><label for="rnQuickProduct">상품</label><input id="rnQuickProduct" maxlength="160" placeholder="상품명"></div>
+                <div class="note-field" id="rnQuickQtyWrap"><label for="rnQuickQty">수량</label><input id="rnQuickQty" type="number" min="1" max="999" step="1" value="1" inputmode="numeric"></div>
+                <div class="note-field" id="rnQuickAmountWrap"><label for="rnQuickAmount">할인액 / 상품권 금액 (원)</label><input id="rnQuickAmount" type="number" min="0" max="999999999" step="1" inputmode="numeric" placeholder="선택 입력"></div>
+                <div class="note-field full" id="rnStockWrap"><p class="muted">등록된 상품과 세트를 여러 개 선택할 수 있습니다. 출고 기록은 공용 출고 내역에 저장되고 일일 마감 재고에 자동 반영됩니다.</p><div id="rnStockItems"></div><button type="button" class="btn" id="rnStockAdd">상품 추가</button><p class="err" id="rnStockError" role="status"></p></div>
+                <div class="note-field" id="rnQuickStockReasonWrap"><label for="rnQuickStockReason">출고 구분 *</label><select id="rnQuickStockReason"><option value="gift">선물 / 증정</option><option value="sample">샘플 / 전시</option><option value="damage">파손 / 불량</option><option value="other">기타</option></select></div>
+                <div class="note-field full" id="rnQuickReasonWrap"><label for="rnQuickReason">사유 <span id="rnReasonRequired">*</span></label><input id="rnQuickReason" maxlength="500" placeholder="할인 또는 출고 사유"></div>
+                <div class="note-field" id="rnQuickRecipientWrap"><label for="rnQuickRecipient">거래처 / 대상 (선택)</label><input id="rnQuickRecipient" maxlength="80" placeholder="거래처명 또는 받는 대상"></div>
+                <div class="note-field" id="rnQuickFulfillmentWrap"><label for="rnQuickFulfillment">지급 상태</label><select id="rnQuickFulfillment"><option value="onsite">현장 지급</option><option value="delivery">택배 발송</option><option value="pending">미지급 / 추후 지급</option></select></div>
+                <div class="note-field" id="rnQuickPosWrap"><label for="rnQuickPos">POS 등록 상태</label><select id="rnQuickPos"><option value="none">POS 미등록</option><option value="zero">0원 등록</option><option value="normal">일반 등록</option></select></div>
+              </div><p class="muted rn-quick-info" id="rnQuickInfo"></p><p id="rnQuickSummary" class="rn-quick-summary" aria-live="polite"></p></div>
+              <div class="note-field full"><label for="rnMemo" id="rnMemoLabel">메모 *</label><textarea id="rnMemo" rows="4" required maxlength="2000" aria-required="true" placeholder="메모를 입력하세요"></textarea><small id="rnMemoHelp">최대 2,000자 · 줄바꿈을 그대로 기록합니다.</small></div>
+            </div>
+            <details class="note-details" id="rnDetails"><summary>정산 보조 정보 (선택)</summary><div class="note-grid">
+              <div class="note-field"><label for="rnTimeHint">대략 시각</label><input type="time" id="rnTimeHint"></div>
+              <div class="note-field"><label for="rnPosNo">POS / 단말기</label><input id="rnPosNo" maxlength="40" autocomplete="off" placeholder="예: POS 1"></div>
+              <div class="note-field"><label for="rnCategory">유형</label><select id="rnCategory"><option value="general">일반</option><option value="discount">할인</option><option value="gift">사은품</option><option value="zero_stock">재고 부족 · 0원 등록</option><option value="other">기타</option></select></div>
+              <div class="note-field"><label for="rnAuthor">작성자</label><input id="rnAuthor" maxlength="40" autocomplete="off" placeholder="이름 또는 이니셜 (선택)"></div>
+            </div></details>
+            <div class="note-actions"><button class="btn primary" id="rnSave" type="submit" disabled>메모 등록</button><button class="btn hide" type="button" id="rnAppendCancel">신규 기록으로 돌아가기</button><span class="muted" id="rnDraftInfo">입력 내용은 이 브라우저 탭에 임시 보관됩니다.</span></div>
+          </fieldset>
+          <p class="err" id="rnSaveError" role="alert" style="margin-top:10px;"></p>
+          <p class="note-success" id="rnSaveStatus" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+      <div class="card" id="rnListCard" aria-busy="false">
+        <h3>영수증 메모 목록 <span class="muted">기록 제외한 메모는 표시하지 않습니다</span></h3>
+        <form class="note-filters" id="receiptNoteFilters">
+          <div class="note-field note-search"><label for="rnQ">번호·메모·작성자 검색</label><input type="search" id="rnQ" maxlength="200" placeholder="검색어 입력"></div>
+          <div class="note-field"><label for="rnDate">거래일 필터</label><input type="date" id="rnDate"></div>
+          <div class="note-field"><label for="rnFilterCategory">유형 필터</label><select id="rnFilterCategory"><option value="">유형 전체</option><option value="general">일반</option><option value="discount">할인</option><option value="gift">사은품</option><option value="zero_stock">재고 부족 · 0원 등록</option><option value="stock_issue">갑작스러운 제품 출고</option><option value="other">기타</option></select></div>
+          <button class="btn" type="submit" id="rnSearch">검색</button>
+        </form>
+        <p class="err" id="rnListError" role="alert"></p>
+        <p class="muted" id="rnListInfo" role="status" aria-live="polite"></p>
+        <div class="tablewrap"><table class="receipt-table" id="receiptNotesTable"><thead><tr><th>행사</th><th>거래일 / 시각</th><th>영수증 번호</th><th>유형</th><th>메모</th><th>POS</th><th>작성자</th><th>기록 시각</th><th>관리</th></tr></thead><tbody></tbody></table></div>
+        <div class="note-pager"><span class="muted">한 페이지에 20건</span><div><button class="btn sm" id="rnPrev" type="button" disabled>이전</button><span class="muted" id="rnPageInfo">1 / 1</span><button class="btn sm" id="rnNext" type="button" disabled>다음</button></div></div>
+      </div>
+      <div class="card" id="rnSettlementCard" aria-busy="false">
+        <details id="rsPanel"><summary id="rsToggle">행사 정산 파일 업로드 · 대조</summary>
+        <p class="muted note-intro">행사 후 이번 행사 정산 파일을 올리면 기록한 메모와 대조할 수 있습니다.</p>
+        <p class="muted note-intro">정산 XLSX의 ‘상품 주문 상세내역’만 가져옵니다. 번호·날짜가 같은 메모는 후보이며 자동으로 확정하지 않습니다. 원래 메모와 추가 기록은 계속 보관됩니다.</p>
+        <div class="note-field full hide" id="rsEventWrap"><label for="rsEvent">정산할 행사 *</label><select id="rsEvent"><option value="">행사를 선택하세요</option></select></div>
+        <p id="rsContext" class="muted" role="status"></p>
+        <fieldset id="rsUploadFields" class="note-fields"><div class="rs-upload-grid">
+          <div class="note-field"><label for="rsFile">정산 XLSX (최대 8 MiB)</label><input id="rsFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></div>
+          <button type="button" class="btn" id="rsPreviewBtn">미리보기</button><button type="button" class="btn primary" id="rsImportBtn" disabled>확인한 파일 가져오기</button>
+        </div></fieldset>
+        <div id="rsPreview" class="rs-preview hide" aria-live="polite"></div>
+        <p id="rsError" class="err" role="alert"></p><p id="rsStatus" class="note-success" role="status" aria-live="polite"></p>
+        <fieldset id="rsBrowseFields" class="note-fields hide"><div class="rs-import-select"><div class="note-field"><label for="rsImport">업로드한 이번 행사 정산 파일</label><select id="rsImport"><option value="">업로드한 파일을 선택하세요</option></select></div><button type="button" class="btn" id="rsReload">목록 갱신</button><button type="button" class="btn danger" id="rsVoidImport" disabled>잘못 올린 파일 제외</button></div>
+          <form id="rsFilters" class="rs-filters"><div class="note-field"><label for="rsQ">영수증 번호 검색</label><input type="search" id="rsQ" maxlength="200" placeholder="앞자리 0도 입력 가능"></div><div class="note-field"><label for="rsDate">거래일</label><input type="date" id="rsDate"></div><div class="note-field"><label for="rsFilter">대조 필터</label><select id="rsFilter"><option value="all">모든 거래</option><option value="no_note">메모 없음</option><option value="has_notes">메모 있음</option><option value="ambiguous">후보 중복</option><option value="zero">0원 포함</option><option value="discount">할인 포함</option><option value="cancelled">취소</option><option value="linked">연결 완료</option></select></div><button class="btn" id="rsSearch" type="submit">대조 조회</button></form>
+        </fieldset>
+        <p id="rsSummary" class="muted" aria-live="polite"></p><div id="rsRows" class="rs-rows"></div>
+        <div class="note-pager hide" id="rsPager"><span class="muted" id="rsTotal">한 페이지에 20건</span><div><button type="button" id="rsPrev" class="btn" disabled>이전</button><span id="rsPageInfo" class="muted">1 / 1</span><button type="button" id="rsNext" class="btn" disabled>다음</button></div></div>
+        </details>
+      </div>
+    </section>
+
     <!-- 상품·재고 -->
     <section id="tab-prod" class="hide">
       <div class="card">
@@ -286,16 +466,19 @@
 </div></div>
 <div id="toast"></div>
 
+<script src="receipt-notes-tools.js?v=1"></script>
 <script>
 // 접수 서버(DB). 이 페이지가 같은 서버에서 열리면 상대 주소, 다른 곳(GitHub Pages 등)에서 열리면 전체 주소를 쓴다
-// NAS 에 직접 닿는 주소를 쓴다. lipaco.app 주소는 해외 거점을 거쳐 요청마다 2~5초가 걸린다
-const WEBAPP_URL = 'https://codes.aguard.synology.me/cwjung/expo_delivery/api.php';
+// NAS 에 직접 닿는 주소를 쓴다. lipaco.app 주소는 해외 거점을 거쳐 요청마다 2~5초가 걸린다 (로컬 개발 때만 상대 주소)
+const WEBAPP_URL = ['localhost', '127.0.0.1'].includes(location.hostname) ? 'api.php' : 'https://codes.aguard.synology.me/cwjung/expo_delivery/api.php';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 const fmt = n => Number(n || 0).toLocaleString('ko-KR');
 let key = sessionStorage.getItem('expo_admin_key') || '';
 let stats = null, productsCache = [];
 let evKey = '';   // 조회할 행사 ('' = 현재 행사, 'all' = 전체)
+const receiptDirectEntryRequested = new URLSearchParams(location.search).get('tab') === 'notes';
+let receiptDirectEntryApplied = false, receiptAuthenticated = false;
 
 async function api(op, params) {
   const ctrl = new AbortController();
@@ -307,6 +490,7 @@ async function api(op, params) {
     const j = await r.json();
     if (j && j.code === 'auth') { logout(); throw new Error(j.error); }
     if (!j || !j.ok) throw new Error((j && j.error) || '서버 오류');
+    if (op === 'login' || op === 'stats') receiptAuthenticated = true;
     return j;
   } catch (e) { clearTimeout(t); throw e; }
 }
@@ -343,28 +527,56 @@ async function doLogin() {
   } catch (e) { key = ''; $('loginErr').textContent = e.message || '로그인 실패'; }
   $('loginBtn').disabled = false; $('loginBtn').classList.remove('busy');
 }
-function logout() { key = ''; sessionStorage.removeItem('expo_admin_key'); $('app').classList.add('hide'); $('login').classList.remove('hide'); $('pw').value = ''; }
+function logout() {
+  key = ''; receiptAuthenticated = false; sessionStorage.removeItem('expo_admin_key'); resetReceiptNotes(); ++statsRequest;
+  $('app').classList.add('hide'); $('login').classList.remove('hide'); $('pw').value = '';
+}
 
 /* 탭 */
 document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
 function showTab(name) {
+  $('app').classList.toggle('notes-active', name === 'notes');
+  $('app').classList.remove('notes-meta-open'); $('rnMetaToggle').setAttribute('aria-expanded', 'false');
   document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name));
-  ['dash', 'list', 'prod', 'set'].forEach(t => $('tab-' + t).classList.toggle('hide', t !== name));
+  ['dash', 'list', 'notes', 'prod', 'set'].forEach(t => $('tab-' + t).classList.toggle('hide', t !== name));
   if (name === 'list' && !$('listTable').tBodies[0].children.length) loadList();
   if (name === 'prod') loadProducts();
+  if (name === 'notes') { if (stats) syncReceiptNoteContext(); loadReceiptNotes(receiptPage); }
+  if (name === 'notes' && window.matchMedia('(max-width:720px)').matches) {
+    const tabs = document.querySelector('.tabs'), active = tabs.querySelector('button.on');
+    tabs.scrollLeft += active.getBoundingClientRect().left - tabs.getBoundingClientRect().left - (tabs.clientWidth - active.offsetWidth) / 2;
+  }
 }
+$('rnMetaToggle').addEventListener('click', () => {
+  const open = $('app').classList.toggle('notes-meta-open');
+  $('rnMetaToggle').setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('click', e => {
+  if (!$('app').classList.contains('notes-meta-open') || $('refreshMeta').contains(e.target) || $('rnMetaToggle').contains(e.target)) return;
+  $('app').classList.remove('notes-meta-open'); $('rnMetaToggle').setAttribute('aria-expanded', 'false');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('app').classList.contains('notes-meta-open')) {
+    $('app').classList.remove('notes-meta-open'); $('rnMetaToggle').setAttribute('aria-expanded', 'false'); $('rnMetaToggle').focus();
+  }
+});
 
 /* 새로고침 */
 let loadedKey = null;   // 마지막으로 화면에 그린 행사
+let statsRequest = 0;
 async function refresh() {
+  const requestedEvent = evKey, request = ++statsRequest;
   if (!stats || loadedKey !== evKey) dashSkeleton();   // 처음이거나 다른 행사로 바꿀 때만 스켈레톤 (자동 새로고침은 그대로 둔 채 교체)
   await withBusy($('refBtn'), async () => {
     try {
-      stats = await api('stats', { event: evKey });
-      loadedKey = evKey;
+      const result = await api('stats', { event: requestedEvent });
+      if (request !== statsRequest || requestedEvent !== evKey || !key) return;
+      stats = result;
+      loadedKey = requestedEvent;
       renderDash(stats);
       $('updatedAt').textContent = '갱신 ' + stats.generatedAt.slice(11, 16);
-    } catch (e) { toast('불러오기 실패: ' + e.message, 4000); if (stats) renderDash(stats); }
+      if (!$('tab-notes').classList.contains('hide')) loadReceiptNotes(receiptPage);
+    } catch (e) { if (request === statsRequest && key) { toast('불러오기 실패: ' + e.message, 4000); if (stats && loadedKey === evKey) renderDash(stats); } }
   });
 }
 setInterval(() => { if (key && $('autoRef').checked && !$('app').classList.contains('hide')) refresh(); }, 60000);
@@ -391,6 +603,11 @@ function renderDash(s) {
       + `<option value="all">전체 (${fmt(s.allCount)}${s.otherCount ? ', 행사 외 ' + fmt(s.otherCount) : ''})</option>`;
     $('evSel').value = s.selected;
   } else $('evSel').style.display = 'none';   // 서버가 구버전일 때
+  syncReceiptNoteContext();
+  if (receiptDirectEntryRequested && !receiptDirectEntryApplied && receiptAuthenticated && key) {
+    receiptDirectEntryApplied = true;
+    queueMicrotask(() => { if (receiptAuthenticated && key) showTab('notes'); });
+  }
 
   // 일별: 선택한 행사 기간 전체 날짜를 축으로 (전체 보기는 접수가 있는 날짜만)
   const today = s.generatedAt.slice(0, 10);
@@ -426,7 +643,7 @@ function renderDash(s) {
     sb.appendChild(tr);
   });
   $('salesSummary').textContent = s.products.length ? `판매 ${fmt(qty)}개 · 매출 ${fmt(rev)}원` + (s.sns ? ` · 오늘 타포린백 ${fmt(s.sns.today)}/${fmt(s.sns.limit)}개` : '') + (t.feeDue ? ` · 배송비 대상 ${fmt(t.feeDue)}건` : '') : '';
-  $('salesNote').textContent = s.products.length ? '접수된 구매 상품은 택배로 나가므로 현장 재고에서 빠지지 않고, 손님이 "현장 수령"으로 가져간 수량만 현장 재고에서 빠집니다. 택배 출고 예정은 묶음·세트를 낱개로 환산한 수량입니다.' : '등록된 상품이 없습니다. "상품·재고" 탭에서 상품을 등록하면 손님 폼에 선택 항목이 나타나고 여기서 판매·재고를 볼 수 있습니다.';
+  $('salesNote').textContent = s.products.length ? '현장 잔여는 일일 마감의 재고 수치를 표시합니다. 정산 판매·택배 접수·공용 출고 기록이 함께 반영되며, 세트는 구성품 재고를 사용합니다.' : '등록된 상품이 없습니다. "상품·재고" 탭에서 상품을 등록하면 손님 폼에 선택 항목이 나타나고 여기서 판매·재고를 볼 수 있습니다.';
 
   renderKv('devTable', s.byDevice, t.total);
   renderKv('regionTable', s.byRegion, t.total, 10);
@@ -453,6 +670,7 @@ function renderDash(s) {
   const sel = $('fDate'); const cur = sel.value;
   sel.innerHTML = '<option value="">전체 날짜</option>' + days.map(d => `<option value="${d}">${d}${weekday(d)} (${s.byDay[d] || 0})</option>`).join('');
   sel.value = days.includes(cur) ? cur : (days.includes(today) ? today : '');
+  syncReceiptCanonicalInventory(s);
 }
 function renderBars(barsId, labelsId, data) {
   const max = Math.max(1, ...data.map(d => d.value));
@@ -483,6 +701,9 @@ function itemsCell(o) {
 function tags(o) {
   return (o.ship === '발송완료' ? '<span class="tag ship">발송완료</span> ' : o.ship === '현장수령' ? '<span class="tag edit">전부 현장수령</span> ' : '') + (o.feeDue ? '<span class="tag dup" title="5만원 미만 택배 건">배송비 대상</span> ' : '') + (o.dup ? '<span class="tag dup">중복의심</span> ' : '') + (o.edited ? `<span class="tag edit" title="${esc(o.edited)}">수정됨</span>` : '');
 }
+
+/* 영수증 메모와 정산 도구 초기화 */
+initializeReceiptNotes();
 
 /* 접수 목록 */
 async function loadList() {
@@ -515,7 +736,14 @@ async function loadList() {
 $('fQ').addEventListener('keydown', e => e.key === 'Enter' && loadList());
 $('fDate').addEventListener('change', loadList);
 $('evSel').addEventListener('change', async () => {
+  if (receiptSaving || settlementBusy) { $('evSel').value = receiptContext || evKey; return; }
+  saveReceiptDraft(); ++receiptListRequest;
   evKey = $('evSel').value; $('fDate').value = '';
+  receiptPage = 1;
+  $('receiptNotesTable').tBodies[0].innerHTML = '';
+  $('rnListInfo').textContent = '선택한 행사를 불러오는 중…';
+  syncReceiptNoteContext();
+  if (!$('tab-notes').classList.contains('hide')) loadReceiptNotes(1);
   await refresh();
   if (!$('tab-list').classList.contains('hide')) loadList(); else $('listTable').tBodies[0].innerHTML = '';
 });
