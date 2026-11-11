@@ -206,7 +206,8 @@
           <select id="fDevice"><option value="">단말기 전체</option></select>
           <input type="search" id="fQ" placeholder="이름·전화·영수증·접수번호·주소 검색">
           <button class="btn" onclick="loadList()">검색</button>
-          <button class="btn" onclick="exportCsv()">⬇ CSV (선택한 행사)</button>
+          <button class="btn" onclick="exportXlsx()">⬇ 엑셀 (선택한 행사)</button>
+          <button class="btn" onclick="exportCsv()">⬇ CSV</button>
         </div>
         <p class="muted" id="listInfo"></p>
         <div class="tablewrap"><table id="listTable"><thead><tr><th>접수번호</th><th>시각</th><th>영수증</th><th>주문자</th><th>받는 분</th><th>배송지</th><th>요청사항</th><th>상품</th><th>표시</th><th>발송</th></tr></thead><tbody></tbody></table></div>
@@ -236,7 +237,7 @@
       </div>
       <div class="card" id="schCard">
         <h3>행사 일정 <span class="muted">저장하면 손님 페이지에 바로 반영됩니다 (재배포 불필요)</span></h3>
-        <div class="tablewrap"><table class="sch-table" id="schTable"><thead><tr><th>행사 이름</th><th>접수 시작일 <span class="muted">(세팅일)</span></th><th>시작 시각</th><th>마지막 날</th><th>종료 시각</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div class="tablewrap"><table class="sch-table" id="schTable"><thead><tr><th>행사 이름</th><th>접수 시작일 <span class="muted">(세팅일)</span></th><th>시작 시각</th><th>마지막 날</th><th>종료 시각</th><th>장소</th><th>메모</th><th></th></tr></thead><tbody></tbody></table></div>
         <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:14px;">
           <label>하루 접수 시작 <input type="text" class="t" id="schOpen" placeholder="10:00" style="width:80px;font-size:14px;padding:7px 8px;text-align:center;"></label>
           <label>하루 마감 <input type="text" class="t" id="schClose" placeholder="없음" style="width:80px;font-size:14px;padding:7px 8px;text-align:center;"> <span class="muted">비우면 자정까지</span></label>
@@ -246,7 +247,12 @@
           <button class="btn primary" onclick="saveSchedule()">일정 저장</button>
           <button class="btn" onclick="schDirty = false; refresh();">되돌리기</button>
         </div>
-        <p class="muted" style="margin-top:10px;">시각은 24시간제 <b>HH:MM</b> 으로 입력합니다. 마지막 날 자정까지 받으려면 종료 시각을 <b>24:00</b> 으로 둡니다. 지난 행사를 지워도 접수 데이터는 시트에 남지만, 행사별 조회 목록에서는 빠집니다.</p>
+        <p class="muted" style="margin-top:10px;">시각은 24시간제 <b>HH:MM</b> 으로 입력합니다. 마지막 날 자정까지 받으려면 종료 시각을 <b>24:00</b> 으로 둡니다. 접수 건이 있는 행사는 지울 수 없고 이름·기간·장소·메모만 고칠 수 있습니다. 접수 데이터는 접수 당시의 행사에 묶여 저장됩니다.</p>
+        <p class="muted" id="sheetInfo" style="margin-top:10px;"></p>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <button class="btn sm" onclick="sheetSync()">구글 시트로 밀린 건 보내기</button>
+          <button class="btn sm" onclick="importSheet()">구글 시트에만 있는 접수 가져오기</button>
+        </div>
       </div>
       <div class="card">
         <h3>접수 상태</h3>
@@ -280,7 +286,8 @@
 <div id="toast"></div>
 
 <script>
-const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbymHbyntYlh4AfC1o4lW3GNQtZ9cm6-WxkKW-ehkjxtlcxxBi3nY3G84f_65XaRzfRIig/exec';
+// 접수 서버(DB). 이 페이지가 같은 서버에서 열리면 상대 주소, 다른 곳(GitHub Pages 등)에서 열리면 전체 주소를 쓴다
+const WEBAPP_URL = /lipaco\.app$/.test(location.hostname) ? 'api.php' : 'https://codes.lipaco.app/cwjung/expo_delivery/api.php';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 const fmt = n => Number(n || 0).toLocaleString('ko-KR');
@@ -438,6 +445,7 @@ function renderDash(s) {
   dsel.innerHTML = '<option value="">단말기 전체</option>' + devs.map(d => `<option value="${esc(d)}">${esc(d)} (${fmt(s.byDevice[d])})</option>`).join('');
   dsel.value = devs.includes(dcur) ? dcur : '';
   if (s.schedule && !schDirty) renderSchedule(s.schedule);
+  renderSheetInfo(s.sheet);
 
   // 목록 날짜 필터 옵션
   const sel = $('fDate'); const cur = sel.value;
@@ -524,6 +532,36 @@ async function exportCsv() {
     a.click();
     toast(`${r.rows.length}건 내보냄`);
   } catch (e) { toast('실패: ' + e.message, 4000); }
+}
+
+// 엑셀(.xlsx): 서버가 만든 파일을 그대로 내려받는다 (시트와 같은 열 순서 + 행사 열)
+async function exportXlsx() {
+  toast('엑셀 준비 중…');
+  try {
+    const r = await fetch(WEBAPP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'admin', key, op: 'xlsx', event: evKey }) });
+    const type = r.headers.get('Content-Type') || '';
+    if (!type.includes('spreadsheetml')) { const j = await r.json().catch(() => null); throw new Error((j && j.error) || '서버 오류'); }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(await r.blob());
+    a.download = `택배접수_${(stats && stats.event ? stats.event.name : '전체').replace(/[^\w가-힣]+/g, '')}_${localIso(new Date())}.xlsx`;
+    a.click();
+    toast('엑셀 파일을 내려받았습니다');
+  } catch (e) { toast('실패: ' + e.message, 4000); }
+}
+// 구글 시트 동시 저장 상태
+function renderSheetInfo(sh) {
+  if (!sh) { $('sheetInfo').textContent = ''; return; }
+  $('sheetInfo').innerHTML = !sh.enabled ? '구글 시트 동시 저장: <b style="color:var(--danger);">연결 안 됨</b>'
+    : sh.pending ? `구글 시트 동시 저장: <b style="color:#b45309;">${fmt(sh.pending)}건 대기 중</b> (자동으로 다시 보냅니다)` : '구글 시트 동시 저장: <b style="color:var(--green);">모두 반영됨</b>';
+}
+async function sheetSync() {
+  toast('구글 시트로 보내는 중…', 20000);
+  try { const r = await api('sheetSync'); toast(`${fmt(r.sent)}건 보냄 · 남은 ${fmt(r.left)}건`); refresh(); } catch (e) { toast('실패: ' + e.message, 5000); }
+}
+async function importSheet() {
+  if (!confirm('구글 시트에만 있는 접수(시트로 직접 들어간 건)를 DB 로 가져옵니다. 이미 있는 건은 건너뜁니다. 계속할까요?')) return;
+  toast('구글 시트에서 가져오는 중…', 30000);
+  try { const r = await api('importSheet'); toast(`접수 ${fmt(r.orders)}건 가져옴 (건너뜀 ${fmt(r.skipped)}건)`, 5000); refresh(); } catch (e) { toast('실패: ' + e.message, 5000); }
 }
 
 /* 상품·재고 */
@@ -617,7 +655,10 @@ function addSchRow(e) {
   tr.innerHTML = `<td><input type="text" class="n sName" maxlength="30" value="${esc(e.name)}" placeholder="행사 이름"></td>
     <td><input type="date" class="sD1" value="${esc(e.start.slice(0, 10).trim())}"></td><td><input type="text" class="t sT1" value="${esc(e.start.slice(11))}" placeholder="10:00"></td>
     <td><input type="date" class="sD2" value="${esc(e.end.slice(0, 10).trim())}"></td><td><input type="text" class="t sT2" value="${esc(e.end.slice(11))}" placeholder="24:00"></td>
+    <td><input type="text" class="n sPlace" maxlength="120" value="${esc(e.place || '')}" placeholder="예: 코엑스 마곡" style="min-width:120px;"></td>
+    <td><input type="text" class="n sMemo" maxlength="500" value="${esc(e.memo || '')}" placeholder="부스 번호 등" style="min-width:140px;"></td>
     <td><button class="btn sm danger" type="button">삭제</button></td>`;
+  tr.dataset.id = e.id || '';   // 행사 번호: 이름을 바꿔도 같은 행사로 저장되게 한다
   tr.querySelector('button').addEventListener('click', () => { tr.remove(); schDirty = true; });
   $('schTable').tBodies[0].appendChild(tr);
 }
@@ -627,6 +668,7 @@ async function saveSchedule() {
     name: tr.querySelector('.sName').value.trim(),
     start: tr.querySelector('.sD1').value + ' ' + tr.querySelector('.sT1').value.trim(),
     end: tr.querySelector('.sD2').value + ' ' + tr.querySelector('.sT2').value.trim(),
+    id: Number(tr.dataset.id) || 0, place: tr.querySelector('.sPlace').value.trim(), memo: tr.querySelector('.sMemo').value.trim(),
   }));
   if (!confirm('행사 일정을 저장합니다. 손님 페이지의 접수 가능 시간에 바로 반영됩니다. 계속할까요?')) return;
   try {
