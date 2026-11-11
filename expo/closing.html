@@ -85,8 +85,8 @@
 <div id="login">
   <form class="login-box" onsubmit="event.preventDefault(); doLogin();">
     <h1>박람회 일일 마감</h1>
-    <p class="muted">관리자 비밀번호 또는 마감 번호를 입력하세요.</p>
-    <input type="password" id="pw" placeholder="비밀번호 / 마감 번호" autocomplete="current-password">
+    <p class="muted">관리자 비밀번호를 입력하세요.</p>
+    <input type="password" id="pw" placeholder="비밀번호" autocomplete="current-password">
     <div class="err" id="loginErr"></div>
     <button class="btn primary" id="loginBtn" type="submit">들어가기</button>
   </form>
@@ -188,7 +188,7 @@
     </div>
 
     <div class="card" id="adminCard">
-      <h3>추가 입고 · 마감 번호 <span class="muted">관리자만</span></h3>
+      <h3>추가 입고 <span class="muted">행사 중 부스로 더 가져온 재고</span></h3>
       <div class="row">
         <select id="siProd"></select>
         <input type="number" id="siQty" placeholder="수량 (빼려면 음수)" step="1">
@@ -196,15 +196,9 @@
         <button class="btn" onclick="addStockIn()">입고 기록</button>
       </div>
       <div id="siList" style="margin-top:8px;"></div>
-      <div class="row" style="margin-top:14px;">
-        <input type="text" id="pinNew" inputmode="numeric" placeholder="새 마감 번호 (숫자 4~8자리, 비우면 끔)" maxlength="8" autocomplete="off">
-        <button class="btn" onclick="setPin()">마감 번호 저장</button>
-      </div>
-      <p class="muted" id="pinInfo" style="margin-top:6px;"></p>
-      <p class="muted" style="margin-top:6px;">초기 재고는 관리자 페이지의 "상품·재고" 탭에서 입력합니다. 마감 번호는 현장 근무자가 이 화면에 들어올 때 쓰는 번호입니다(접수 목록·개인정보는 볼 수 없습니다).</p>
+      <p class="muted" style="margin-top:8px;">초기 재고는 관리자 페이지의 "상품·재고" 탭에서 입력합니다.</p>
       <button class="btn sm" onclick="logout()" style="margin-top:10px;">로그아웃</button>
     </div>
-    <button class="btn sm hide" id="pinLogout" onclick="logout()">나가기</button>
   </main>
 </div>
 <div id="toast"></div>
@@ -220,7 +214,7 @@ const fmt = n => Number(n || 0).toLocaleString('ko-KR');
 const weekday = iso => { const d = new Date(iso + 'T00:00:00'); return isNaN(d) ? '' : '(' + '일월화수목금토'[d.getDay()] + ')'; };
 const p2 = n => String(n).padStart(2, '0');
 const isoDay = d => d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
-let cred = null;      // { key } 또는 { pin }
+let cred = null;      // { key: 관리자 비밀번호 }
 let role = '', rep = null, evKey = '';
 function toast(msg, ms) { const el = $('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), ms || 2400); }
 
@@ -240,8 +234,7 @@ async function doLogin() {
   const v = $('pw').value.trim();
   if (!v) return;
   const btn = $('loginBtn'); btn.disabled = true; btn.classList.add('busy'); $('loginErr').textContent = '';
-  // 숫자만 4~8자리면 마감 번호로 먼저 확인하고, 아니면 관리자 비밀번호로 확인한다
-  const tries = /^\d{4,8}$/.test(v) ? [{ pin: v }, { key: v }] : [{ key: v }];
+  const tries = [{ key: v }];
   let ok = false, lastErr = '';
   for (const c of tries) {
     try {
@@ -266,7 +259,7 @@ const ST = { soldout: ['품절', 'bad'], short: ['추가 필요', 'bad'], nostoc
 function render(r) {
   rep = r; role = r.role;
   const admin = role === 'admin';
-  $('adminCard').classList.toggle('hide', !admin); $('pinLogout').classList.toggle('hide', admin);
+  $('adminCard').classList.toggle('hide', !admin);
   $('evSel').innerHTML = r.events.map(e => `<option value="${esc(e.name)}">${esc(e.name)} · ${e.start.slice(5, 10).replace('-', '/')}~${e.end.slice(5, 10).replace('-', '/')}</option>`).join('');
   if (r.event) $('evSel').value = r.event.name;
 
@@ -326,7 +319,6 @@ function render(r) {
   if (admin) {
     $('siProd').innerHTML = '<option value="">상품 고르기</option>' + r.products.filter(p => !p.bundle).map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
     $('siList').innerHTML = r.stockIns.map(s => `<div class="maprow"><div>${s.day.slice(5)} · <b>${esc(s.product)}</b> ${s.qty > 0 ? '+' : ''}${fmt(s.qty)}개 <span class="muted">${esc(s.memo)}</span></div><div><button class="btn sm danger" onclick="delStockIn(${s.id})">삭제</button></div></div>`).join('');
-    $('pinInfo').textContent = r.pinSet ? '마감 번호가 설정되어 있습니다.' : '마감 번호가 없습니다. 현장 근무자가 올리려면 번호를 정해 주세요.';
   }
 }
 $('evSel').addEventListener('change', () => { evKey = $('evSel').value; load(); });
@@ -357,10 +349,6 @@ async function addStockOut() {
 async function voidStockOut(id) {
   if (!confirm('이 출고 기록을 취소합니다. 남은 재고에 다시 더해집니다. 계속할까요?')) return;
   try { await api('stockOutVoid', { id }); toast('취소했습니다'); load(); } catch (e) { toast('실패: ' + e.message, 4000); }
-}
-async function setPin() {
-  try { const r = await api('setPin', { newPin: $('pinNew').value.trim() }); $('pinNew').value = ''; toast(r.pinSet ? '마감 번호를 저장했습니다' : '마감 번호를 껐습니다'); load(); }
-  catch (e) { toast('실패: ' + e.message, 4000); }
 }
 
 /* ── 판매내역 파일 읽기 (브라우저에서 처리 — 파일은 서버로 보내지 않는다) ── */
@@ -528,7 +516,7 @@ try { $('upWho').value = localStorage.getItem('expo_closing_who') || ''; } catch
 try { cred = JSON.parse(localStorage.getItem(KEEP) || 'null'); } catch (e) { cred = null; }
 // 같은 기기에서 관리자 페이지에 로그인해 두었으면 그 로그인으로 바로 들어온다
 if (!cred) { try { const k = localStorage.getItem('expo_admin_key_keep'); if (k) cred = { key: k }; } catch (e) {} }
-if (cred && (cred.key || cred.pin)) { $('login').classList.add('hide'); $('app').classList.remove('hide'); load(); }
+if (cred && cred.key) { $('login').classList.add('hide'); $('app').classList.remove('hide'); load(); }
 </script>
 </body>
 </html>
