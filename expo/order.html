@@ -21,11 +21,12 @@
   }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
+  button, input, select, textarea { font-family: inherit; }   /* 버튼·입력칸도 본문과 같은 한글 글꼴을 쓴다 */
   /* 두 번 탭 확대 끄기: iOS 사파리는 viewport 의 user-scalable=no 를 무시하므로 touch-action 으로 막는다.
      (＋ 버튼을 빠르게 두 번 눌러도 화면이 커지지 않고 두 번 담긴다. 두 손가락 확대는 그대로 된다) */
   html, body, button, a, input, select, textarea, label { touch-action: manipulation; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+    font-family: "Apple SD Gothic Neo", -apple-system, BlinkMacSystemFont, "Noto Sans KR", "Apple Color Emoji", sans-serif;
     background: var(--bg); color: var(--text);
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;   /* 안드로이드 크롬·삼성 인터넷이 글자만 따로 키워 칸이 넘치는 것을 막는다 */
@@ -500,7 +501,7 @@
   <div id="zipBox">
     <div class="zip-head">
       <b>주소 검색</b>
-      <button id="zipClose" onclick="closePostcode(true)">닫기 ✕</button>
+      <button id="zipClose" onclick="closePostcode(true)">닫기 ×</button>
     </div>
     <div id="zipEmbed"></div>
   </div>
