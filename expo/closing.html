@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>박람회 일일 마감</title>
+<style>
+  :root { --primary:#2563eb; --danger:#dc2626; --green:#16a34a; --warn:#b45309; --bg:#f4f6fa; --card:#fff; --text:#1e293b; --muted:#64748b; --border:#d7dde6; --radius:14px; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  button, input, select { font-family:inherit; }
+  body { font-family:"Apple SD Gothic Neo",-apple-system,BlinkMacSystemFont,"Noto Sans KR",sans-serif; background:var(--bg); color:var(--text); -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  .hide { display:none !important; }
+  input, select { width:100%; font-size:16px; padding:11px 12px; border:1.5px solid var(--border); border-radius:10px; background:#fff; color:var(--text); outline:none; min-width:0; }
+  input:focus, select:focus { border-color:var(--primary); }
+  .btn { font-size:15px; font-weight:600; padding:11px 16px; border-radius:10px; border:1.5px solid var(--border); background:#fff; color:var(--text); cursor:pointer; white-space:nowrap; }
+  .btn.primary { background:var(--primary); border-color:var(--primary); color:#fff; }
+  .btn.danger { color:var(--danger); border-color:#fecaca; }
+  .btn.sm { font-size:13px; padding:7px 11px; border-radius:8px; }
+  .btn:disabled { opacity:.5; cursor:default; }
+  .btn.busy::before { content:''; display:inline-block; width:.9em; height:.9em; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:spin .7s linear infinite; vertical-align:-0.12em; margin-right:6px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .muted { color:var(--muted); font-size:13px; }
+  .err { color:var(--danger); font-size:14px; min-height:18px; }
+
+  #login { min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .login-box { width:min(380px,100%); background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:26px; display:grid; gap:12px; }
+  .login-box h1 { font-size:20px; }
+
+  .topbar { position:sticky; top:0; z-index:10; background:var(--card); border-bottom:1px solid var(--border); padding:10px 14px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .topbar b { font-size:16px; margin-right:auto; }
+  .topbar select { width:auto; flex:1 1 180px; padding:9px 8px; font-size:15px; }
+  main { max-width:900px; margin:0 auto; padding:12px 12px 60px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:12px; }
+  .card h3 { font-size:15px; color:var(--muted); font-weight:600; margin-bottom:10px; display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; align-items:baseline; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .row > * { flex:1 1 140px; }
+  .row > .btn { flex:0 0 auto; }
+  label.f { display:block; font-size:13px; font-weight:600; margin:10px 0 4px; }
+
+  .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
+  @media (max-width:640px) { .tiles { grid-template-columns:repeat(2,1fr); } }
+  .tile { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; }
+  .tile b { display:block; font-size:22px; font-weight:800; letter-spacing:-.5px; }
+  .tile span { font-size:12.5px; color:var(--muted); }
+  .tile b.warn { color:var(--danger); }
+
+  .alertbox { padding:12px 14px; border-radius:10px; margin-bottom:12px; border:1px solid; font-size:14.5px; line-height:1.6; }
+  .alertbox.warn { background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+  .alertbox.good { background:#f0fdf4; border-color:#bbf7d0; color:#166534; }
+  .alertbox.info { background:#eff6ff; border-color:#bfdbfe; color:#1e40af; }
+
+  .bars { display:flex; align-items:flex-end; gap:6px; height:120px; padding-top:18px; border-bottom:1px solid var(--border); }
+  .bar { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; position:relative; min-width:0; }
+  .bar i { display:block; width:100%; max-width:56px; background:#93c5fd; border-radius:4px 4px 0 0; min-height:2px; }
+  .bar em { position:absolute; top:0; font-style:normal; font-size:11.5px; font-weight:600; white-space:nowrap; }
+  .xlabels { display:flex; gap:6px; margin-top:6px; }
+  .xlabels span { flex:1; text-align:center; font-size:11.5px; color:var(--muted); min-width:0; }
+
+  .item { border:1px solid var(--border); border-radius:12px; padding:11px 12px; margin-bottom:8px; }
+  .item.low { background:#fff7ed; border-color:#fed7aa; }
+  .item .nm { font-size:15.5px; font-weight:700; display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
+  .item .g { display:grid; grid-template-columns:repeat(4,1fr); gap:4px 10px; margin-top:6px; }
+  @media (max-width:520px) { .item .g { grid-template-columns:repeat(3,1fr); } }
+  .item .g div { font-size:14.5px; font-variant-numeric:tabular-nums; }
+  .item .g small { display:block; font-size:11.5px; color:var(--muted); }
+  .tag { display:inline-block; font-size:11.5px; padding:2px 8px; border-radius:999px; border:1px solid; white-space:nowrap; font-weight:500; }
+  .tag.ok { color:#166534; border-color:#bbf7d0; background:#f0fdf4; }
+  .tag.bad { color:#9a3412; border-color:#fed7aa; background:#fff7ed; }
+  .tag.off { color:var(--muted); border-color:var(--border); background:#fff; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th, td { text-align:left; padding:7px 6px; border-bottom:1px solid #eef2f7; vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:12.5px; white-space:nowrap; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .tablewrap { overflow-x:auto; }
+  .maprow { display:grid; grid-template-columns:1fr 1fr; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid #eef2f7; font-size:14px; }
+  @media (max-width:520px) { .maprow { grid-template-columns:1fr; } }
+  #toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#1e293b; color:#fff; padding:10px 16px; border-radius:10px; font-size:14px; display:none; z-index:50; max-width:92vw; }
+  #toast.show { display:block; }
+  details summary { cursor:pointer; font-size:14px; font-weight:600; color:var(--primary); padding:4px 0; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="login-box" onsubmit="event.preventDefault(); doLogin();">
+    <h1>박람회 일일 마감</h1>
+    <p class="muted">관리자 비밀번호 또는 마감 번호를 입력하세요.</p>
+    <input type="password" id="pw" placeholder="비밀번호 / 마감 번호" autocomplete="current-password">
+    <div class="err" id="loginErr"></div>
+    <button class="btn primary" id="loginBtn" type="submit">들어가기</button>
+  </form>
+</div>
+
+<div id="app" class="hide">
+  <div class="topbar">
+    <b>일일 마감</b>
+    <select id="evSel" title="행사"></select>
+    <button class="btn sm" id="refBtn" onclick="load()">새로고침</button>
+  </div>
+  <main>
+    <!-- 마감 올리기 -->
+    <div class="card">
+      <h3>마감 올리기 <span class="muted">토스 포스 → 매출 리포트 → 매출현황 → 엑셀 내보내기 파일</span></h3>
+      <div class="row">
+        <input type="file" id="upFile" accept=".xlsx,.xls,.csv">
+        <input type="text" id="upPw" placeholder="파일 비밀번호 (없으면 비움)" autocomplete="off">
+        <button class="btn primary" id="upRead" onclick="readFile()">파일 읽기</button>
+      </div>
+      <div class="err" id="upErr"></div>
+      <div id="preview" class="hide">
+        <div class="alertbox info" id="pvSummary"></div>
+        <details>
+          <summary>읽은 칸이 맞는지 확인 · 바꾸기</summary>
+          <label class="f">상품 시트</label><select id="pvSheet"></select>
+          <div class="row">
+            <div><label class="f">상품명 칸</label><select id="colName"></select></div>
+            <div><label class="f">수량 칸</label><select id="colQty"></select></div>
+            <div><label class="f">금액 칸</label><select id="colAmt"></select></div>
+          </div>
+          <div class="row">
+            <div><label class="f">옵션 칸</label><select id="colOpt"></select></div>
+            <div><label class="f">영수증·주문번호 칸</label><select id="colRc"></select></div>
+            <div><label class="f">일시 칸</label><select id="colTime"></select></div>
+          </div>
+          <div class="tablewrap" style="margin-top:10px;"><table id="pvTable"><thead></thead><tbody></tbody></table></div>
+        </details>
+        <div class="row" style="margin-top:10px;">
+          <div><label class="f">마감 날짜 <span class="muted">(파일에 날짜가 없을 때 사용)</span></label><input type="date" id="upDay"></div>
+          <div><label class="f">올리는 사람</label><input type="text" id="upWho" maxlength="30" placeholder="이름"></div>
+        </div>
+        <div class="row" style="margin-top:12px;">
+          <button class="btn primary" id="upSave" onclick="saveDays()">마감 확정</button>
+          <button class="btn" onclick="resetUpload()">취소</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="alertArea"></div>
+    <div class="tiles">
+      <div class="tile"><b id="tRev">–</b><span id="tRevL">최근 마감 일매출</span></div>
+      <div class="tile"><b id="tRevAll">–</b><span>행사 누적 매출</span></div>
+      <div class="tile"><b id="tTx">–</b><span>누적 거래 / 판매 수량</span></div>
+      <div class="tile"><b id="tAlert">–</b><span>재고 위험 상품</span></div>
+    </div>
+
+    <div class="card">
+      <h3>일별 매출 <span class="muted" id="dayInfo"></span></h3>
+      <div class="bars" id="dayBars"></div><div class="xlabels" id="dayLabels"></div>
+      <div class="tablewrap" style="margin-top:10px;"><table id="dayTable"><thead><tr><th>날짜</th><th class="num">매출</th><th class="num">거래</th><th class="num">수량</th><th>올린 사람 · 시각</th><th></th></tr></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="card" id="mapCard">
+      <h3>상품 이름 맞추기 <span class="muted">포스 상품명이 우리 상품과 연결되지 않은 것</span></h3>
+      <div id="mapList"></div>
+      <button class="btn primary sm" id="mapSave" onclick="saveMap()" style="margin-top:10px;">짝 저장</button>
+    </div>
+
+    <div class="card">
+      <h3>현장 재고 <span class="muted" id="stockInfo"></span></h3>
+      <div id="itemList"></div>
+      <p class="muted" style="margin-top:8px;line-height:1.6;">현장 출고 = 포스 판매(묶음·세트는 낱개로 환산) − 택배 접수분. 남은 재고 = 초기 재고 + 추가 입고 − 현장 출고. 남은 기간 예상 = (최근 마감일 출고와 일평균 중 큰 값) × 남은 행사일. 금액대별 사은품은 택배에 함께 나가는 것으로 보고 현장 재고에서 빼지 않습니다.</p>
+    </div>
+
+    <div class="card">
+      <h3>판매 상품 <span class="muted">포스 기준 · 매출 큰 순</span></h3>
+      <div class="tablewrap"><table id="salesTable"><thead><tr><th>상품</th><th class="num">최근 마감일</th><th class="num">누적 수량</th><th class="num">누적 매출</th></tr></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="card" id="unmatchedCard">
+      <h3>택배 접수 중 포스에서 못 찾은 영수증 <span class="muted">번호를 잘못 적었을 수 있는 건</span></h3>
+      <div id="unmatchedList" class="muted"></div>
+    </div>
+
+    <div class="card" id="adminCard">
+      <h3>추가 입고 · 마감 번호 <span class="muted">관리자만</span></h3>
+      <div class="row">
+        <select id="siProd"></select>
+        <input type="number" id="siQty" placeholder="수량 (빼려면 음수)" step="1">
+        <input type="text" id="siMemo" placeholder="메모" maxlength="120">
+        <button class="btn" onclick="addStockIn()">입고 기록</button>
+      </div>
+      <div id="siList" style="margin-top:8px;"></div>
+      <div class="row" style="margin-top:14px;">
+        <input type="text" id="pinNew" inputmode="numeric" placeholder="새 마감 번호 (숫자 4~8자리, 비우면 끔)" maxlength="8" autocomplete="off">
+        <button class="btn" onclick="setPin()">마감 번호 저장</button>
+      </div>
+      <p class="muted" id="pinInfo" style="margin-top:6px;"></p>
+      <p class="muted" style="margin-top:6px;">초기 재고는 관리자 페이지의 "상품·재고" 탭에서 입력합니다. 마감 번호는 현장 근무자가 이 화면에 들어올 때 쓰는 번호입니다(접수 목록·개인정보는 볼 수 없습니다).</p>
+      <button class="btn sm" onclick="logout()" style="margin-top:10px;">로그아웃</button>
+    </div>
+    <button class="btn sm hide" id="pinLogout" onclick="logout()">나가기</button>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-populate@1.21.0/browser/xlsx-populate.min.js"></script>
+<script>
+// NAS 에 직접 닿는 주소 (lipaco.app 주소는 해외 거점을 거쳐 느리다). 로컬 개발 때만 상대 주소
+const API = ['localhost', '127.0.0.1'].includes(location.hostname) ? (window.CLOSING_API || 'closing.php') : 'https://codes.aguard.synology.me/cwjung/expo_delivery/closing.php';
+const KEEP = 'expo_closing_login';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const fmt = n => Number(n || 0).toLocaleString('ko-KR');
+const weekday = iso => { const d = new Date(iso + 'T00:00:00'); return isNaN(d) ? '' : '(' + '일월화수목금토'[d.getDay()] + ')'; };
+const p2 = n => String(n).padStart(2, '0');
+const isoDay = d => d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
+let cred = null;      // { key } 또는 { pin }
+let role = '', rep = null, evKey = '';
+function toast(msg, ms) { const el = $('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), ms || 2400); }
+
+async function api(op, params) {
+  const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), 30000);
+  try {
+    const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ op }, cred, params || {})), signal: ctrl.signal });
+    const j = await r.json();
+    if (j && j.code === 'auth') { logout(); throw new Error(j.error); }
+    if (!j || !j.ok) throw new Error((j && j.error) || '서버 오류');
+    return j;
+  } finally { clearTimeout(t); }
+}
+
+/* ── 들어가기 ── */
+async function doLogin() {
+  const v = $('pw').value.trim();
+  if (!v) return;
+  const btn = $('loginBtn'); btn.disabled = true; btn.classList.add('busy'); $('loginErr').textContent = '';
+  // 숫자만 4~8자리면 마감 번호로 먼저 확인하고, 아니면 관리자 비밀번호로 확인한다
+  const tries = /^\d{4,8}$/.test(v) ? [{ pin: v }, { key: v }] : [{ key: v }];
+  let ok = false, lastErr = '';
+  for (const c of tries) {
+    try {
+      const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ op: 'report', event: evKey }, c)) }).then(x => x.json());
+      if (r && r.ok) { cred = c; ok = true; try { localStorage.setItem(KEEP, JSON.stringify(c)); } catch (e) {} enter(r); break; }
+      lastErr = (r && r.error) || '들어갈 수 없습니다.';
+    } catch (e) { lastErr = '서버에 연결하지 못했습니다.'; }
+  }
+  if (!ok) $('loginErr').textContent = lastErr;
+  btn.disabled = false; btn.classList.remove('busy');
+}
+function enter(r) { $('login').classList.add('hide'); $('app').classList.remove('hide'); render(r); }
+function logout() { cred = null; try { localStorage.removeItem(KEEP); } catch (e) {} $('app').classList.add('hide'); $('login').classList.remove('hide'); $('pw').value = ''; }
+
+/* ── 대시보드 ── */
+async function load() {
+  const btn = $('refBtn'); btn.classList.add('busy'); btn.disabled = true;
+  try { render(await api('report', { event: evKey })); } catch (e) { if (cred) toast('불러오기 실패: ' + e.message, 4000); }
+  btn.classList.remove('busy'); btn.disabled = false;
+}
+const ST = { soldout: ['품절', 'bad'], short: ['추가 필요', 'bad'], nostock: ['초기 재고 미입력', 'off'], ok: ['충분', 'ok'], nodata: ['마감 전', 'off'] };
+function render(r) {
+  rep = r; role = r.role;
+  const admin = role === 'admin';
+  $('adminCard').classList.toggle('hide', !admin); $('pinLogout').classList.toggle('hide', admin);
+  $('evSel').innerHTML = r.events.map(e => `<option value="${esc(e.name)}">${esc(e.name)} · ${e.start.slice(5, 10).replace('-', '/')}~${e.end.slice(5, 10).replace('-', '/')}</option>`).join('');
+  if (r.event) $('evSel').value = r.event.name;
+
+  const last = r.days.find(d => d.day === r.lastDay);
+  $('tRev').textContent = last ? fmt(last.revenue) + '원' : '–';
+  $('tRevL').textContent = last ? `${r.lastDay.slice(5).replace('-', '/')}${weekday(r.lastDay)} 일매출` : '마감 자료 없음';
+  $('tRevAll').textContent = fmt(r.totals.revenue) + '원';
+  $('tTx').textContent = `${fmt(r.totals.txCount)}건 / ${fmt(r.totals.qty)}개`;
+  $('tAlert').textContent = fmt(r.totals.alerts) + '개'; $('tAlert').className = r.totals.alerts ? 'warn' : '';
+
+  // 재고 위험 알림
+  const need = r.items.filter(x => x.status === 'soldout' || x.status === 'short');
+  const noStock = r.items.filter(x => x.status === 'nostock' && x.out > 0);
+  $('alertArea').innerHTML = !r.days.length
+    ? '<div class="alertbox info">아직 올라온 마감 자료가 없습니다. 위에서 토스 포스 판매내역 파일을 올려주세요.</div>'
+    : (need.length
+      ? `<div class="alertbox warn"><b>현장 추가 재고가 필요한 상품 ${need.length}개</b> <span class="muted">(남은 행사일 ${r.daysLeft}일)</span><br>${need.map(x => `${esc(x.name)} — ${x.status === 'soldout' ? '품절' : '남은 ' + fmt(x.remaining) + '개'}${x.shortage ? ', <b>' + fmt(x.shortage) + '개 추가 필요</b>' : ''}`).join('<br>')}</div>`
+      : `<div class="alertbox good"><b>현장 추가 재고가 필요한 상품이 없습니다.</b>${r.daysLeft === 0 ? ' (마지막 날까지 마감했습니다)' : ` 남은 행사일 ${r.daysLeft}일`}</div>`)
+    + (noStock.length ? `<div class="alertbox warn">초기 재고가 입력되지 않아 판정할 수 없는 상품: ${noStock.map(x => esc(x.name)).join(', ')}</div>` : '');
+
+  // 일별
+  const max = Math.max(1, ...r.days.map(d => d.revenue));
+  $('dayBars').innerHTML = r.days.map(d => `<div class="bar"><em>${fmt(Math.round(d.revenue / 10000))}만</em><i style="height:${Math.round(d.revenue / max * 100)}%"></i></div>`).join('');
+  $('dayLabels').innerHTML = r.days.map(d => `<span>${d.day.slice(5).replace('-', '/')}${weekday(d.day)}</span>`).join('');
+  $('dayInfo').textContent = r.days.length ? `마감 ${r.days.length}일` : '';
+  $('dayTable').tBodies[0].innerHTML = r.days.map(d => `<tr><td>${d.day}${weekday(d.day)}</td><td class="num"><b>${fmt(d.revenue)}</b></td><td class="num">${fmt(d.txCount)}</td><td class="num">${fmt(d.qty)}</td><td class="muted">${esc(d.uploader || '–')} · ${esc(d.uploadedAt.slice(5, 16))}</td><td>${admin ? `<button class="btn sm danger" onclick="deleteDay('${d.day}')">삭제</button>` : ''}</td></tr>`).join('')
+    || '<tr><td colspan="6" class="muted">마감 자료 없음</td></tr>';
+
+  // 상품 이름 맞추기
+  const opts = '<option value="__none">— 고르기 —</option><option value="">재고 계산에서 제외</option>' + r.products.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+  $('mapCard').classList.toggle('hide', !r.unmapped.length);
+  $('mapList').innerHTML = r.unmapped.map(u => `<div class="maprow" data-pos="${esc(u.pos)}"><div><b>${esc(u.pos)}</b> <span class="muted">${fmt(u.qty)}개 판매</span></div><select>${opts}</select></div>`).join('');
+
+  // 현장 재고
+  $('stockInfo').textContent = r.lastDay ? `${r.lastDay.slice(5).replace('-', '/')} 마감 기준` : '';
+  $('itemList').innerHTML = r.items.map(x => {
+    const [label, cls] = ST[x.status];
+    return `<div class="item${cls === 'bad' ? ' low' : ''}"><div class="nm"><span>${esc(x.name)}${x.gift ? ' <span class="tag off">사은품</span>' : ''}</span><span class="tag ${cls}">${label}${x.shortage ? ' ' + fmt(x.shortage) + '개' : ''}</span></div>
+      <div class="g"><div><small>남은 재고</small><b>${x.stock ? fmt(x.remaining) : '–'}</b></div><div><small>현장 출고 (최근/누적)</small>${fmt(x.outLast)} / ${fmt(x.out)}</div><div><small>초기+입고</small>${fmt(x.initial)}${x.added ? ' + ' + fmt(x.added) : ''}</div>
+      <div><small>포스 판매</small>${fmt(x.posSold)}</div><div><small>택배 접수분</small>${fmt(x.ship)}</div><div><small>남은 기간 예상</small>${fmt(x.need)}</div></div></div>`;
+  }).join('') || '<p class="muted">등록된 상품이 없습니다.</p>';
+
+  $('salesTable').tBodies[0].innerHTML = r.sales.map(s => `<tr><td>${esc(s.name)}</td><td class="num">${fmt(s.qtyLast)}</td><td class="num"><b>${fmt(s.qty)}</b></td><td class="num">${fmt(s.amount)}</td></tr>`).join('')
+    || '<tr><td colspan="4" class="muted">판매 자료 없음</td></tr>';
+
+  $('unmatchedCard').classList.toggle('hide', !r.unmatchedOrders.length);
+  $('unmatchedList').innerHTML = r.unmatchedOrders.map(u => `${u.day.slice(5)} · 영수증 <b>${esc(u.orderNo)}</b>`).join('<br>');
+
+  if (admin) {
+    $('siProd').innerHTML = '<option value="">상품 고르기</option>' + r.products.filter(p => !p.bundle).map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+    $('siList').innerHTML = r.stockIns.map(s => `<div class="maprow"><div>${s.day.slice(5)} · <b>${esc(s.product)}</b> ${s.qty > 0 ? '+' : ''}${fmt(s.qty)}개 <span class="muted">${esc(s.memo)}</span></div><div><button class="btn sm danger" onclick="delStockIn(${s.id})">삭제</button></div></div>`).join('');
+    $('pinInfo').textContent = r.pinSet ? '마감 번호가 설정되어 있습니다.' : '마감 번호가 없습니다. 현장 근무자가 올리려면 번호를 정해 주세요.';
+  }
+}
+$('evSel').addEventListener('change', () => { evKey = $('evSel').value; load(); });
+
+async function saveMap() {
+  const pairs = [...document.querySelectorAll('#mapList .maprow')].map(el => ({ pos: el.dataset.pos, product: el.querySelector('select').value })).filter(p => p.product !== '__none');
+  if (!pairs.length) { toast('짝지을 상품을 골라주세요'); return; }
+  try { await api('saveMap', { pairs }); toast('저장했습니다'); load(); } catch (e) { toast('실패: ' + e.message, 4000); }
+}
+async function deleteDay(day) {
+  if (!confirm(`${day} 마감 자료를 지웁니다. 다시 올리면 복구됩니다. 계속할까요?`)) return;
+  try { await api('deleteDay', { day }); toast('삭제했습니다'); load(); } catch (e) { toast('실패: ' + e.message, 4000); }
+}
+async function addStockIn() {
+  try { await api('stockIn', { product: $('siProd').value, qty: Number($('siQty').value) || 0, memo: $('siMemo').value.trim() }); $('siQty').value = ''; $('siMemo').value = ''; toast('입고를 기록했습니다'); load(); }
+  catch (e) { toast('실패: ' + e.message, 4000); }
+}
+async function delStockIn(id) { try { await api('stockInDelete', { id }); load(); } catch (e) { toast('실패: ' + e.message, 4000); } }
+async function setPin() {
+  try { const r = await api('setPin', { newPin: $('pinNew').value.trim() }); $('pinNew').value = ''; toast(r.pinSet ? '마감 번호를 저장했습니다' : '마감 번호를 껐습니다'); load(); }
+  catch (e) { toast('실패: ' + e.message, 4000); }
+}
+
+/* ── 판매내역 파일 읽기 (브라우저에서 처리 — 파일은 서버로 보내지 않는다) ── */
+let book = null;          // [{ name, rows: [[…]] }]
+let parsed = null;        // { rows: [{name, option, qty, amount, receipt, time, day}], revenue, txCount }
+const COLS = [['colName', /상품명|메뉴명|품목명|상품/], ['colQty', /수량|개수/], ['colAmt', /실판매|실결제|판매금액|결제금액|상품금액|금액|매출/], ['colOpt', /옵션/], ['colRc', /주문번호|영수증|결제번호|거래번호|승인번호/], ['colTime', /일시|시각|시간|일자|날짜/]];
+function cellText(v) {
+  if (v === undefined || v === null) return '';
+  if (v instanceof Date) return isoDay(v) + ' ' + p2(v.getHours()) + ':' + p2(v.getMinutes()) + ':' + p2(v.getSeconds());
+  if (typeof v === 'object') return String(typeof v.text === 'function' ? v.text() : (v.text ?? v.result ?? ''));
+  return String(v);
+}
+function toNum(v) { if (typeof v === 'number') return v; const n = parseFloat(String(v ?? '').replace(/[^\d.\-]/g, '')); return isNaN(n) ? 0 : n; }
+// 엑셀 날짜(숫자)·글자 날짜 → 'yyyy-MM-dd HH:mm:ss' (못 읽으면 빈 값)
+function toTime(v) {
+  if (v instanceof Date) return cellText(v);
+  if (typeof v === 'number' && v > 30000 && v < 80000) { const d = XlsxPopulate.numberToDate(v); return cellText(d); }
+  const m = String(v ?? '').match(/(\d{4})[.\-\/년]\s*(\d{1,2})[.\-\/월]\s*(\d{1,2})(?:[일\s.T]*\s*(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  return m ? `${m[1]}-${p2(m[2])}-${p2(m[3])}` + (m[4] ? ` ${p2(m[4])}:${m[5]}:${m[6] || '00'}` : '') : '';
+}
+function parseCsv(text) {
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === ',') { row.push(cur); cur = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; rows.push(row); row = []; }
+    else cur += c;
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+async function readFile() {
+  const f = $('upFile').files[0];
+  $('upErr').textContent = '';
+  if (!f) { $('upErr').textContent = '파일을 골라주세요.'; return; }
+  const btn = $('upRead'); btn.classList.add('busy'); btn.disabled = true;
+  try {
+    if (/\.csv$/i.test(f.name)) {
+      book = [{ name: 'CSV', rows: parseCsv((await f.text()).replace(/^﻿/, '')) }];
+    } else {
+      if (!window.XlsxPopulate) throw new Error('엑셀 읽기 도구를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해주세요.');
+      const pw = $('upPw').value;
+      let wb;
+      try { wb = await XlsxPopulate.fromDataAsync(await f.arrayBuffer(), pw ? { password: pw } : {}); }
+      catch (e) { throw new Error(pw ? '파일을 열 수 없습니다. 비밀번호를 확인해주세요.' : '파일을 열 수 없습니다. 비밀번호가 걸린 파일이면 비밀번호를 입력해주세요.'); }
+      book = wb.sheets().map(s => { const u = s.usedRange(); return { name: s.name(), rows: u ? u.value() : [] }; });
+    }
+    $('pvSheet').innerHTML = book.map((s, i) => `<option value="${i}">${esc(s.name)} (${s.rows.length}줄)</option>`).join('');
+    // 상품 시트: 이름에 '상품'이 있는 시트, 없으면 '상품명' 머리글이 있는 첫 시트
+    let si = book.findIndex(s => /상품/.test(s.name));
+    if (si < 0) si = book.findIndex(s => s.rows.slice(0, 20).some(r => r.some(c => /상품명|메뉴명/.test(cellText(c)))));
+    $('pvSheet').value = Math.max(0, si);
+    $('upDay').value = (f.name.match(/(20\d{2})[.\-_]?(\d{2})[.\-_]?(\d{2})/) || []).slice(1).join('-') || isoDay(new Date());
+    setupColumns(true);
+    $('preview').classList.remove('hide');
+  } catch (e) { $('upErr').textContent = e.message || '파일을 읽지 못했습니다.'; $('preview').classList.add('hide'); }
+  btn.classList.remove('busy'); btn.disabled = false;
+}
+let headRow = 0;
+function setupColumns(auto) {
+  const sh = book[Number($('pvSheet').value)] || { rows: [] };
+  // 머리글 줄: 앞쪽 20줄 가운데 '상품'과 '수량'이 함께 있는 줄
+  headRow = sh.rows.slice(0, 20).findIndex(r => r.some(c => /상품|메뉴/.test(cellText(c))) && r.some(c => /수량|개수/.test(cellText(c))));
+  if (headRow < 0) headRow = 0;
+  const heads = (sh.rows[headRow] || []).map(cellText);
+  const opts = '<option value="-1">(없음)</option>' + heads.map((h, i) => `<option value="${i}">${esc(h || '(' + (i + 1) + '번째 칸)')}</option>`).join('');
+  COLS.forEach(([id, re]) => {
+    const el = $(id), cur = el.value;
+    el.innerHTML = opts;
+    if (auto) {
+      // 금액 칸은 '실판매'처럼 더 구체적인 이름을 먼저 찾는다
+      const order = id === 'colAmt' ? [/실판매|실결제/, /판매금액|결제금액/, re] : id === 'colName' ? [/상품명|메뉴명|품목명/, re] : [re];
+      let hit = -1;
+      for (const r of order) { hit = heads.findIndex(h => r.test(h)); if (hit >= 0) break; }
+      el.value = String(hit);
+    } else el.value = cur;
+  });
+  compute();
+}
+function compute() {
+  const sh = book[Number($('pvSheet').value)] || { rows: [] };
+  const ci = id => Number($(id).value);
+  const [cn, cq, ca, co, cr, ct] = COLS.map(([id]) => ci(id));
+  const rows = [];
+  sh.rows.slice(headRow + 1).forEach(r => {
+    const name = cn >= 0 ? cellText(r[cn]).trim() : '';
+    const qty = cq >= 0 ? toNum(r[cq]) : 0;
+    if (!name || !qty || /^(합계|총계|소계)/.test(name)) return;
+    const time = ct >= 0 ? toTime(r[ct]) : '';
+    rows.push({ name, option: co >= 0 ? cellText(r[co]).trim() : '', qty, amount: ca >= 0 ? toNum(r[ca]) : 0, receipt: cr >= 0 ? cellText(r[cr]).trim() : '', time, day: time.slice(0, 10) });
+  });
+  // 결제 시트가 있으면 결제 금액 합계를 일매출로 쓴다 (취소 건은 뺀다)
+  let pay = null;
+  const ps = book.find(s => /결제/.test(s.name));
+  if (ps) {
+    const hr = ps.rows.slice(0, 20).findIndex(r => r.some(c => /금액/.test(cellText(c))));
+    if (hr >= 0) {
+      const h = ps.rows[hr].map(cellText);
+      const a = [/결제금액|승인금액|실결제/, /금액/].map(re => h.findIndex(x => re.test(x))).find(i => i >= 0);
+      const s = h.findIndex(x => /상태|구분|취소/.test(x)), t = h.findIndex(x => /일시|시각|시간|일자|날짜/.test(x));
+      if (a !== undefined) {
+        pay = {};
+        ps.rows.slice(hr + 1).forEach(r => {
+          let amt = toNum(r[a]); if (!amt) return;
+          const cancel = s >= 0 && /취소/.test(cellText(r[s]));
+          if (cancel && amt > 0) amt = -amt;
+          const d = t >= 0 ? toTime(r[t]).slice(0, 10) : '';
+          pay[d] = pay[d] || { revenue: 0, tx: 0 };
+          pay[d].revenue += amt; if (!cancel) pay[d].tx++;
+        });
+      }
+    }
+  }
+  parsed = { rows, pay };
+  const byDay = {};
+  rows.forEach(r => { const d = r.day || ''; byDay[d] = byDay[d] || { lines: 0, qty: 0, amount: 0 }; byDay[d].lines++; byDay[d].qty += r.qty; byDay[d].amount += r.amount; });
+  const dayKeys = Object.keys(byDay).sort();
+  const dated = dayKeys.filter(d => d);
+  $('pvSummary').innerHTML = !rows.length
+    ? '<b>판매 줄을 찾지 못했습니다.</b> 아래 "읽은 칸이 맞는지 확인"에서 시트와 칸을 골라주세요.'
+    : `<b>${esc(sh.name)}</b> 시트에서 판매 ${fmt(rows.length)}줄을 읽었습니다.<br>` + (dated.length
+      ? dated.map(d => `${d}${weekday(d)} — ${fmt(byDay[d].qty)}개 · ${fmt(pay && pay[d] ? pay[d].revenue : byDay[d].amount)}원${pay && pay[d] ? ' (결제 ' + fmt(pay[d].tx) + '건)' : ''}`).join('<br>') + (byDay[''] ? `<br>날짜 없는 줄 ${fmt(byDay[''].lines)}개는 아래 마감 날짜로 저장합니다.` : '')
+      : `파일에 날짜가 없어 아래 <b>마감 날짜</b>로 저장합니다 — ${fmt(byDay[''].qty)}개 · ${fmt(pay && pay[''] ? pay[''].revenue : byDay[''].amount)}원`);
+  const heads = (sh.rows[headRow] || []).map(cellText);
+  $('pvTable').tHead.innerHTML = '<tr>' + heads.map(h => `<th>${esc(h)}</th>`).join('') + '</tr>';
+  $('pvTable').tBodies[0].innerHTML = sh.rows.slice(headRow + 1, headRow + 6).map(r => '<tr>' + heads.map((_, i) => `<td>${esc(toTime(r[i]) && i === ct ? toTime(r[i]) : cellText(r[i]))}</td>`).join('') + '</tr>').join('');
+  $('upSave').disabled = !rows.length;
+}
+$('pvSheet').addEventListener('change', () => setupColumns(true));
+COLS.forEach(([id]) => $(id).addEventListener('change', compute));
+function resetUpload() { book = parsed = null; $('upFile').value = ''; $('upPw').value = ''; $('preview').classList.add('hide'); $('upErr').textContent = ''; }
+async function saveDays() {
+  if (!parsed || !parsed.rows.length) return;
+  const fallback = $('upDay').value;
+  if (parsed.rows.some(r => !r.day) && !fallback) { $('upErr').textContent = '마감 날짜를 골라주세요.'; return; }
+  const groups = {};
+  parsed.rows.forEach(r => { const d = r.day || fallback; (groups[d] = groups[d] || []).push(r); });
+  const days = Object.keys(groups).sort();
+  const existing = days.filter(d => rep && rep.days.some(x => x.day === d));
+  if (existing.length && !confirm(`${existing.join(', ')} 마감 자료가 이미 있습니다. 새 파일 내용으로 바꿉니다. 계속할까요?`)) return;
+  const btn = $('upSave'); btn.classList.add('busy'); btn.disabled = true;
+  try {
+    let last = null; const outside = [];
+    for (const d of days) {
+      const pay = parsed.pay && (parsed.pay[d] || (days.length === 1 && parsed.pay['']) || null);
+      last = await api('saveDay', { day: d, rows: groups[d].map(r => ({ name: r.name, option: r.option, qty: r.qty, amount: r.amount, receipt: r.receipt, time: r.time })),
+        revenue: pay ? pay.revenue : undefined, txCount: pay ? pay.tx : undefined, fileName: ($('upFile').files[0] || {}).name || '', uploader: $('upWho').value.trim() });
+      if (!last.saved.event) outside.push(d);
+    }
+    try { localStorage.setItem('expo_closing_who', $('upWho').value.trim()); } catch (e) {}
+    resetUpload();
+    toast(`${days.length}일치 마감을 저장했습니다` + (last.saved.mailed ? ' · 재고 위험 메일 발송' : ''), 4000);
+    render(last);
+    // 행사 기간(세팅일 포함) 밖의 날짜는 어느 행사에도 묶이지 않아 이 화면의 집계에 나오지 않는다
+    if (outside.length) $('upErr').textContent = `${outside.join(', ')} 은(는) 등록된 행사 기간 밖이라 행사 집계에 포함되지 않았습니다. 날짜가 맞는지, 관리자 페이지의 행사 일정이 맞는지 확인해주세요.`;
+    if (last.unmapped.length) $('mapCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) { $('upErr').textContent = '저장 실패: ' + e.message; }
+  btn.classList.remove('busy'); btn.disabled = false;
+}
+
+/* ── 시작 ── */
+try { $('upWho').value = localStorage.getItem('expo_closing_who') || ''; } catch (e) {}
+try { cred = JSON.parse(localStorage.getItem(KEEP) || 'null'); } catch (e) { cred = null; }
+// 같은 기기에서 관리자 페이지에 로그인해 두었으면 그 로그인으로 바로 들어온다
+if (!cred) { try { const k = localStorage.getItem('expo_admin_key_keep'); if (k) cred = { key: k }; } catch (e) {} }
+if (cred && (cred.key || cred.pin)) { $('login').classList.add('hide'); $('app').classList.remove('hide'); load(); }
+</script>
+</body>
+</html>

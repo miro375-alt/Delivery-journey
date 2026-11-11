@@ -245,6 +245,10 @@
     labelTable(t);
   });
 
+  /* ── 오늘 마감: 주문서가 택배 접수 전용이 되어 예전 마감(현장 수령 기준)은 계산할 것이 없다. 포스 판매내역으로 마감하는 화면으로 보낸다 ── */
+  const closeBtn = document.querySelector('#banner .btn.primary');
+  if (closeBtn) { closeBtn.textContent = '일일 마감'; closeBtn.onclick = () => { location.href = 'closing.html'; }; closeBtn.removeAttribute('onclick'); closeBtn.onclick = () => { location.href = 'closing.html'; }; }
+
   /* ── 시작: 로그인 유지 중이면 저장해 둔 화면을 바로 띄우고 뒤에서 새로 받는다 ── */
   if (!key) {
     let kept = '';
