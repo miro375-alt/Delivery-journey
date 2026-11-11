@@ -118,7 +118,7 @@
 
 <div id="login">
   <form class="login-box" onsubmit="event.preventDefault(); doLogin();">
-    <h1>🔧 택배 접수 관리자</h1>
+    <h1>택배 접수 관리자</h1>
     <p class="muted">관리자 비밀번호를 입력하세요.</p>
     <input type="password" id="pw" placeholder="비밀번호" autocomplete="current-password">
     <div class="err" id="loginErr"></div>
@@ -128,7 +128,7 @@
 
 <div id="app" class="hide">
   <div class="topbar">
-    <span class="logo">🔧 택배 접수 관리자</span>
+    <span class="logo">택배 접수 관리자</span>
     <div class="tabs">
       <button data-tab="dash" class="on">대시보드</button>
       <button data-tab="list">접수 목록</button>
@@ -148,7 +148,7 @@
     <section id="tab-dash">
       <div class="banner closed" id="banner">
         <div><b id="bannerTitle">상태 확인 중…</b><div class="sub" id="bannerSub"></div></div>
-        <button class="btn primary" onclick="openClosing()">📋 오늘 마감</button>
+        <button class="btn primary" onclick="openClosing()">오늘 마감</button>
         <div class="seg" id="openSeg">
           <button data-mode="" onclick="setOpen('')">자동(행사 시간)</button>
           <button data-mode="open" onclick="setOpen('open')">강제 열기</button>
@@ -220,7 +220,7 @@
         <div class="tablewrap"><table class="prod-table" id="prodTable"><thead><tr><th>상품명</th><th class="num">단가(원)</th><th class="num">초기 재고</th><th>구성 <span class="muted">(묶음·세트만)</span></th><th>사은품</th><th>판매 중</th><th class="num">판매</th><th class="num">현장 잔여</th><th></th></tr></thead><tbody></tbody></table></div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
           <button class="btn" onclick="addProdRow()">+ 상품 추가</button>
-          <button class="btn primary" onclick="saveProducts()">💾 저장</button>
+          <button class="btn primary" onclick="saveProducts()">저장</button>
         </div>
         <p class="muted" style="margin-top:10px;line-height:1.7;"><b>초기 재고</b>는 부스에 가져온 현장 재고입니다. 접수된 구매 상품은 택배로 나가므로 현장 재고에서 빠지지 않고, 손님이 접수할 때 <b>"현장에서 바로 가져가는 상품"</b>으로 고른 수량만 빠집니다.<br>
         <b>사은품</b>에 체크한 상품은 구매 목록에는 없고 현장 수령 목록에만 나옵니다 (단가 0원으로 등록).<br>
@@ -243,7 +243,7 @@
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
           <button class="btn" onclick="addSchRow(); schDirty = true;">+ 행사 추가</button>
-          <button class="btn primary" onclick="saveSchedule()">💾 일정 저장</button>
+          <button class="btn primary" onclick="saveSchedule()">일정 저장</button>
           <button class="btn" onclick="schDirty = false; refresh();">되돌리기</button>
         </div>
         <p class="muted" style="margin-top:10px;">시각은 24시간제 <b>HH:MM</b> 으로 입력합니다. 마지막 날 자정까지 받으려면 종료 시각을 <b>24:00</b> 으로 둡니다. 지난 행사를 지워도 접수 데이터는 시트에 남지만, 행사별 조회 목록에서는 빠집니다.</p>
@@ -272,8 +272,8 @@
   <div class="tablewrap"><table id="clTable"><thead><tr><th>낱개 상품·사은품</th><th class="num">오늘 현장 출고</th><th class="num">누적 현장 출고</th><th class="num">일평균</th><th class="num">현장 잔여</th><th class="num">남은 기간 예상</th><th class="num">추가 필요</th><th class="num" title="오늘 접수분 / 누적 (낱개 환산, 현장 수령분 제외)">택배 출고 예정</th><th>판정</th></tr></thead><tbody></tbody></table></div>
   <p class="muted" style="margin-top:10px;">현장 재고는 손님이 현장에서 바로 가져간 수량만 차감합니다. 남은 기간 예상 = (오늘 현장 출고와 일평균 중 큰 값) × 남은 행사일. 추가 필요 = 예상 − 현장 잔여. 택배 출고 예정은 구매 수량을 낱개로 환산한 값(오늘 / 누적)으로, 현장 재고와는 무관합니다.</p>
   <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
-    <button class="btn" id="clMail" onclick="openClosing(true)">✉ 메일로 보내기</button>
-    <button class="btn" onclick="copyClosing()">📋 텍스트 복사</button>
+    <button class="btn" id="clMail" onclick="openClosing(true)">메일로 보내기</button>
+    <button class="btn" onclick="copyClosing()">텍스트 복사</button>
     <button class="btn primary" onclick="$('modal').classList.remove('show')">닫기</button>
   </div>
 </div></div>
@@ -365,7 +365,7 @@ function renderDash(s) {
   const st = s.state;
   const modeName = { open: '접수 중 (행사 시간)', forced_open: '접수 중 (강제 열기)', forced_closed: '접수 중지 (강제 닫기)', before: '행사 시작 전', after: '행사 종료', test: '접수 중 (행사 기간 외 · 테스트)', hours: '접수 시간 외' }[st.mode] || st.mode;
   $('banner').className = 'banner ' + (st.open ? 'open' : 'closed');
-  $('bannerTitle').textContent = (st.open ? '🟢 ' : '🟠 ') + modeName;
+  $('bannerTitle').textContent = (st.open ? '● ' : '○ ') + modeName;
   $('bannerSub').textContent = (/^forced/.test(st.mode) ? '⚠ 강제 모드 — 행사 일정이 무시됩니다. 끝나면 "자동"으로 되돌려 주세요 · ' : '') + (st.message ? st.message + ' · ' : '') + `서버 시각 ${s.generatedAt.slice(5, 16)} · 배송지 수정 ${s.editOpen ? '가능' : '불가'}`;
   const forced = st.mode === 'forced_open' ? 'open' : st.mode === 'forced_closed' ? 'closed' : '';
   document.querySelectorAll('#openSeg button, #openSeg2 button').forEach(b => b.classList.toggle('on', b.dataset.mode === forced));
@@ -571,14 +571,14 @@ async function openClosing(mail) {
   if (mail && !confirm('마감 리포트를 알림 메일 주소로 보냅니다. 계속할까요?')) return;
   if (mail) toast('메일 보내는 중…');
   else {   // 창을 먼저 열고 계산되는 동안 스켈레톤
-    $('clTitle').textContent = '📋 오늘 마감'; $('clSub').innerHTML = '<span class="sk" style="width:60%;"></span>';
+    $('clTitle').textContent = '오늘 마감'; $('clSub').innerHTML = '<span class="sk" style="width:60%;"></span>';
     $('clAlert').innerHTML = '<div class="alertbox" style="border-color:var(--border);"><span class="sk" style="width:45%;margin-bottom:8px;"></span><span class="sk" style="width:70%;"></span></div>';
     skRows('clTable', 6); $('modal').classList.add('show');
   }
   try {
     const r = await api('closing', { mail: !!mail });
     const stName = { soldout: '품절', short: '추가 필요', nostock: '재고 미입력', ok: '충분' };
-    $('clTitle').textContent = `📋 ${r.event} · ${r.date}${weekday(r.date)} 마감`;
+    $('clTitle').textContent = `${r.event} · ${r.date}${weekday(r.date)} 마감`;
     $('clSub').textContent = `오늘 접수 ${fmt(r.ordersToday)}건 (현장 수령 포함 ${fmt(r.pickupOrdersToday)}건) · 타포린백 ${fmt(r.snsToday || 0)}/${fmt(r.snsLimit || 100)}개 · 판매 ${fmt(r.qtyToday)}개 · 매출(추정) ${fmt(r.revenueToday)}원 · 남은 행사일 ${r.daysLeft}일 (마지막 날 ${r.lastDay.slice(5).replace('-', '/')})`;
     const need = r.items.filter(x => x.status === 'soldout' || x.status === 'short');
     const noStock = r.items.filter(x => x.status === 'nostock');

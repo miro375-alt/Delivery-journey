@@ -311,13 +311,13 @@
     <span class="logo" id="logoPress2"><img src="img/babystandard-cloud.png" alt="베이비스탠다드" width="30" height="30" draggable="false">택배 배송 접수</span>
   </div>
   <div class="center" style="flex:1;display:flex;flex-direction:column;">
-    <div class="info-icon">⏰</div>
+    <div class="info-icon" style="color:#4f46e5;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
     <h1>지금은 접수 시간이 아닙니다</h1>
     <p class="done-hint" id="closedMsg"></p>
     <p class="done-hint" id="closedHours"></p>
     <div class="btn-row">
       <button class="btn-home" onclick="checkOpenAndShow(true)">다시 확인</button>
-      <button class="btn-home" id="closedEditBtn" onclick="openEdit()">📍 배송지 수정</button>
+      <button class="btn-home" id="closedEditBtn" onclick="openEdit()">배송지 수정</button>
     </div>
   </div>
 </section>
@@ -328,7 +328,7 @@
     <span class="logo" id="logoPress"><img src="img/babystandard-cloud.png" alt="베이비스탠다드" width="30" height="30" draggable="false">택배 배송 접수</span>
     <span class="right">
       <span class="badge-queue" id="qBadge2"></span>
-      <button class="btn-link" onclick="openEdit()">📍 배송지 수정</button>
+      <button class="btn-link" onclick="openEdit()">배송지 수정</button>
     </span>
   </div>
   <main class="pad">
@@ -386,7 +386,7 @@
     </div>
 
     <div class="section" id="giftSection" style="display:none;">
-      <h3>🎁 사은품 <span id="giftCount" style="font-size:14px;font-weight:600;color:var(--primary);margin-left:6px;"></span></h3>
+      <h3>사은품 <span id="giftCount" style="font-size:14px;font-weight:600;color:var(--primary);margin-left:6px;"></span></h3>
       <div class="gift-sum">
         <div class="names" id="giftNames"></div>
         <button type="button" class="gift-change" id="giftChange">바꾸기</button>
@@ -397,9 +397,9 @@
     <div class="section" id="pickSection" style="display:none;">
       <h3>상품 받는 방법 <span class="req" style="color:var(--danger);">*</span></h3>
       <div class="recv-grid" id="recvMode">
-        <button type="button" data-m="ship" class="on"><span class="ic">📦</span><b>전부 택배</b><small>택배로 받기</small></button>
-        <button type="button" data-m="part"><span class="ic">🛍</span><b>일부만 지금</b><small>나머지는 택배</small></button>
-        <button type="button" data-m="all"><span class="ic">🙌</span><b>전부 지금</b><small>택배 없음</small></button>
+        <button type="button" data-m="ship" class="on"><b>전부 택배</b><small>택배로 받기</small></button>
+        <button type="button" data-m="part"><b>일부만 지금</b><small>나머지는 택배</small></button>
+        <button type="button" data-m="all"><b>전부 지금</b><small>택배 없음</small></button>
       </div>
       <div id="pickWrap" style="display:none;margin-top:10px;">
         <p class="hint-note" id="pickNote" style="color:var(--muted);margin:0 0 4px;"></p>
@@ -408,8 +408,8 @@
       <div id="giftRecv" style="display:none;">
         <label class="fld">사은품 받는 방법 <span class="req">*</span></label>
         <div class="recv-grid two" id="giftRecvMode">
-          <button type="button" data-g="now"><b>🎁 지금 가져가기</b><small>현장에서 바로 받기</small></button>
-          <button type="button" data-g="ship"><b>📦 택배로 받기</b><small>택배 상품과 함께 배송</small></button>
+          <button type="button" data-g="now"><b>지금 가져가기</b><small>현장에서 바로 받기</small></button>
+          <button type="button" data-g="ship"><b>택배로 받기</b><small>택배 상품과 함께 배송</small></button>
         </div>
         <div class="manual-note" id="giftRecvErr">사은품을 지금 가져가실지, 택배로 받으실지 선택해주세요.</div>
       </div>
@@ -474,7 +474,7 @@
   <div class="panel">
     <div class="grab"></div>
     <div class="head">
-      <h2 id="giftSheetTitle">🎁 사은품을 골라주세요</h2>
+      <h2 id="giftSheetTitle">사은품을 골라주세요</h2>
       <p id="giftSheetSub"></p>
     </div>
     <div class="body" id="giftSheetList"></div>
@@ -486,7 +486,7 @@
 <div id="cartSheet" role="dialog" aria-modal="true" aria-labelledby="cartSheetTitle" aria-hidden="true">
   <div class="panel">
     <div class="grab"></div>
-    <div class="head"><h2 id="cartSheetTitle">🛒 담은 상품</h2><span id="cartSheetCount"></span></div>
+    <div class="head"><h2 id="cartSheetTitle">담은 상품</h2><span id="cartSheetCount"></span></div>
     <div class="body" id="cartSheetList"></div>
     <div class="more-hint" id="cartSheetMore" style="display:none;">↓ 아래로 밀어서 더 보기</div>
     <div class="foot">
@@ -521,14 +521,14 @@
   <p class="done-hint" id="doneShipNote">이 화면을 사진으로 찍어두시거나<br>접수번호를 메모해두시면 추후 배송 관리가 수월합니다.<br><br>상품은 <b>영업일 기준 2~3일 내</b> 발송됩니다.<br><br>배송지를 바꾸시려면 행사 기간 중 <b>영수증 번호와 휴대폰 번호</b>로<br>아래 "배송지 수정"에서 직접 수정하실 수 있습니다.</p>
   <div class="btn-row">
     <button class="btn-home" onclick="resetToStart()">확인</button>
-    <button class="btn-home" onclick="openEdit()">📍 배송지 수정</button>
+    <button class="btn-home" onclick="openEdit()">배송지 수정</button>
   </div>
 </section>
 
 <!-- ═══════ ③ 배송지 수정 ═══════ -->
 <section id="scr-edit" class="screen">
   <div class="topbar">
-    <span class="logo">📍 배송지 수정</span>
+    <span class="logo">배송지 수정</span>
     <button class="btn-cancel" onclick="resetToStart()" style="padding:8px 16px;">닫기</button>
   </div>
   <main class="pad">
@@ -595,7 +595,7 @@
 <!-- ═══════ ④ 스태프 확인 (스태프 화면 진입 시에만) ═══════ -->
 <section id="scr-lock" class="screen">
   <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:20px;padding:24px;">
-    <div style="font-size:52px;">🔒</div>
+    <div style="color:var(--muted);line-height:0;"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
     <h1 style="font-size:24px;">스태프 확인</h1>
     <p style="color:var(--muted);font-size:15px;text-align:center;">스태프 관리 화면은 스태프 계정으로만 열 수 있습니다.</p>
     <div style="width:min(360px,90vw);display:grid;gap:10px;">
@@ -611,7 +611,7 @@
 <!-- ═══════ ⑤ 스태프 화면 ═══════ -->
 <section id="scr-staff" class="screen">
   <div class="topbar">
-    <span class="logo">🔧 스태프 관리</span>
+    <span class="logo">스태프 관리</span>
     <button class="btn-cancel" onclick="resetToStart()" style="padding:8px 16px;">닫기</button>
   </div>
   <main class="pad">
@@ -621,8 +621,8 @@
       <div class="stat"><b id="stQueue" class="">0</b><span>미전송</span></div>
     </div>
     <div class="staff-actions">
-      <button onclick="flushQueue(true)">🔄 미전송 건 지금 재전송</button>
-      <button onclick="exportCsv()">⬇️ 이 기기 접수 내역 CSV 백업</button>
+      <button onclick="flushQueue(true)">미전송 건 지금 재전송</button>
+      <button onclick="exportCsv()">⬇ 이 기기 접수 내역 CSV 백업</button>
       <div class="cfg">
         <label>Apps Script 웹앱 URL</label>
         <input type="text" id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec">
@@ -631,10 +631,10 @@
         <label>단말기 코드 (부스 태블릿마다 다르게: T1, T2… / 손님 폰은 비워두면 WEB)</label>
         <input type="text" id="cfgDevice" placeholder="WEB" maxlength="6">
       </div>
-      <button onclick="saveConfig()">💾 설정 저장</button>
-      <button onclick="testSend()">🧪 서버 연결 테스트</button>
-      <button onclick="relock()">🔒 스태프 로그아웃</button>
-      <button class="danger" onclick="clearLocal()">🗑 이 기기 백업 데이터 전체 삭제 (행사 종료 후)</button>
+      <button onclick="saveConfig()">설정 저장</button>
+      <button onclick="testSend()">서버 연결 테스트</button>
+      <button onclick="relock()">스태프 로그아웃</button>
+      <button class="danger" onclick="clearLocal()">이 기기 백업 데이터 전체 삭제 (행사 종료 후)</button>
     </div>
     <div id="staffMsg"></div>
   </main>
@@ -810,9 +810,9 @@ function setOrderCheck(state) {
   el.classList.remove('show', 'checking', 'ok', 'fail');
   el.textContent = '';
   const map = {
-    checking: ['🔍 오늘 접수 이력 확인 중…', 'checking'],
+    checking: ['오늘 접수 이력 확인 중…', 'checking'],
     ok:       ['✓ 오늘 접수 가능한 번호입니다', 'ok'],
-    fail:     ['ℹ 서버 접수 이력은 확인하지 못했어요 (접수는 가능합니다)', 'fail'],
+    fail:     ['서버 접수 이력은 확인하지 못했어요 (접수는 가능합니다)', 'fail'],
   };
   if (!state || !map[state]) return;
   el.textContent = map[state][0];
@@ -987,15 +987,14 @@ function catOf(p) {
 }
 // 상품 사진: img 폴더의 '번호.jpg' (주문서 PDF에서 잘라낸 사진). 여기 없는 번호는 그림 아이콘으로 대신한다
 const PRODUCT_IMAGES = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 31, 32, 33, 34, 35].map(n => [n, `img/${n}.jpg`]));
-const EMOJI = [[/세탁망/, '🧺'], [/세트/, '🎁'], [/젖병/, '🍼'], [/유연제/, '🌸'], [/세탁|세제/, '🫧'], [/치약/, '🦷'], [/스펀지/, '🧽'],
-               [/핸드워시/, '🙌'], [/탑투토/, '🛁'], [/클렌저/, '🧴'], [/립밤/, '💋'], [/멀티밤/, '✨'], [/수딩/, '💧'], [/크림/, '🫙'], [/로션/, '🧴']];
+const ICON_BOX = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>', ICON_GIFT = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="18" height="12" rx="1.5"/><path d="M3 13h18M12 9v12M12 9c-2-4-6-3-5 0M12 9c2-4 6-3 5 0"/></svg>';   // 그림 글자는 기기에 따라 깨질 수 있어 선 그림을 쓴다
 const prodNo = n => (n.match(/^(\d+)\.\s*/) || [])[1] || '';
 const prodLabel = n => n.replace(/^\d+\.\s*/, '');
 function thumbHtml(p) {
   const no = prodNo(p.name), img = PRODUCT_IMAGES[no];
   const cat = catOf(p);
-  const em = cat === 'set' ? '🎁' : (EMOJI.find(e => e[0].test(p.name)) || [0, '🛍'])[1];
-  return `<div class="thumb"${img ? '' : ` style="background:${CAT_BG[cat]};border-color:transparent;"`}>${img ? `<img src="${esc(img)}" alt="">` : `<span aria-hidden="true">${em}</span>`}${no ? `<span class="no">No.${no}</span>` : ''}</div>`;
+  const em = cat === 'set' ? ICON_GIFT : ICON_BOX;
+  return `<div class="thumb"${img ? '' : ` style="background:${CAT_BG[cat]};border-color:transparent;"`}>${img ? `<img src="${esc(img)}" alt="">` : `<span aria-hidden="true" style="color:#64748b;line-height:0;">${em}</span>`}${no ? `<span class="no">No.${no}</span>` : ''}</div>`;
 }
 // 낱개와 묶음("○○ 2개")을 한 카드로 묶는다 — 주문서(가격표)와 같은 구성
 function productGroups(list) {
@@ -1228,7 +1227,7 @@ function closeGiftSheet() {
 // 사은품 사진: 판매 상품과 같은 것은 그 상품 사진을, 주방세제는 주문서의 DISH DETERGENT 병 사진을 쓴다
 const GIFT_IMAGES = { '사은품 주방세제': 'img/11.jpg' };
 function giftImg(n) { return GIFT_IMAGES[n] || PRODUCT_IMAGES[prodNo(n)] || ''; }
-function giftThumb(n) { const src = giftImg(n); return `<span class="gthumb">${src ? `<img src="${esc(src)}" alt="">` : '🎁'}</span>`; }
+function giftThumb(n) { const src = giftImg(n); return `<span class="gthumb">${src ? `<img src="${esc(src)}" alt="">` : `<span style="color:#64748b;line-height:0;">${ICON_GIFT}</span>`}</span>`; }
 function renderGiftSheet() {
   const single = sheetCount === 1;
   $('giftSheetList').innerHTML = giftOptions().map(n => {
@@ -1347,9 +1346,9 @@ async function submitOrderInner() {
   $('btnSubmit').textContent = '전송 중…'; $('btnSubmit').classList.add('busy');
 
   const stages = [
-    [0,    '📡 데이터 전송 중…'],
-    [3000, '🌐 온라인 연결 확인 중…'],
-    [6500, '⏳ 연결이 지연되어 다시 시도하고 있어요…'],
+    [0,    '데이터 전송 중…'],
+    [3000, '온라인 연결 확인 중…'],
+    [6500, '연결이 지연되어 다시 시도하고 있어요…'],
   ];
   const t0 = Date.now();
   $('sendStatus').textContent = stages[0][1];
@@ -1425,13 +1424,13 @@ function showDone(no, isTemp, p, resp) {
     ? resp.gifts.split(';').map(x => x.trim()).filter(Boolean).map(x => esc(x.replace(/^\d+\.\s*/, '').replace('×', ' × ')))
     : p ? [...(p.gifts || []).map(i => `${esc(i.name.replace(/^\d+\.\s*/, ''))} × ${i.qty}`), ...(p.sns && giftCfg ? [esc(giftCfg.sns) + ' × 1'] : [])] : [];
   const notice = resp && resp.notice ? `<br><span style="color:var(--danger);font-size:14px;">${esc(resp.notice)}</span>` : '';
-  $('doneGifts').innerHTML = gl.length || notice ? `<b>🎁 사은품</b>${gl.length ? '<br>' + gl.join('<br>') : ''}${notice}` : '';
+  $('doneGifts').innerHTML = gl.length || notice ? `<b>사은품</b>${gl.length ? '<br>' + gl.join('<br>') : ''}${notice}` : '';
   $('doneGifts').style.display = gl.length || notice ? 'block' : 'none';
   // 전부 현장 수령이면 구매 상품 전체 + 사은품, 일부 수령이면 고른 상품만 보여준다
   const list = p ? (p.allPickup ? [...(p.items || []), ...(p.pickup || [])] : (p.pickup || [])) : [];
   const pk = list.map(i => `${esc(i.name)} × ${i.qty}`).join('<br>');
   $('doneShipNote').style.display = p && p.allPickup ? 'none' : '';
-  $('donePickup').innerHTML = pk ? `<b>🛍 ${p.allPickup ? '전부 현장 수령 (택배 없음)' : '현장 수령 상품'}</b><br>${pk}<br><span style="font-size:13px;">직원에게 이 화면을 보여주고 받아 가세요.</span>` : '';
+  $('donePickup').innerHTML = pk ? `<b>${p.allPickup ? '전부 현장 수령 (택배 없음)' : '현장 수령 상품'}</b><br>${pk}<br><span style="font-size:13px;">직원에게 이 화면을 보여주고 받아 가세요.</span>` : '';
   $('donePickup').style.display = pk ? 'block' : 'none';
   $('doneTempNote').style.display = isTemp ? 'block' : 'none';
   showScreen('done');
