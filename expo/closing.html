@@ -159,12 +159,27 @@
     <div class="card">
       <h3>현장 재고 <span class="muted" id="stockInfo"></span></h3>
       <div id="itemList"></div>
-      <p class="muted" style="margin-top:8px;line-height:1.6;">현장 출고 = 포스 판매(묶음·세트는 낱개로 환산) − 택배 접수분. 남은 재고 = 초기 재고 + 추가 입고 − 현장 출고. 남은 기간 예상 = (최근 마감일 출고와 일평균 중 큰 값) × 남은 행사일. 금액대별 사은품은 택배에 함께 나가는 것으로 보고 현장 재고에서 빼지 않습니다.</p>
+      <p class="muted" style="margin-top:8px;line-height:1.6;">현장 출고 = 포스 판매(묶음·세트는 낱개로 환산) − 택배 접수분. 남은 재고 = 초기 재고 + 추가 입고 − 현장 출고 − 메모 출고(선물·샘플 등). 남은 기간 예상 = (최근 마감일 출고와 일평균 중 큰 값) × 남은 행사일. 금액대별 사은품은 택배에 함께 나가는 것으로 보고 현장 재고에서 빼지 않습니다.</p>
     </div>
 
     <div class="card">
       <h3>판매 상품 <span class="muted">포스 기준 · 매출 큰 순</span></h3>
       <div class="tablewrap"><table id="salesTable"><thead><tr><th>상품</th><th class="num">최근 마감일</th><th class="num">누적 수량</th><th class="num">누적 매출</th></tr></thead><tbody></tbody></table></div>
+    </div>
+
+    <div class="card">
+      <h3>메모 출고 <span class="muted">판매가 아닌 출고 — 거래처·손님 선물, 샘플, 파손</span></h3>
+      <div class="row">
+        <select id="soProd"></select>
+        <input type="number" id="soQty" placeholder="수량" min="1" step="1" inputmode="numeric">
+        <select id="soReason"></select>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <input type="text" id="soMemo" placeholder="메모 (예: ○○ 거래처 방문 선물)" maxlength="300">
+        <button class="btn" id="soAdd" onclick="addStockOut()">출고 기록</button>
+      </div>
+      <div id="soList" style="margin-top:8px;"></div>
+      <p class="muted" style="margin-top:6px;">기록하면 바로 남은 재고에서 빠집니다. 관리자 페이지의 메모 기능에서 기록한 출고도 여기에 함께 나옵니다.</p>
     </div>
 
     <div class="card" id="unmatchedCard">
@@ -290,7 +305,7 @@ function render(r) {
   $('itemList').innerHTML = r.items.map(x => {
     const [label, cls] = ST[x.status];
     return `<div class="item${cls === 'bad' ? ' low' : ''}"><div class="nm"><span>${esc(x.name)}${x.gift ? ' <span class="tag off">사은품</span>' : ''}</span><span class="tag ${cls}">${label}${x.shortage ? ' ' + fmt(x.shortage) + '개' : ''}</span></div>
-      <div class="g"><div><small>남은 재고</small><b>${x.stock ? fmt(x.remaining) : '–'}</b></div><div><small>현장 출고 (최근/누적)</small>${fmt(x.outLast)} / ${fmt(x.out)}</div><div><small>초기+입고</small>${fmt(x.initial)}${x.added ? ' + ' + fmt(x.added) : ''}</div>
+      <div class="g"><div><small>남은 재고</small><b>${x.stock ? fmt(x.remaining) : '–'}</b></div><div><small>현장 출고 (최근/누적)</small>${fmt(x.outLast)} / ${fmt(x.out)}</div><div><small>초기+입고</small>${fmt(x.initial)}${x.added ? ' + ' + fmt(x.added) : ''}</div>${x.memoOut ? `<div><small>메모 출고</small>${fmt(x.memoOut)}</div>` : ''}
       <div><small>포스 판매</small>${fmt(x.posSold)}</div><div><small>택배 접수분</small>${fmt(x.ship)}</div><div><small>남은 기간 예상</small>${fmt(x.need)}</div></div></div>`;
   }).join('') || '<p class="muted">등록된 상품이 없습니다.</p>';
 
@@ -299,6 +314,14 @@ function render(r) {
 
   $('unmatchedCard').classList.toggle('hide', !r.unmatchedOrders.length);
   $('unmatchedList').innerHTML = r.unmatchedOrders.map(u => `${u.day.slice(5)} · 영수증 <b>${esc(u.orderNo)}</b>`).join('<br>');
+
+  // 메모 출고
+  const soCur = $('soProd').value;
+  $('soProd').innerHTML = '<option value="">상품 고르기</option>' + r.products.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+  $('soProd').value = soCur;
+  if (!$('soReason').options.length) $('soReason').innerHTML = Object.entries(r.stockOutReasons || {}).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join('');
+  $('soList').innerHTML = (r.stockOuts || []).map(s => `<div class="maprow"><div>${s.day.slice(5)} · <b>${esc(s.product)}</b> ${fmt(s.qty)}개 <span class="tag off">${esc(s.reasonLabel)}</span> <span class="muted">${esc(s.memo)}${s.author ? ' · ' + esc(s.author) : ''}</span></div><div>${admin ? `<button class="btn sm danger" onclick="voidStockOut(${s.id})">취소</button>` : ''}</div></div>`).join('')
+    || '<p class="muted">기록된 메모 출고가 없습니다.</p>';
 
   if (admin) {
     $('siProd').innerHTML = '<option value="">상품 고르기</option>' + r.products.filter(p => !p.bundle).map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
@@ -322,6 +345,19 @@ async function addStockIn() {
   catch (e) { toast('실패: ' + e.message, 4000); }
 }
 async function delStockIn(id) { try { await api('stockInDelete', { id }); load(); } catch (e) { toast('실패: ' + e.message, 4000); } }
+async function addStockOut() {
+  const btn = $('soAdd'); btn.disabled = true; btn.classList.add('busy');
+  const uuid = 'so-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);   // 같은 요청이 두 번 가도 한 번만 저장되게
+  try {
+    await api('stockOut', { uuid, event: rep && rep.event ? rep.event.name : '', product: $('soProd').value, qty: Number($('soQty').value) || 0, reason: $('soReason').value, memo: $('soMemo').value.trim(), author: $('upWho').value.trim() });
+    $('soQty').value = ''; $('soMemo').value = ''; toast('출고를 기록했습니다'); load();
+  } catch (e) { toast('실패: ' + e.message, 4000); }
+  btn.disabled = false; btn.classList.remove('busy');
+}
+async function voidStockOut(id) {
+  if (!confirm('이 출고 기록을 취소합니다. 남은 재고에 다시 더해집니다. 계속할까요?')) return;
+  try { await api('stockOutVoid', { id }); toast('취소했습니다'); load(); } catch (e) { toast('실패: ' + e.message, 4000); }
+}
 async function setPin() {
   try { const r = await api('setPin', { newPin: $('pinNew').value.trim() }); $('pinNew').value = ''; toast(r.pinSet ? '마감 번호를 저장했습니다' : '마감 번호를 껐습니다'); load(); }
   catch (e) { toast('실패: ' + e.message, 4000); }
