@@ -1080,7 +1080,15 @@ function closeCartSheet() {
   if (cartLastFocus && cartLastFocus.focus && document.contains(cartLastFocus)) cartLastFocus.focus({ preventScroll: true });
 }
 // 섬유유연제가 들어간 상품(단품·묶음·세트)을 담으면 재입고·분할 배송 안내를 보여준다
-const SOFTENER_NOTICE = '섬유유연제 제품은 현재 준비된 수량이 모두 완판되어 2주내로 재입고 예정이며 다른 제품들과 분할 배송될 예정입니다. 최대한 빠른 입고를 위해 노력하겠습니다. 감사합니다.';
+// 날짜별 문구(한국 시간): 11/15(일)까지는 '2주내 재입고', 11/19(목)~11/22(일)은 '차주 중 입고', 그 밖의 날에는 안내 없음
+const SOFTENER_NOTICES = [
+  { until: '2026-11-16T00:00:00+09:00', text: '섬유유연제 제품은 현재 준비된 수량이 모두 완판되어 2주내로 재입고 예정이며 다른 제품들과 분할 배송될 예정입니다. 최대한 빠른 입고를 위해 노력하겠습니다. 감사합니다.' },
+  { from: '2026-11-19T00:00:00+09:00', until: '2026-11-23T00:00:00+09:00', text: '섬유유연제 제품은 현재 준비된 수량이 모두 완판되어 차주 중으로 입고될 예정이며 다른 제품들과 분할 배송될 예정입니다. 최대한 빠른 입고를 위해 노력하겠습니다. 감사합니다.' },
+];
+function softenerNotice(now = Date.now()) {
+  const n = SOFTENER_NOTICES.find(x => (!x.from || now >= Date.parse(x.from)) && now < Date.parse(x.until));
+  return n ? n.text : '';
+};
 const hasSoftener = p => /유연제/.test(p.name) || (p.comp || []).some(c => /유연제/.test(c.name));
 function renderCartSheet() {
   const items = buyList().filter(p => qtyMap[p.name] > 0);
@@ -1095,8 +1103,9 @@ function renderCartSheet() {
       `<button type="button" data-n="${esc(p.name)}" data-d="1" aria-label="${esc(prodLabel(p.name))} 더 담기">＋</button></div></div>`;
   }).join('');
   const soft = items.some(hasSoftener);
-  $('cartSheetNotice').textContent = soft ? SOFTENER_NOTICE : '';
-  $('cartSheetNotice').style.display = soft ? '' : 'none';
+  const softMsg = soft ? softenerNotice() : '';
+  $('cartSheetNotice').textContent = softMsg;
+  $('cartSheetNotice').style.display = softMsg ? '' : 'none';
   $('cartSheetTotal').textContent = won(total) + '원';
   const min = giftCfg ? giftCfg.freeShipMin : 0;
   $('cartSheetShip').innerHTML = !min ? '' : total >= min ? '<b style="color:var(--green);">무료배송</b>' : `${won(min - total)}원 더 담으면 무료배송`;
