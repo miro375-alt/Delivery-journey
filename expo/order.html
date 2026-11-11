@@ -948,6 +948,7 @@ let productList = getJson('expo_products', []);
 let giftCfg = getJson('expo_gift', null);   // 무료배송 기준·금액대별 사은품·SNS 증정품 (서버에서 받음)
 const qtyMap = {};
 // 받는 방법: ship(전부 택배) / part(일부 현장 수령) / all(전부 현장 수령 — 택배 없음, 배송지 입력 불필요)
+const PICKUP_ENABLED = false;
 let recvMode = 'ship';
 function applySchedule(sch) {
   if (!sch || !Array.isArray(sch.events) || !sch.events.length) return;
@@ -1031,7 +1032,8 @@ function renderProducts() {
     return `<div class="pcard${on ? ' on' : ''}">${thumbHtml(g.base)}<div class="body"><div class="nm">${esc(prodLabel(g.base.name))}</div>${desc}` +
       optRow(g.base, g.vars.length ? '낱개' : (g.base.bundle ? '세트' : '1개')) + g.vars.map(v => optRow(v.p, v.n + '개 묶음', true)).join('') + `</div></div>`;
   }).join('');
-  $('pickSection').style.display = buyList().length ? '' : 'none';
+  // 택배 접수 전용: 현장 수령 선택(상품 받는 방법)은 쓰지 않는다. 다시 쓰려면 PICKUP_ENABLED 를 true 로
+  $('pickSection').style.display = PICKUP_ENABLED && buyList().length ? '' : 'none';
   setRecvMode(buyList().length ? recvMode : 'ship');
   updateSummary();
 }
