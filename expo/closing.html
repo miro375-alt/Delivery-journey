@@ -285,7 +285,7 @@ function render(r) {
   $('dayBars').innerHTML = r.days.map(d => `<div class="bar"><em>${fmt(Math.round(d.revenue / 10000))}만</em><i style="height:${Math.round(d.revenue / max * 100)}%"></i></div>`).join('');
   $('dayLabels').innerHTML = r.days.map(d => `<span>${d.day.slice(5).replace('-', '/')}${weekday(d.day)}</span>`).join('');
   $('dayInfo').textContent = r.days.length ? `마감 ${r.days.length}일` : '';
-  $('dayTable').tBodies[0].innerHTML = r.days.map(d => `<tr><td>${d.day}${weekday(d.day)}</td><td class="num"><b>${fmt(d.revenue)}</b></td><td class="num">${fmt(d.txCount)}</td><td class="num">${fmt(d.qty)}</td><td class="muted">${esc(d.uploader || '–')} · ${esc(d.uploadedAt.slice(5, 16))}</td><td>${admin ? `<button class="btn sm danger" onclick="deleteDay('${d.day}')">삭제</button>` : ''}</td></tr>`).join('')
+  $('dayTable').tBodies[0].innerHTML = r.days.map(d => `<tr><td>${d.day}${weekday(d.day)}</td><td class="num"><b>${fmt(d.revenue)}</b></td><td class="num">${fmt(d.txCount)}</td><td class="num">${fmt(d.qty)}</td><td class="muted">${esc(d.uploader || '–')} · ${esc(d.uploadedAt.slice(5, 16))}</td><td>${d.source === 'settlement' ? '<span class="muted">정산 대조에서 관리</span>' : admin ? `<button class="btn sm danger" onclick="deleteDay('${d.day}')">삭제</button>` : ''}</td></tr>`).join('')
     || '<tr><td colspan="6" class="muted">마감 자료 없음</td></tr>';
 
   // 상품 이름 맞추기
@@ -353,6 +353,7 @@ async function voidStockOut(id) {
 
 /* ── 판매내역 파일 읽기 (브라우저에서 처리 — 파일은 서버로 보내지 않는다) ── */
 let book = null;          // [{ name, rows: [[…]] }]
+let bookZip = null;       // 비밀번호를 푼 엑셀 묶음 (정산 대조에 함께 올릴 때 쓴다)
 let parsed = null;        // { rows: [{name, option, qty, amount, receipt, time, day}], revenue, txCount }
 const COLS = [['colName', /상품명|메뉴명|품목명|상품/], ['colQty', /수량|개수/], ['colAmt', /실판매|실결제|판매금액|결제금액|상품금액|금액|매출/], ['colOpt', /옵션/], ['colRc', /주문번호|영수증|결제번호|거래번호|승인번호/], ['colTime', /일시|시각|시간|일자|날짜/]];
 function cellText(v) {
@@ -388,6 +389,7 @@ async function openWorkbook(buf, pw) {
   const wb = new Ctor();
   try { await wb._initAsync(buf, pw ? { password: pw } : {}); } catch (e) { /* 내용 해석에 실패해도 압축까지 풀렸으면 아래에서 직접 읽는다 */ }
   const zip = wb._zip;
+  bookZip = zip || null;
   if (!zip || !zip.file('xl/workbook.xml')) throw new Error('open');
   const xml = async path => { const f = zip.file(path); return f ? new DOMParser().parseFromString(await f.async('string'), 'application/xml') : null; };
   const els = (node, name) => [...node.getElementsByTagName('*')].filter(e => e.localName === name);
@@ -523,7 +525,7 @@ function compute() {
 }
 $('pvSheet').addEventListener('change', () => setupColumns(true));
 COLS.forEach(([id]) => $(id).addEventListener('change', compute));
-function resetUpload() { book = parsed = null; $('upFile').value = ''; $('upPw').value = ''; $('preview').classList.add('hide'); $('upErr').textContent = ''; }
+function resetUpload() { book = parsed = null; bookZip = null; $('upFile').value = ''; $('upPw').value = ''; $('preview').classList.add('hide'); $('upErr').textContent = ''; }
 async function saveDays() {
   if (!parsed || !parsed.rows.length) return;
   const fallback = $('upDay').value;
@@ -535,6 +537,10 @@ async function saveDays() {
   if (existing.length && !confirm(`${existing.join(', ')} 마감 자료가 이미 있습니다. 새 파일 내용으로 바꿉니다. 계속할까요?`)) return;
   const btn = $('upSave'); btn.classList.add('busy'); btn.disabled = true;
   try {
+    // 토스 엑셀이면 관리자 메모의 '정산 대조'에 가져온다 — 한 번 올리면 정산 대조와 일일 마감에 함께 반영된다
+    const shared = await importToSettlement(days);
+    if (shared === 'done') { resetUpload(); toast('마감을 저장했습니다 · 정산 대조에도 반영했습니다', 4000); await load(); if (rep && rep.unmapped.length) $('mapCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (shared === 'stop') return;
     let last = null; const outside = [];
     for (const d of days) {
       const pay = parsed.pay && (parsed.pay[d] || (days.length === 1 && parsed.pay['']) || null);
@@ -551,6 +557,27 @@ async function saveDays() {
     if (last.unmapped.length) $('mapCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) { $('upErr').textContent = '저장 실패: ' + e.message; }
   btn.classList.remove('busy'); btn.disabled = false;
+}
+
+// 정산 대조에 같은 파일 가져오기. 'done' = 반영됨, 'stop' = 멈춤(안내 표시), 'skip' = 이 화면 자료로 따로 저장
+async function importToSettlement(days) {
+  const file = $('upFile').files[0];
+  if (!bookZip || !file || !/\.xlsx$/i.test(file.name) || !cred || !cred.key) return 'skip';
+  // 파일의 날짜가 모두 한 행사 기간(세팅일 포함) 안에 있을 때만
+  const ev = rep && rep.events.find(e => days.every(d => d >= e.start.slice(0, 10) && d <= e.end.slice(0, 10)));
+  if (!ev) return 'skip';
+  try {
+    const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+    const locked = head[0] === 0xD0 && head[1] === 0xCF;   // 비밀번호가 걸린 파일이면 푼 내용을, 아니면 원본 그대로 보낸다 (관리자 페이지에서 올릴 때와 같은 파일로 인식되게)
+    const bytes = locked ? await bookZip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' }) : new Uint8Array(await file.arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    const r = await fetch(API.replace('closing.php', 'api.php'), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'admin', key: cred.key, op: 'importReceiptSettlement', event: ev.name, fileName: file.name, fileBase64: btoa(bin) }) }).then(x => x.json());
+    if (r && r.ok) return 'done';
+    if (r && r.code === 'archived') { $('upErr').textContent = '정산 대조에서 제외했던 파일입니다. 다시 쓰려면 관리자 페이지 → 영수증 메모 → 정산 대조에서 같은 파일을 미리보기한 뒤 "제외한 파일 다시 가져오기"를 눌러주세요.'; return 'stop'; }
+    return 'skip';   // 정산 대조가 읽지 못하는 형식 → 이 화면 자료로 저장
+  } catch (e) { return 'skip'; }
 }
 
 /* ── 시작 ── */
