@@ -382,6 +382,47 @@ function parseCsv(text) {
   if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
   return rows;
 }
+// 엑셀 열기: 비밀번호 풀기와 압축 풀기만 도구에 맡기고, 시트 내용은 직접 읽는다 (도구가 해석하지 못하는 파일도 읽을 수 있게)
+async function openWorkbook(buf, pw) {
+  const Ctor = (await XlsxPopulate.fromBlankAsync()).constructor;
+  const wb = new Ctor();
+  try { await wb._initAsync(buf, pw ? { password: pw } : {}); } catch (e) { /* 내용 해석에 실패해도 압축까지 풀렸으면 아래에서 직접 읽는다 */ }
+  const zip = wb._zip;
+  if (!zip || !zip.file('xl/workbook.xml')) throw new Error('open');
+  const xml = async path => { const f = zip.file(path); return f ? new DOMParser().parseFromString(await f.async('string'), 'application/xml') : null; };
+  const els = (node, name) => [...node.getElementsByTagName('*')].filter(e => e.localName === name);
+  const kids = (node, name) => [...node.children].filter(e => e.localName === name);
+  const text = node => els(node, 't').map(t => t.textContent).join('');
+  const sst = await xml('xl/sharedStrings.xml');
+  const strings = sst ? els(sst, 'si').map(text) : [];
+  const rels = {};
+  const relDoc = await xml('xl/_rels/workbook.xml.rels');
+  if (relDoc) els(relDoc, 'Relationship').forEach(r => { const t = r.getAttribute('Target') || ''; rels[r.getAttribute('Id')] = t.startsWith('/') ? t.slice(1) : 'xl/' + t; });
+  const colIndex = ref => { let n = 0; for (const ch of ref.replace(/[^A-Z]/g, '')) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+  const out = [];
+  for (const s of els(await xml('xl/workbook.xml'), 'sheet')) {
+    const rid = [...s.attributes].find(a => a.localName === 'id' && a.name !== 'sheetId');
+    const doc = rid && rels[rid.value] ? await xml(rels[rid.value]) : null;
+    const rows = [];
+    if (doc) els(doc, 'row').forEach(row => {
+      const r = [];
+      kids(row, 'c').forEach((c, i) => {
+        const ref = c.getAttribute('r'), t = c.getAttribute('t') || '';
+        const v = kids(c, 'v')[0], raw = v ? v.textContent : '';
+        let val = raw;
+        if (t === 's') val = strings[Number(raw)] ?? '';
+        else if (t === 'inlineStr') { const is = kids(c, 'is')[0]; val = is ? text(is) : ''; }
+        else if (t === 'b') val = raw === '1';
+        else if (t !== 'str' && t !== 'e' && raw !== '' && !isNaN(Number(raw))) val = Number(raw);
+        r[ref ? colIndex(ref) : i] = val;
+      });
+      const n = Number(row.getAttribute('r')) || rows.length + 1;
+      rows[n - 1] = Array.from(r, x => x === undefined ? '' : x);
+    });
+    out.push({ name: s.getAttribute('name') || '', rows: Array.from(rows, x => x || []) });
+  }
+  return out;
+}
 async function readFile() {
   const f = $('upFile').files[0];
   $('upErr').textContent = '';
@@ -393,10 +434,8 @@ async function readFile() {
     } else {
       if (!window.XlsxPopulate) throw new Error('엑셀 읽기 도구를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침해주세요.');
       const pw = $('upPw').value;
-      let wb;
-      try { wb = await XlsxPopulate.fromDataAsync(await f.arrayBuffer(), pw ? { password: pw } : {}); }
+      try { book = await openWorkbook(await f.arrayBuffer(), pw); }
       catch (e) { throw new Error(pw ? '파일을 열 수 없습니다. 비밀번호를 확인해주세요.' : '파일을 열 수 없습니다. 비밀번호가 걸린 파일이면 비밀번호를 입력해주세요.'); }
-      book = wb.sheets().map(s => { const u = s.usedRange(); return { name: s.name(), rows: u ? u.value() : [] }; });
     }
     $('pvSheet').innerHTML = book.map((s, i) => `<option value="${i}">${esc(s.name)} (${s.rows.length}줄)</option>`).join('');
     // 상품 시트: 이름에 '상품'이 있는 시트, 없으면 '상품명' 머리글이 있는 첫 시트
@@ -434,11 +473,14 @@ function compute() {
   const sh = book[Number($('pvSheet').value)] || { rows: [] };
   const ci = id => Number($(id).value);
   const [cn, cq, ca, co, cr, ct] = COLS.map(([id]) => ci(id));
+  const cs = (sh.rows[headRow] || []).findIndex(h => /결제상태|결제 상태|주문상태/.test(cellText(h)));   // 결제상태 칸 (완료·취소)
   const rows = [];
   sh.rows.slice(headRow + 1).forEach(r => {
     const name = cn >= 0 ? cellText(r[cn]).trim() : '';
     const qty = cq >= 0 ? toNum(r[cq]) : 0;
     if (!name || !qty || /^(합계|총계|소계)/.test(name)) return;
+    // 취소 줄은 수량이 음수로 적혀 있어 합계에서 저절로 빠진다. 취소인데 수량이 양수로 적힌 줄은 판매로 세지 않는다
+    if (cs >= 0 && /취소/.test(cellText(r[cs])) && qty > 0) return;
     const time = ct >= 0 ? toTime(r[ct]) : '';
     rows.push({ name, option: co >= 0 ? cellText(r[co]).trim() : '', qty, amount: ca >= 0 ? toNum(r[ca]) : 0, receipt: cr >= 0 ? cellText(r[cr]).trim() : '', time, day: time.slice(0, 10) });
   });
