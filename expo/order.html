@@ -77,8 +77,11 @@
   #recipientFields { display: none; margin-top: 4px; }
   #recipientFields.show { display: block; }
 
-  .addr-row { display: flex; gap: 10px; }
-  .addr-row input { flex: 1; }
+  .addr-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .addr-row input { flex: 1 1 0; min-width: 0; font-size: 16px; padding: 12px; }
+  .addr-row input.addr-main { flex: 1 1 100%; order: 3; text-overflow: ellipsis; }
+  .addr-row .btn-zip { min-height: 46px; white-space: nowrap; }
+  #addr2, #eAddr2 { font-size: 16px; padding: 12px; }
   .btn-zip {
     flex-shrink: 0; font-size: 16px; font-weight: 600; padding: 0 20px; border-radius: 10px;
     border: none; background: var(--primary); color: #fff; cursor: pointer;
@@ -108,8 +111,24 @@
   .pcard .thumb .no { position: absolute; left: 0; bottom: 0; font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 0 8px 0 0; background: rgba(15,23,42,.62); color: #fff; }
   .pcard .opt .lb em { font-style: normal; font-size: 11.5px; color: var(--muted); margin-left: 4px; }
   .pcard .qty { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-  .pcard .qty button { width: 40px; height: 40px; font-size: 20px; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; cursor: pointer; color: var(--text); }
-  .pcard .qty b { min-width: 26px; text-align: center; font-size: 17px; color: var(--muted); }
+  .pcard .qty button { width: 34px; height: 34px; padding: 0; font-size: 18px; line-height: 1; border: 1.5px solid var(--border); border-radius: 10px; background: #fff; cursor: pointer; color: var(--text); }
+  .pcard .qty b { min-width: 24px; text-align: center; font-size: 16px; color: var(--muted); }
+  .pcard .opt { flex-wrap: wrap; }
+  .pcard .opt .lb { flex: 1 1 auto; }
+  .pcard .qty { margin-left: auto; }
+  @media (max-width: 400px) {
+    main.pad { padding-left: 12px; padding-right: 12px; }
+    .section { padding: 14px; }
+    .pcard { gap: 10px; padding: 9px; }
+    .pcard .thumb { flex-basis: 64px; width: 64px; }
+    .pcard .nm { font-size: 15px; }
+    .pcard .opt .lb b { font-size: 15px; }
+  }
+  .recv-grid.two { grid-template-columns: repeat(2, 1fr); }
+  .recv-grid.two button { padding: 11px 4px; }
+  #giftRecv { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+  #giftRecv.err .recv-grid button { border-color: var(--danger); }
+
   .pcard .qty b.on { color: var(--primary); }
   /* 상품 받는 방법: 1열 3칸 */
   .recv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -370,10 +389,6 @@
         <button type="button" class="gift-change" id="giftChange">바꾸기</button>
       </div>
       <p class="hint-note" id="giftNote" style="color:var(--muted);"></p>
-      <label class="toggle-line" id="giftPickLine" style="display:none;">
-        <input type="checkbox" id="giftPickup">
-        <span>사은품도 지금 가져갈게요</span>
-      </label>
     </div>
 
     <div class="section" id="pickSection" style="display:none;">
@@ -387,14 +402,22 @@
         <p class="hint-note" id="pickNote" style="color:var(--muted);margin:0 0 4px;"></p>
         <div id="pickList"></div>
       </div>
+      <div id="giftRecv" style="display:none;">
+        <label class="fld">사은품 받는 방법 <span class="req">*</span></label>
+        <div class="recv-grid two" id="giftRecvMode">
+          <button type="button" data-g="now"><b>🎁 지금 가져가기</b><small>현장에서 바로 받기</small></button>
+          <button type="button" data-g="ship"><b>📦 택배로 받기</b><small>택배 상품과 함께 배송</small></button>
+        </div>
+        <div class="manual-note" id="giftRecvErr">사은품을 지금 가져가실지, 택배로 받으실지 선택해주세요.</div>
+      </div>
     </div>
 
     <div class="section" id="addrSection">
       <h3>배송지</h3>
       <label class="fld">주소 <span class="req">*</span></label>
       <div class="addr-row">
-        <input type="text" id="zipcode" placeholder="우편번호" readonly style="max-width:130px;">
-        <input type="text" id="addr1" placeholder="주소 검색을 눌러주세요" readonly>
+        <input type="text" id="zipcode" placeholder="우편번호" readonly>
+        <input type="text" id="addr1" class="addr-main" placeholder="주소 검색을 눌러주세요" readonly>
         <button type="button" class="btn-zip" onclick="openPostcode('main')">주소 검색</button>
       </div>
       <div class="manual-note" id="manualNote">⚠ 주소 검색을 사용할 수 없어 직접 입력으로 전환되었습니다. 우편번호와 주소를 정확히 입력해주세요.</div>
@@ -541,8 +564,8 @@
         <h3>배송지</h3>
         <label class="fld">주소 <span class="req">*</span></label>
         <div class="addr-row">
-          <input type="text" id="eZip" placeholder="우편번호" readonly style="max-width:130px;">
-          <input type="text" id="eAddr1" placeholder="주소 검색을 눌러주세요" readonly>
+          <input type="text" id="eZip" placeholder="우편번호" readonly>
+          <input type="text" id="eAddr1" class="addr-main" placeholder="주소 검색을 눌러주세요" readonly>
           <button type="button" class="btn-zip" onclick="openPostcode('edit')">주소 검색</button>
         </div>
         <label class="fld">상세주소 <span class="req">*</span></label>
@@ -859,7 +882,7 @@ function resetForm() {
   Object.keys(pickMap).forEach(k => delete pickMap[k]);
   Object.keys(giftMap).forEach(k => delete giftMap[k]);
   giftTierKey = null; closeGiftSheet(); closeCartSheet();
-  $('giftPickup').checked = false; curCat = null;
+  setGiftRecv(null); curCat = null;
   recvMode = 'ship';
   $('prodSection').style.borderColor = '';
   renderProducts();
@@ -874,7 +897,7 @@ function loadPostcodeScript() {
   return new Promise((res, rej) => {
     if (postcodeReady) return res();
     const s = document.createElement('script');
-    s.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+    s.src = 'https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
     s.onload = () => { postcodeReady = true; res(); };
     s.onerror = rej;
     document.head.appendChild(s);
@@ -1156,7 +1179,7 @@ function updateSummary() {
 function renderGifts() {
   const tier = curTier(), opts = giftOptions();
   $('giftSection').style.display = tier && opts.length ? '' : 'none';
-  if (!tier || !opts.length) return;
+  if (!tier || !opts.length) { showGiftRecv(); return; }
   const sel = giftSelCount();
   $('giftCount').textContent = `${won(tier.min)}원 이상 · ${tier.count}개`;
   $('giftNames').innerHTML = sel ? Object.keys(giftMap).map(n => `<div class="gline">${giftImg(n) ? `<img src="${esc(giftImg(n))}" alt="">` : ''}<span>${esc(giftLabel(n))} <b>× ${giftMap[n]}</b></span></div>`).join('')
@@ -1165,8 +1188,18 @@ function renderGifts() {
   $('giftChange').style.display = opts.length > 1 ? '' : 'none';
   $('giftNote').textContent = sel ? (tier.choice ? '' : '기본 사은품입니다. 다른 사은품으로 바꿀 수 있습니다.') : '접수하기를 누르면 사은품을 고르는 창이 나옵니다.';
   $('giftNote').style.display = $('giftNote').textContent ? '' : 'none';
-  $('giftPickLine').style.display = recvMode === 'part' ? '' : 'none';
+  showGiftRecv();
 }
+/* 일부만 지금 가져갈 때: 사은품을 현장에서 받을지 택배로 받을지 */
+let giftRecv = null;   // null(안 고름) | 'now' | 'ship'
+const giftRecvNeeded = () => recvMode === 'part' && !!curTier() && giftOptions().length > 0;
+function showGiftRecv() { $('giftRecv').style.display = giftRecvNeeded() ? '' : 'none'; }
+function setGiftRecv(g) {
+  giftRecv = g;
+  document.querySelectorAll('#giftRecvMode button').forEach(b => b.classList.toggle('on', b.dataset.g === g));
+  $('giftRecv').classList.remove('err'); $('giftRecvErr').classList.remove('show');
+}
+$('giftRecvMode').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setGiftRecv(b.dataset.g); });
 
 /* 사은품 선택 바텀시트 */
 let sheetSel = {}, sheetCount = 0, sheetLastFocus = null, sheetThenSubmit = false;
@@ -1250,7 +1283,10 @@ function validate() {
   bad |= markErr('zipcode', !onsite && !/^\d{5}$/.test($('zipcode').value.trim()));
   bad |= markErr('addr1', !onsite && $('addr1').value.trim().length < 5);
   bad |= markErr('addr2', !onsite && !$('addr2').value.trim());
-  const noPick = recvMode === 'part' && selectedPickup().length === 0 && !$('giftPickup').checked;
+  const giftNow = giftRecvNeeded() && giftRecv === 'now';
+  const noGiftRecv = giftRecvNeeded() && !giftRecv;
+  $('giftRecv').classList.toggle('err', noGiftRecv); $('giftRecvErr').classList.toggle('show', noGiftRecv);
+  const noPick = recvMode === 'part' && selectedPickup().length === 0 && !giftNow;
   // 상품이 등록돼 있으면 1개 이상 선택해야 한다 (상품 목록을 못 받은 기기는 건너뜀)
   const noItems = buyList().length > 0 && selectedItems().length === 0;
   $('prodSection').style.borderColor = noItems ? 'var(--danger)' : '';
@@ -1259,6 +1295,7 @@ function validate() {
   if (phoneBad) msg = '휴대폰 번호 자릿수가 맞지 않습니다. 010-0000-0000 형식(11자리)으로 입력해주세요.';
   else if (bad) msg = '빨간색으로 표시된 항목을 확인해주세요.';
   else if (noItems) msg = '구매하신 상품을 1개 이상 선택해주세요.';
+  else if (noGiftRecv) msg = '사은품을 지금 가져가실지, 택배로 받으실지 선택해주세요.';
   else if (noPick) msg = '지금 가져가시는 상품을 선택하거나, 받는 방법을 "전부 택배로 받기"로 바꿔주세요.';
   else if (!$('consent').checked) msg = '개인정보 수집·이용 동의가 필요합니다.';
 
@@ -1336,7 +1373,7 @@ async function submitOrderInner() {
     items: selectedItems(),
     pickup: selectedPickup(),   // 현장에서 바로 가져간 상품 — 이것만 현장 재고에서 빠진다
     gifts: selectedGifts(),     // 금액대별 사은품 (개수는 서버가 구매금액으로 다시 확인)
-    giftPickup: recvMode === 'part' && $('giftPickup').checked,
+    giftPickup: giftRecvNeeded() && giftRecv === 'now',
     website: $('website').value,   // 숨은 함정칸 — 사람은 비어 있음
     consent: 'Y',
     device: deviceCode(),
