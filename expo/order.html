@@ -28,6 +28,7 @@
     font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
     background: var(--bg); color: var(--text);
     -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;   /* 안드로이드 크롬·삼성 인터넷이 글자만 따로 키워 칸이 넘치는 것을 막는다 */
   }
   .screen { display: none; min-height: 100dvh; }
   .screen.active { display: flex; flex-direction: column; }
@@ -50,6 +51,7 @@
   .btn-link {
     font-size: 13.5px; font-weight: 600; color: var(--primary); background: #eff6ff;
     border: 1px solid #bfdbfe; border-radius: 999px; padding: 6px 12px; cursor: pointer;
+    white-space: nowrap; flex-shrink: 0;
   }
 
   /* ── 폼 화면 ── */
