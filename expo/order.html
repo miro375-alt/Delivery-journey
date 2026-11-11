@@ -650,7 +650,9 @@
 const CONFIG = {
   RETRY_INTERVAL_MS: 30000,       // 미전송 큐 재전송 주기
   // 접수 서버(DB). 같은 서버에서 열리면 상대 주소, 다른 곳(GitHub Pages)에서 열리면 전체 주소
-  WEBAPP_URL: /lipaco\.app$/.test(location.hostname) ? 'api.php' : 'https://codes.lipaco.app/cwjung/expo_delivery/api.php',
+  // NAS 에 직접 닿는 주소(0.02~0.2초). lipaco.app 주소는 해외 거점을 거쳐 요청마다 2~5초가 걸려 예비로만 쓴다
+  WEBAPP_URL: 'https://codes.aguard.synology.me/cwjung/expo_delivery/api.php',
+  WEBAPP_URL_SLOW: 'https://codes.lipaco.app/cwjung/expo_delivery/api.php',
   // 예비: 구글 시트(Apps Script)로 직접 접수. 접수 서버에 문제가 생기면 backend.json 을 {"backend":"sheet"} 로 바꿔 전환한다
   SHEET_URL: 'https://script.google.com/macros/s/AKfycbymHbyntYlh4AfC1o4lW3GNQtZ9cm6-WxkKW-ehkjxtlcxxBi3nY3G84f_65XaRzfRIig/exec',
   // 서버에 연결되지 않을 때만 쓰는 예비 기준 (실제 판단은 서버가 한다)
@@ -1543,7 +1545,7 @@ function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;
 
 /* ══════════════ 전송 큐 ══════════════ */
 function getWebappUrl() {
-  return localStorage.getItem(LS.url) || (backendMode === 'sheet' ? CONFIG.SHEET_URL : CONFIG.WEBAPP_URL);
+  return localStorage.getItem(LS.url) || (backendMode === 'sheet' ? CONFIG.SHEET_URL : apiDirect ? CONFIG.WEBAPP_URL : CONFIG.WEBAPP_URL_SLOW);
 }
 let flushing = false;
 const inFlight = new Set();   // 지금 직접 전송 중인 접수들
@@ -1680,13 +1682,19 @@ function staffMsg(msg, isErr) {
 
 /* ══════════════ 접수 서버 전환 (비상용) ══════════════ */
 // GitHub 에 올려 둔 backend.json 을 1분마다 확인한다. "sheet" 이면 구글 시트로 직접 접수하고, 그 밖에는 접수 서버(DB)를 쓴다
-let backendMode = 'db';
+let backendMode = 'db', apiDirect = true;
 function checkBackend() {
   const base = /github\.io$/.test(location.hostname) ? '' : 'https://miro375-alt.github.io/Delivery-journey/expo/';
   fetch(base + 'backend.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null)
     .then(j => { if (j && (j.backend === 'sheet' || j.backend === 'db')) backendMode = j.backend; }).catch(() => {});
 }
-checkBackend(); setInterval(checkBackend, 60000);
+// 직접 주소가 안 닿는 통신망이면 예비 주소로 바꾼다 (1분마다 다시 확인)
+function probeApi() {
+  const c = new AbortController(), t = setTimeout(() => c.abort(), 4000);
+  fetch(CONFIG.WEBAPP_URL, { signal: c.signal, cache: 'no-store' }).then(r => r.json()).then(j => { apiDirect = !!(j && j.ok); })
+    .catch(() => { apiDirect = false; }).finally(() => clearTimeout(t));
+}
+checkBackend(); probeApi(); setInterval(() => { checkBackend(); probeApi(); }, 60000);
 
 /* ══════════════ 초기화 ══════════════ */
 resetForm();

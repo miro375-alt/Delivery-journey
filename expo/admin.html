@@ -288,7 +288,8 @@
 
 <script>
 // 접수 서버(DB). 이 페이지가 같은 서버에서 열리면 상대 주소, 다른 곳(GitHub Pages 등)에서 열리면 전체 주소를 쓴다
-const WEBAPP_URL = /lipaco\.app$/.test(location.hostname) ? 'api.php' : 'https://codes.lipaco.app/cwjung/expo_delivery/api.php';
+// NAS 에 직접 닿는 주소를 쓴다. lipaco.app 주소는 해외 거점을 거쳐 요청마다 2~5초가 걸린다
+const WEBAPP_URL = 'https://codes.aguard.synology.me/cwjung/expo_delivery/api.php';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 const fmt = n => Number(n || 0).toLocaleString('ko-KR');
