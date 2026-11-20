@@ -57,7 +57,7 @@
       if (flag === 'fee' && !o.feeDue) return false;
       if (device && (o.device || '(미지정)') !== device) return false;
       if (text) {
-        const hay = [o.receiptNo, o.orderNo, o.name, o.rName, o.addr1, o.addr2, o.memo, o.adminMemo, o.items, o.pickup, o.gifts].join(' ').toLowerCase();
+        const hay = [o.receiptNo, o.orderNo, o.name, o.rName, o.addr1, o.addr2, o.memo, o.adminMemo, o.setChangeText, o.items, o.pickup, o.gifts].join(' ').toLowerCase();
         const phoneHit = dg.length >= 4 && (digits(o.phone).includes(dg) || digits(o.rPhone).includes(dg));
         if (!hay.includes(text) && !phoneHit) return false;
       }
@@ -72,8 +72,8 @@
       tr.innerHTML = `<td><b>${esc(o.receiptNo)}</b></td><td>${esc(o.ts.slice(5, 16))}</td><td>${esc(o.orderNo)}</td>
         <td>${esc(o.name)}<br><span class="muted">${esc(o.phone)}</span></td>
         <td>${esc(o.rName)}<br><span class="muted">${esc(o.rPhone)}</span></td>
-        <td>${o.ship === '현장수령' ? '<span class="muted">택배 없음</span>' : `[${esc(o.zipcode)}] ${esc(o.addr1)} ${esc(o.addr2)}`}</td><td>${esc(o.memo)}</td><td>${itemsCell(o)}${o.adminMemo ? `<div class="admin-memo"><b>메모</b> ${esc(o.adminMemo)}</div>` : ''}</td><td>${tags(o)}</td>
-        <td><div class="row-actions"><button class="btn sm" data-act="memo">${o.adminMemo ? '메모 수정' : '메모'}</button>${o.ship === '현장수령' ? '' : `<button class="btn sm ${shipped ? '' : 'primary'}" data-act="ship">${shipped ? '발송 취소' : '발송완료'}</button>`}<button class="btn sm danger" data-act="del">삭제</button></div></td>`;
+        <td>${o.ship === '현장수령' ? '<span class="muted">택배 없음</span>' : `[${esc(o.zipcode)}] ${esc(o.addr1)} ${esc(o.addr2)}`}</td><td>${esc(o.memo)}</td><td>${itemsCell(o)}${setChangeHtml(o)}${o.adminMemo ? `<div class="admin-memo"><b>메모</b> ${esc(o.adminMemo)}</div>` : ''}</td><td>${tags(o)}</td>
+        <td><div class="row-actions">${hasSet(o) ? `<button class="btn sm" data-act="setchg">세트 변경</button>` : ''}<button class="btn sm" data-act="memo">${o.adminMemo ? '메모 수정' : '메모'}</button>${o.ship === '현장수령' ? '' : `<button class="btn sm ${shipped ? '' : 'primary'}" data-act="ship">${shipped ? '발송 취소' : '발송완료'}</button>`}<button class="btn sm danger" data-act="del">삭제</button></div></td>`;
       const shipBtn = tr.querySelector('[data-act=ship]');
       if (shipBtn) shipBtn.addEventListener('click', async () => {
         shipBtn.disabled = true; shipBtn.classList.add('busy');
@@ -83,6 +83,8 @@
           toast(shipped ? '발송 취소됨' : '발송완료 처리됨'); loadList(); refresh();
         } catch (e) { toast(e.message, 4000); shipBtn.disabled = false; shipBtn.classList.remove('busy'); }
       });
+      const scBtn = tr.querySelector('[data-act=setchg]');
+      if (scBtn) scBtn.addEventListener('click', () => openSetChange(o));
       // 주문 메모: 세트 구성 변경처럼 이 접수에만 해당하는 내용을 관리자가 적어 둔다
       const memoBtn = tr.querySelector('[data-act=memo]');
       memoBtn.addEventListener('click', async () => {
@@ -110,6 +112,73 @@
     if (!rows.length) tb.innerHTML = '<tr><td colspan="10" class="muted">조건에 맞는 접수가 없습니다.</td></tr>';
     el('listInfo').textContent = `${rows.length}건` + (capped ? ' (최신 500건 안에서 찾은 결과 — 더 오래된 건은 검색어로 찾아주세요)' : '');
   }
+  /* ── 세트 변경: 접수 1건의 세트 구성품을 다른 상품으로 바꿔 보낸 기록 ── */
+  const short = n => String(n || '').replace(/^\d+\.\s*/, '');
+  const catalog = () => (typeof productsCache !== 'undefined' && productsCache) || [];
+  const setsOf = o => { const by = {}; catalog().forEach(p => by[p.name] = p);
+    return String(o.items || '').split(';').map(t => t.trim().match(/^(.*?)\s*[×x]\s*(\d+)$/)).filter(Boolean)
+      .map(m => ({ name: m[1].trim(), qty: +m[2], p: by[m[1].trim()] })).filter(x => x.p && x.p.comp && x.p.comp.length > 1); };
+  function hasSet(o) { return /세트/.test(o.items || '') || (o.setChanges || []).length > 0; }
+  function setChangeHtml(o) {
+    const l = o.setChanges || []; if (!l.length) return '';
+    return '<div class="set-change">' + l.map(c => `<div><b>세트 변경</b> ${esc(short(c.set))}: ${esc(short(c.from))} → <b>${esc(short(c.to))}</b> ×${c.qty}${c.reason ? ` <span class="muted">(${esc(c.reason)})</span>` : ''}</div>`).join('') + '</div>';
+  }
+  async function ensureCatalog() { if (!catalog().length) { const r = await api('products'); productsCache = r.products; } }
+  async function openSetChange(o) {
+    try { await ensureCatalog(); } catch (e) { toast('상품 목록을 불러오지 못했습니다: ' + e.message, 4000); return; }
+    const sets = setsOf(o);
+    const singles = catalog().filter(p => !(p.comp && p.comp.length) && !p.gift);
+    const bg = document.createElement('div'); bg.className = 'sc-bg';
+    const opt = (v, t) => `<option value="${esc(v)}">${esc(t)}</option>`;
+    bg.innerHTML = `<div class="sc-box" role="dialog" aria-modal="true" aria-label="세트 변경">
+      <h3>세트 변경 · ${esc(o.receiptNo)} ${esc(o.name)}</h3>
+      <p class="muted">세트 가격은 그대로 두고, 실제로 보내는 구성품만 바꿉니다. 재고·마감·엑셀·시트에 반영됩니다.</p>
+      <div class="sc-list"></div>
+      ${sets.length ? `<div class="sc-form">
+        <label>세트<select class="sc-set">${sets.map(x => opt(x.name, short(x.name) + (x.qty > 1 ? ' ×' + x.qty : ''))).join('')}</select></label>
+        <label>바꿀 구성품<select class="sc-from"></select></label>
+        <label>대신 보낼 상품<select class="sc-to"><option value="">선택</option>${singles.map(p => opt(p.name, short(p.name) + (p.active ? '' : ' (판매 안 함)'))).join('')}</select></label>
+        <label>수량<input type="number" class="sc-qty" min="1" value="1" inputmode="numeric"></label>
+        <label class="sc-wide">사유 (선택)<input type="text" class="sc-reason" maxlength="200" placeholder="예: 섬유유연제 품절"></label>
+        <button class="btn primary sc-add">변경 추가</button>
+      </div>` : '<p class="muted">이 접수에는 구성품을 바꿀 세트가 없습니다.</p>'}
+      <div class="sc-foot"><button class="btn sc-close">닫기</button></div></div>`;
+    document.body.appendChild(bg);
+    const q = s => bg.querySelector(s);
+    const close = () => { bg.remove(); document.removeEventListener('keydown', onKey); };
+    const onKey = e => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+    bg.addEventListener('click', e => { if (e.target === bg) close(); });
+    q('.sc-close').addEventListener('click', close);
+    const changed = list => { o.setChanges = list; o.setChangeText = list.map(c => short(c.set) + ': ' + short(c.from) + '→' + short(c.to) + ' ×' + c.qty).join('; '); drawList(); loadList(); };
+    function drawList() {
+      const l = o.setChanges || [];
+      q('.sc-list').innerHTML = l.length ? l.map(c => `<div class="sc-item"><span>${esc(short(c.set))}: ${esc(short(c.from))} → <b>${esc(short(c.to))}</b> ×${c.qty}${c.reason ? ` <span class="muted">(${esc(c.reason)})</span>` : ''}</span><button class="btn sm danger" data-id="${c.id}">되돌리기</button></div>`).join('') : '<p class="muted">아직 바꾼 구성품이 없습니다.</p>';
+      q('.sc-list').querySelectorAll('[data-id]').forEach(b => b.addEventListener('click', async () => {
+        if (!confirm('이 세트 변경을 되돌릴까요? 원래 구성으로 다시 계산됩니다.')) return;
+        b.disabled = true;
+        try { const r = await api('removeSetChange', { row: o.row, receiptNo: o.receiptNo, id: +b.dataset.id }); changed(r.setChanges || []); toast('되돌렸습니다'); }
+        catch (e) { toast(e.message, 4000); b.disabled = false; }
+      }));
+    }
+    drawList();
+    if (!sets.length) return;
+    const fillFrom = () => {
+      const x = sets.find(s => s.name === q('.sc-set').value);
+      q('.sc-from').innerHTML = x.p.comp.map(c => opt(c.name, short(c.name) + ' (' + c.qty * x.qty + '개)')).join('');
+    };
+    q('.sc-set').addEventListener('change', fillFrom); fillFrom();
+    q('.sc-add').addEventListener('click', async () => {
+      const body = { row: o.row, receiptNo: o.receiptNo, set: q('.sc-set').value, from: q('.sc-from').value, to: q('.sc-to').value,
+                     qty: parseInt(q('.sc-qty').value, 10) || 0, reason: q('.sc-reason').value.trim() };
+      if (!body.to) { toast('대신 보낼 상품을 골라주세요.'); return; }
+      const btn = q('.sc-add'); btn.disabled = true; btn.classList.add('busy');
+      try { const r = await api('addSetChange', body); changed(r.setChanges || []); q('.sc-reason').value = ''; toast('세트 변경을 저장했습니다'); }
+      catch (e) { toast(e.message, 4000); }
+      finally { btn.disabled = false; btn.classList.remove('busy'); }
+    });
+  }
+
   async function fetchList(ev, quiet) {
     const req = ++listReq;
     if (!quiet) { el('listInfo').textContent = '불러오는 중…'; skRows('listTable', 6); }
