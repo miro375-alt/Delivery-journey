@@ -57,7 +57,7 @@
       if (flag === 'fee' && !o.feeDue) return false;
       if (device && (o.device || '(미지정)') !== device) return false;
       if (text) {
-        const hay = [o.receiptNo, o.orderNo, o.name, o.rName, o.addr1, o.addr2, o.memo, o.items, o.pickup, o.gifts].join(' ').toLowerCase();
+        const hay = [o.receiptNo, o.orderNo, o.name, o.rName, o.addr1, o.addr2, o.memo, o.adminMemo, o.items, o.pickup, o.gifts].join(' ').toLowerCase();
         const phoneHit = dg.length >= 4 && (digits(o.phone).includes(dg) || digits(o.rPhone).includes(dg));
         if (!hay.includes(text) && !phoneHit) return false;
       }
@@ -72,8 +72,8 @@
       tr.innerHTML = `<td><b>${esc(o.receiptNo)}</b></td><td>${esc(o.ts.slice(5, 16))}</td><td>${esc(o.orderNo)}</td>
         <td>${esc(o.name)}<br><span class="muted">${esc(o.phone)}</span></td>
         <td>${esc(o.rName)}<br><span class="muted">${esc(o.rPhone)}</span></td>
-        <td>${o.ship === '현장수령' ? '<span class="muted">택배 없음</span>' : `[${esc(o.zipcode)}] ${esc(o.addr1)} ${esc(o.addr2)}`}</td><td>${esc(o.memo)}</td><td>${itemsCell(o)}</td><td>${tags(o)}</td>
-        <td><div class="row-actions">${o.ship === '현장수령' ? '' : `<button class="btn sm ${shipped ? '' : 'primary'}" data-act="ship">${shipped ? '발송 취소' : '발송완료'}</button>`}<button class="btn sm danger" data-act="del">삭제</button></div></td>`;
+        <td>${o.ship === '현장수령' ? '<span class="muted">택배 없음</span>' : `[${esc(o.zipcode)}] ${esc(o.addr1)} ${esc(o.addr2)}`}</td><td>${esc(o.memo)}</td><td>${itemsCell(o)}${o.adminMemo ? `<div class="admin-memo"><b>메모</b> ${esc(o.adminMemo)}</div>` : ''}</td><td>${tags(o)}</td>
+        <td><div class="row-actions"><button class="btn sm" data-act="memo">${o.adminMemo ? '메모 수정' : '메모'}</button>${o.ship === '현장수령' ? '' : `<button class="btn sm ${shipped ? '' : 'primary'}" data-act="ship">${shipped ? '발송 취소' : '발송완료'}</button>`}<button class="btn sm danger" data-act="del">삭제</button></div></td>`;
       const shipBtn = tr.querySelector('[data-act=ship]');
       if (shipBtn) shipBtn.addEventListener('click', async () => {
         shipBtn.disabled = true; shipBtn.classList.add('busy');
@@ -82,6 +82,20 @@
           o.ship = shipped ? '' : '발송완료';            // 받아 둔 목록을 바로 고쳐 다시 그린다 (서버를 다시 기다리지 않는다)
           toast(shipped ? '발송 취소됨' : '발송완료 처리됨'); loadList(); refresh();
         } catch (e) { toast(e.message, 4000); shipBtn.disabled = false; shipBtn.classList.remove('busy'); }
+      });
+      // 주문 메모: 세트 구성 변경처럼 이 접수에만 해당하는 내용을 관리자가 적어 둔다
+      const memoBtn = tr.querySelector('[data-act=memo]');
+      memoBtn.addEventListener('click', async () => {
+        const v = prompt(`접수번호 ${o.receiptNo} (${o.name}) 메모\n예: 세트 구성 변경 — 섬유유연제 리필 → 탑투토워시 리필\n(비우고 확인을 누르면 메모가 지워집니다)`, o.adminMemo || '');
+        if (v === null) return;
+        const memo = v.trim().slice(0, 500);
+        if (memo === (o.adminMemo || '')) return;
+        memoBtn.disabled = true; memoBtn.classList.add('busy');
+        try {
+          const r = await api('setOrderMemo', { row: o.row, receiptNo: o.receiptNo, memo });
+          o.adminMemo = r.adminMemo || '';
+          toast(o.adminMemo ? '메모를 저장했습니다' : '메모를 지웠습니다'); loadList();
+        } catch (e) { toast(e.message, 4000); memoBtn.disabled = false; memoBtn.classList.remove('busy'); }
       });
       tr.querySelector('[data-act=del]').addEventListener('click', async () => {
         if (!confirm(`접수번호 ${o.receiptNo} (${o.name}) 을 삭제합니다. 구글 시트에서도 지워지며 되돌릴 수 없습니다. 계속할까요?`)) return;
