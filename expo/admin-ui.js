@@ -118,7 +118,22 @@
   const setsOf = o => { const by = {}; catalog().forEach(p => by[p.name] = p);
     return String(o.items || '').split(';').map(t => t.trim().match(/^(.*?)\s*[×x]\s*(\d+)$/)).filter(Boolean)
       .map(m => ({ name: m[1].trim(), qty: +m[2], p: by[m[1].trim()] })).filter(x => x.p && x.p.comp && x.p.comp.length > 1); };
-  function hasSet(o) { return /세트/.test(o.items || '') || (o.setChanges || []).length > 0; }
+  // 세트 변경 버튼은 숨겨 두고, 상단 제목을 1.5초 안에 3번 누른 기기(이 창)에서만 보인다. 다시 3번 누르면 숨긴다
+  const SC_KEY = 'expo_sc_on';
+  let scOn = false; try { scOn = sessionStorage.getItem(SC_KEY) === '1'; } catch (e) { /* 저장 불가 */ }
+  (function () {
+    const logo = document.querySelector('.topbar .logo'); if (!logo) return;
+    let taps = [];
+    logo.addEventListener('click', () => {
+      const now = Date.now(); taps = taps.filter(t => now - t < 1500); taps.push(now);
+      if (taps.length < 3) return;
+      taps = []; scOn = !scOn;
+      try { scOn ? sessionStorage.setItem(SC_KEY, '1') : sessionStorage.removeItem(SC_KEY); } catch (e) { /* 저장 불가 */ }
+      toast(scOn ? '세트 변경을 켰습니다 (이 창에서만)' : '세트 변경을 껐습니다');
+      if (typeof window.loadList === 'function' && document.getElementById('listTable').tBodies[0].children.length) window.loadList();
+    });
+  })();
+  function hasSet(o) { return scOn && (/세트/.test(o.items || '') || (o.setChanges || []).length > 0); }
   function setChangeHtml(o) {
     const l = o.setChanges || []; if (!l.length) return '';
     return '<div class="set-change">' + l.map(c => `<div><b>세트 변경</b> ${esc(short(c.set))}: ${esc(short(c.from))} → <b>${esc(short(c.to))}</b> ×${c.qty}${c.reason ? ` <span class="muted">(${esc(c.reason)})</span>` : ''}</div>`).join('') + '</div>';
@@ -281,7 +296,7 @@
 
   const logoutOld = window.logout;
   window.logout = function () {
-    try { localStorage.removeItem(KEEP); localStorage.removeItem(CACHE); } catch (e) {}
+    try { localStorage.removeItem(KEEP); localStorage.removeItem(CACHE); sessionStorage.removeItem('expo_sc_on'); } catch (e) {}
     saved = {}; Object.keys(lists).forEach(k => delete lists[k]); prodAt = 0;
     return logoutOld.apply(this, arguments);
   };
